@@ -1,0 +1,64 @@
+{
+  "DMICHERTOOLS": {
+    "Title": "dmicher 🛠️ Tools | Utilities",
+    "Description": "Small system-agnostic tools for playing in Foundry VTT.",
+    "Requests": {
+      "Label": "Requests",
+      "Common": {
+        "Label": "Regular request",
+        "Type": "regular",
+        "ImageAlt": "Raised hand: regular request",
+        "DefaultText": "I would like to speak."
+      },
+      "Urgent": {
+        "Label": "Urgent request",
+        "Type": "urgent",
+        "ImageAlt": "Raised hand: urgent request",
+        "DefaultText": "I urgently need to speak!"
+      },
+      "Settings": {
+        "WindowTitle": "dmicher 🛠️ Tools | Utilities - Settings - Requests",
+        "MenuName": "dmicher 🛠️ Tools | Utilities - Requests",
+        "MenuLabel": "Open request settings",
+        "MenuHint": "Configure the text and style of your regular and urgent requests.",
+        "Intro": "Configure the text of your requests. Click an image to submit a request, or drag it to the hotbar.",
+        "ImageTitle": "Submit a request or drag it to the hotbar",
+        "ImageHint": "Click to submit or drag to the hotbar",
+        "Text": "Text",
+        "CssStyle": "CSS style",
+        "CssSettingName": "{label}: CSS",
+        "StyleNote": "Only safe text styling properties are saved in CSS style: color, background, font, alignment, spacing, padding, and border.",
+        "Save": "Save",
+        "Saved": "Request settings saved.",
+        "SaveError": "Could not save request settings."
+      },
+      "Chat": {
+        "Actions": "Request actions",
+        "Cancel": "Cancel",
+        "Grant": "Give the floor",
+        "SubmitError": "Could not submit the request.",
+        "Forbidden": "You do not have permission for this action.",
+        "WhisperRequired": "The Game Master has disabled private messages. Ask the Game Master to cancel the request.",
+        "ResolveError": "Could not close the request."
+      },
+      "Technical": {
+        "Completed": "Request completed. Author: {author}, type: {type}, time in queue: {duration}.",
+        "Cancelled": "Request cancelled. Cancelled by: {resolver}. Author: {author}, type: {type}, time in queue: {duration}."
+      },
+      "Popup": {
+        "Granted": "The floor is given to {name}{token}"
+      },
+      "Hotbar": {
+        "MacroName": "{label} ({title})",
+        "ScriptsDisabled": "The Game Master has disabled script macros. You can still submit a request from the settings window.",
+        "Added": "The \"{label}\" macro has been added to the hotbar.",
+        "AddError": "Could not add the request to the hotbar."
+      }
+    },
+    "Duration": {
+      "Hours": "{count} h",
+      "Minutes": "{count} min",
+      "Seconds": "{count} sec"
+    }
+  }
+}
