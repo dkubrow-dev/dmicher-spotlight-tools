@@ -1,5 +1,11 @@
 .dmicher-request-settings {
-  min-width: 640px;
+  max-height: calc(100vh - 2rem);
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+}
+
+.dmicher-request-settings .window-content {
+  overflow-y: auto;
 }
 
 .dmicher-request-settings-form {
@@ -17,7 +23,7 @@
 .dmicher-settings-blocks {
   display: grid;
   gap: 0.8rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(205px, 100%), 1fr));
 }
 
 .dmicher-settings-block {
@@ -27,6 +33,7 @@
   flex-direction: column;
   gap: 0.6rem;
   margin: 0;
+  min-width: 0;
   padding: 0.65rem;
 }
 
@@ -37,6 +44,10 @@
 
 .dmicher-settings-urgent legend {
   color: #b4232d;
+}
+
+.dmicher-settings-stop legend {
+  color: #6e4616;
 }
 
 .dmicher-settings-preview {
@@ -85,6 +96,11 @@
 
 .dmicher-settings-field textarea {
   resize: vertical;
+}
+
+.dmicher-settings-field input,
+.dmicher-settings-field textarea {
+  max-width: 100%;
 }
 
 .dmicher-request-settings-form .form-footer {

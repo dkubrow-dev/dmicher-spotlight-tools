@@ -27,6 +27,18 @@ const REQUEST_TYPES = Object.freeze({
     styleSetting: "requestUrgentStyle",
     defaultTextKey: "Requests.Urgent.DefaultText",
     defaultStyle: "text-align: center; color: #b4232d; font-size: 1.35em; font-weight: bold;"
+  },
+  stop: {
+    labelKey: "Requests.Stop.Label",
+    typeLabelKey: "Requests.Stop.Type",
+    imageAltKey: "Requests.Stop.ImageAlt",
+    image: `modules/${MODULE_ID}/assets/requests/request-stop.webp`,
+    sound: `modules/${MODULE_ID}/assets/requests/request-stop.ogg`,
+    textSetting: "requestStopText",
+    styleSetting: "requestStopStyle",
+    defaultTextKey: "Requests.Stop.DefaultText",
+    defaultStyle: "text-align: center; color: #5b3a12; font-size: 1.2em; font-weight: bold;",
+    moderatorOnly: true
   }
 });
 
@@ -64,7 +76,8 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     },
     window: {
       icon: "fa-solid fa-hand",
-      title: "DMICHERTOOLS.Requests.Settings.WindowTitle"
+      title: "DMICHERTOOLS.Requests.Settings.WindowTitle",
+      resizable: true
     }
   };
 
@@ -80,7 +93,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const requests = Object.entries(REQUEST_TYPES).map(([urgency, request]) => ({
+    const requests = getConfigurableRequestEntries().map(([urgency, request]) => ({
       urgency,
       label: localize(request.labelKey),
       imageAlt: localize(request.imageAltKey),
@@ -120,7 +133,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
 
     try {
       const saves = [];
-      for (const [urgency, request] of Object.entries(REQUEST_TYPES)) {
+      for (const [urgency, request] of getConfigurableRequestEntries()) {
         const text = String(formData.get(`${urgency}Text`) ?? "").trim().slice(0, 500);
         const style = sanitizeTextStyle(formData.get(`${urgency}Style`));
         saves.push(game.settings.set(MODULE_ID, request.textSetting, text));
@@ -188,7 +201,11 @@ function registerSettings() {
 }
 
 function normalizeUrgency(urgency) {
-  return urgency === "urgent" ? "urgent" : "common";
+  return Object.hasOwn(REQUEST_TYPES, urgency) ? urgency : "common";
+}
+
+function getConfigurableRequestEntries() {
+  return Object.entries(REQUEST_TYPES).filter(([, request]) => !request.moderatorOnly || isModerator());
 }
 
 function openRequestSettings() {
@@ -229,6 +246,10 @@ function injectSettingsSidebarSection(app, html) {
 async function submitRequest(urgency) {
   const normalizedUrgency = normalizeUrgency(urgency);
   const request = REQUEST_TYPES[normalizedUrgency];
+  if (request.moderatorOnly && !isModerator()) {
+    ui.notifications.warn(localize("Requests.Chat.Forbidden"));
+    return;
+  }
   const ChatMessageClass = getChatMessageClass();
   const token = canvas?.tokens?.controlled?.[0] ?? null;
   const requestData = {
@@ -276,7 +297,7 @@ function buildRequestMessageContent(urgency, text, style) {
         </button>
         <button type="button" data-request-action="grant">
           <i class="fa-solid fa-comment" aria-hidden="true"></i>
-          <span data-request-action-label="grant">${escapeHTML(localize("Requests.Chat.Grant"))}</span>
+          <span data-request-action-label="grant">${escapeHTML(localize(getGrantActionKey(urgency)))}</span>
         </button>
       </div>
     </section>`;
@@ -322,7 +343,7 @@ function activateRequestMessageActions(message, html, requestData) {
   const cancelButton = actions.querySelector('[data-request-action="cancel"]');
   const grantButton = actions.querySelector('[data-request-action="grant"]');
   localizeActionButton(cancelButton, "Requests.Chat.Cancel", "cancel");
-  localizeActionButton(grantButton, "Requests.Chat.Grant", "grant");
+  localizeActionButton(grantButton, getGrantActionKey(requestData.urgency), "grant");
   if (cancelButton) cancelButton.hidden = !mayCancel;
   if (grantButton) grantButton.hidden = !mayGrant;
 
@@ -349,6 +370,10 @@ function localizeActionButton(button, key, action) {
   label.textContent = localize(key);
 }
 
+function getGrantActionKey(urgency) {
+  return normalizeUrgency(urgency) === "stop" ? "Requests.Chat.TakeFloor" : "Requests.Chat.GiveFloor";
+}
+
 async function resolveRequest(message, action) {
   const requestData = message.getFlag(MODULE_ID, REQUEST_FLAG);
   if (!requestData) return;
@@ -371,6 +396,9 @@ async function resolveRequest(message, action) {
     if (!game.messages.get(message.id)) return;
     const createdAt = Number(requestData.createdAt ?? message.timestamp ?? game.time.serverTime);
     const elapsed = game.time.serverTime - createdAt;
+    if (completed && normalizeUrgency(requestData.urgency) === "stop") {
+      await game.togglePause(true, { broadcast: true });
+    }
     await message.delete();
 
     if (completed) broadcastSpeechGranted(requestData);
@@ -513,7 +541,7 @@ function handleHotbarDrop(_hotbar, data, slot) {
 }
 
 function handleRequestChatCommand(_chatLog, message) {
-  const pattern = new RegExp(`^${CHAT_MACRO_COMMAND}\\s+(common|urgent)\\s*$`, "i");
+  const pattern = new RegExp(`^${CHAT_MACRO_COMMAND}\\s+(common|urgent|stop)\\s*$`, "i");
   const match = pattern.exec(String(message).trim());
   if (!match) return;
 
@@ -523,6 +551,10 @@ function handleRequestChatCommand(_chatLog, message) {
 
 async function createRequestMacro(urgency, slot, notify = true) {
   const request = REQUEST_TYPES[urgency];
+  if (request.moderatorOnly && !isModerator()) {
+    ui.notifications.warn(localize("Requests.Chat.Forbidden"));
+    return;
+  }
   const label = localize(request.labelKey);
   const name = format("Requests.Hotbar.MacroName", {
     label,

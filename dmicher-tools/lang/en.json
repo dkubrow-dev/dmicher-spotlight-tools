@@ -16,11 +16,17 @@
         "ImageAlt": "Raised hand: urgent request",
         "DefaultText": "I urgently need to speak!"
       },
+      "Stop": {
+        "Label": "Environment",
+        "Type": "environment",
+        "ImageAlt": "Stop for an environment action",
+        "DefaultText": "Environment action. New requests are temporarily paused."
+      },
       "Settings": {
         "WindowTitle": "dmicher 🛠️ Tools | Utilities - Settings - Requests",
         "MenuName": "dmicher 🛠️ Tools | Utilities - Requests",
         "MenuLabel": "Open request settings",
-        "MenuHint": "Configure the text and style of your regular and urgent requests.",
+        "MenuHint": "Configure the text and style of your requests.",
         "Intro": "Configure the text of your requests. Click an image to submit a request, or drag it to the hotbar.",
         "ImageTitle": "Submit a request or drag it to the hotbar",
         "ImageHint": "Click to submit or drag to the hotbar",
@@ -35,7 +41,8 @@
       "Chat": {
         "Actions": "Request actions",
         "Cancel": "Cancel",
-        "Grant": "Give the floor",
+        "GiveFloor": "Give the floor",
+        "TakeFloor": "Take the floor",
         "SubmitError": "Could not submit the request.",
         "Forbidden": "You do not have permission for this action.",
         "WhisperRequired": "The Game Master has disabled private messages. Ask the Game Master to cancel the request.",
