@@ -1,5 +1,5 @@
 # Ru
-Dmicher tools - это модуль с набором мелких полезных приспособлений для Foundry VTT, в котором можно найти небольшие полезные скрипты для игры.
+Модуль dmicher tools - набор небольших системно независимых инструментов для игры на Foundry VTT. Сейчас реализована очередь заявок за игровым столом. Инструменты, планируемые к выпуску: таймеры, проверка готовности, афк-статусы, мониторинг спотлайта.
 
 # En
-Dmicher tools is a module  for Foundry VTT with a set of small useful instruments, in which you can find small useful scripts for the game.
+Dmicher tools module is small, system-agnostic tools set for gaming on Foundry VTT. Currently implemented: a player requests queue. Planned features: timers, readiness checks, AFK statuses, and spotlight monitoring for the GM.

@@ -1,7 +1,7 @@
 {
   "id": "dmicher-tools",
   "title": "dmicher 🛠️ Tools | Приспособы",
-  "description": "Небольшие системно-независимые инструменты для игры в Foundry VTT.",
+  "description": "Dmicher tools module is small, system-agnostic tools set for gaming on Foundry VTT. Currently implemented: a player requests queue. Planned features: timers, readiness checks, AFK statuses, and spotlight monitoring for the GM.",
   "version": "0.1.0",
   "authors": [
     {

@@ -1,9 +1,7 @@
 {
   "DMICHERTOOLS": {
     "Title": "dmicher 🛠️ Tools | Utilities",
-    "Description": "Small system-agnostic tools for playing in Foundry VTT.",
     "Requests": {
-      "Label": "Requests",
       "Common": {
         "Label": "Regular request",
         "Type": "regular",
@@ -20,7 +18,7 @@
         "Label": "Environment",
         "Type": "environment",
         "ImageAlt": "Stop for an environment action",
-        "DefaultText": "Environment action. New requests are temporarily paused."
+        "DefaultText": "Environment action. Pay attention to the scene."
       },
       "Settings": {
         "WindowTitle": "dmicher 🛠️ Tools | Utilities - Settings - Requests",
@@ -32,7 +30,6 @@
         "ImageHint": "Click to submit or drag to the hotbar",
         "Text": "Text",
         "CssStyle": "CSS style",
-        "CssSettingName": "{label}: CSS",
         "StyleNote": "Only safe text styling properties are saved in CSS style: color, background, font, alignment, spacing, padding, and border.",
         "Save": "Save",
         "Saved": "Request settings saved.",
@@ -60,7 +57,6 @@
       },
       "Hotbar": {
         "MacroName": "{label} ({title})",
-        "ScriptsDisabled": "The Game Master has disabled script macros. You can still submit a request from the settings window.",
         "Added": "The \"{label}\" macro has been added to the hotbar.",
         "AddError": "Could not add the request to the hotbar."
       }
