@@ -236,6 +236,7 @@ async function submitRequest(urgency) {
     authorId: game.user.id,
     authorName: game.user.name,
     tokenName: token?.name ?? "",
+    submittedAt: Date.now(),
     createdAt: game.time.serverTime
   };
   const text = getRequestText(request);
@@ -406,15 +407,17 @@ async function createTechnicalMessage(requestData, completed, elapsed) {
 
 function buildTechnicalMessageLines(resolutionData) {
   const requestData = resolutionData.requestData ?? {};
+  const request = REQUEST_TYPES[normalizeUrgency(requestData.urgency)];
   const author = requestData.tokenName
     ? `${requestData.authorName} (${requestData.tokenName})`
     : requestData.authorName;
-  const createdAt = Number(requestData.createdAt ?? (game.time.serverTime - Number(resolutionData.elapsed ?? 0)));
+  const submittedAt = Number(requestData.submittedAt ?? requestData.createdAt ?? (game.time.serverTime - Number(resolutionData.elapsed ?? 0)));
   const data = {
     author,
     resolver: resolutionData.resolverName ?? "",
-    timestamp: formatTimestamp(createdAt),
-    duration: formatDuration(resolutionData.elapsed)
+    timestamp: formatTimestamp(submittedAt),
+    duration: formatDuration(resolutionData.elapsed),
+    type: localize(request.typeLabelKey)
   };
   const titleKey = resolutionData.outcome === "completed"
     ? "Requests.Technical.InGameTitle"
@@ -424,11 +427,13 @@ function buildTechnicalMessageLines(resolutionData) {
   const resolver = resolutionData.outcome === "cancelled"
     ? `<small class="dmicher-request-technical-meta">${escapeHTML(format("Requests.Technical.Resolver", data))}</small>`
     : "";
+  const type = escapeHTML(format("Requests.Technical.Type", data));
 
   return `
     <strong class="dmicher-request-technical-title">${title}</strong>
     <small class="dmicher-request-technical-meta">${details}</small>
-    ${resolver}`;
+    ${resolver}
+    <small class="dmicher-request-technical-meta">${type}</small>`;
 }
 
 function getTechnicalMessageRecipients(authorId) {
@@ -666,9 +671,12 @@ function formatDuration(milliseconds) {
 function formatTimestamp(timestamp) {
   const date = new Date(Number(timestamp) || game.time.serverTime);
   try {
-    return new Intl.DateTimeFormat(game.i18n.lang, {
+    const systemTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const options = {
       timeStyle: "medium"
-    }).format(date);
+    };
+    if (systemTimeZone) options.timeZone = systemTimeZone;
+    return new Intl.DateTimeFormat(game.i18n.lang, options).format(date);
   } catch (_error) {
     return date.toLocaleTimeString();
   }

@@ -45,7 +45,8 @@
         "InGameTitle": "Слово по заявке {author}",
         "CancelledTitle": "Отмена заявки {author}",
         "Details": "Заявка подана: {timestamp}, времени в чате: {duration}",
-        "Resolver": "Отменил: {resolver}"
+        "Resolver": "Отменил: {resolver}",
+        "Type": "Тип: {type}"
       },
       "Popup": {
         "Granted": "Слово предоставлено {name}{token}"
