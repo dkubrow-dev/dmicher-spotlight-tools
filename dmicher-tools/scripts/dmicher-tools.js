@@ -2,6 +2,8 @@ const MODULE_ID = "dmicher-tools";
 const I18N_PREFIX = "DMICHERTOOLS";
 const SOCKET_CHANNEL = `module.${MODULE_ID}`;
 const REQUEST_FLAG = "request";
+const SPEECH_GRANTED_SOUND = `modules/${MODULE_ID}/assets/requests/next-request.ogg`;
+const CHAT_MACRO_COMMAND = "/dmicher-tools-request";
 
 const REQUEST_TYPES = Object.freeze({
   common: {
@@ -83,7 +85,8 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       label: localize(request.labelKey),
       imageAlt: localize(request.imageAltKey),
       image: request.image,
-      text: game.settings.get(MODULE_ID, request.textSetting),
+      text: getRequestTextOverride(request),
+      placeholder: localize(request.defaultTextKey),
       style: game.settings.get(MODULE_ID, request.styleSetting)
     }));
 
@@ -143,12 +146,14 @@ Hooks.once("init", () => {
 
   Hooks.on("renderSettings", injectSettingsSidebarSection);
   Hooks.on("renderChatMessageHTML", renderLocalizedChatMessage);
+  Hooks.on("chatMessage", handleRequestChatCommand);
   Hooks.on("hotbarDrop", handleHotbarDrop);
 });
 
 Hooks.once("ready", () => {
   game.socket.on(SOCKET_CHANNEL, receiveSocketMessage);
   void preloadAssets();
+  void migrateRequestMacros();
 
   const settingsTab = ui.sidebar?.tabs?.settings;
   if (settingsTab?.element) injectSettingsSidebarSection(settingsTab, settingsTab.element);
@@ -161,7 +166,7 @@ function registerSettings() {
       scope: "user",
       config: false,
       type: String,
-      default: localize(request.defaultTextKey)
+      default: ""
     });
     game.settings.register(MODULE_ID, request.styleSetting, {
       name: format("Requests.Settings.CssSettingName", { label: localize(request.labelKey) }),
@@ -233,7 +238,7 @@ async function submitRequest(urgency) {
     tokenName: token?.name ?? "",
     createdAt: game.time.serverTime
   };
-  const text = game.settings.get(MODULE_ID, request.textSetting);
+  const text = getRequestText(request);
   const style = sanitizeTextStyle(game.settings.get(MODULE_ID, request.styleSetting));
   const speaker = ChatMessageClass.getSpeaker(token ? { token } : {});
 
@@ -276,14 +281,27 @@ function buildRequestMessageContent(urgency, text, style) {
     </section>`;
 }
 
+function getRequestText(request) {
+  return getRequestTextOverride(request) || localize(request.defaultTextKey);
+}
+
+function getRequestTextOverride(request) {
+  const storedValue = game.settings.get(MODULE_ID, request.textSetting);
+  if (storedValue == null) return "";
+
+  const value = String(storedValue).trim();
+  const legacyDefaultValue = `${I18N_PREFIX}.${request.defaultTextKey}`;
+  return value === legacyDefaultValue ? "" : value;
+}
+
 function renderLocalizedChatMessage(message, html) {
   const requestData = message.getFlag(MODULE_ID, REQUEST_FLAG);
   if (requestData) activateRequestMessageActions(message, html, requestData);
 
   const resolutionData = message.getFlag(MODULE_ID, "resolution");
   if (resolutionData && (typeof resolutionData === "object")) {
-    const technicalText = html.querySelector(".dmicher-request-technical");
-    if (technicalText) technicalText.textContent = buildTechnicalMessage(resolutionData);
+    const technicalMessage = html.querySelector(".dmicher-request-technical");
+    if (technicalMessage) technicalMessage.innerHTML = buildTechnicalMessageLines(resolutionData);
   }
 }
 
@@ -376,7 +394,7 @@ async function createTechnicalMessage(requestData, completed, elapsed) {
   await ChatMessageClass.create({
     user: game.user.id,
     speaker: ChatMessageClass.getSpeaker(),
-    content: `<p class="dmicher-request-technical">${escapeHTML(buildTechnicalMessage(resolutionData))}</p>`,
+    content: `<section class="dmicher-request-technical">${buildTechnicalMessageLines(resolutionData)}</section>`,
     whisper: getTechnicalMessageRecipients(requestData.authorId),
     flags: {
       [MODULE_ID]: {
@@ -386,22 +404,31 @@ async function createTechnicalMessage(requestData, completed, elapsed) {
   });
 }
 
-function buildTechnicalMessage(resolutionData) {
+function buildTechnicalMessageLines(resolutionData) {
   const requestData = resolutionData.requestData ?? {};
-  const request = REQUEST_TYPES[normalizeUrgency(requestData.urgency)];
   const author = requestData.tokenName
     ? `${requestData.authorName} (${requestData.tokenName})`
     : requestData.authorName;
+  const createdAt = Number(requestData.createdAt ?? (game.time.serverTime - Number(resolutionData.elapsed ?? 0)));
   const data = {
     author,
     resolver: resolutionData.resolverName ?? "",
-    type: localize(request.typeLabelKey),
+    timestamp: formatTimestamp(createdAt),
     duration: formatDuration(resolutionData.elapsed)
   };
-  const key = resolutionData.outcome === "completed"
-    ? "Requests.Technical.Completed"
-    : "Requests.Technical.Cancelled";
-  return format(key, data);
+  const titleKey = resolutionData.outcome === "completed"
+    ? "Requests.Technical.InGameTitle"
+    : "Requests.Technical.CancelledTitle";
+  const title = escapeHTML(format(titleKey, data));
+  const details = escapeHTML(format("Requests.Technical.Details", data));
+  const resolver = resolutionData.outcome === "cancelled"
+    ? `<small class="dmicher-request-technical-meta">${escapeHTML(format("Requests.Technical.Resolver", data))}</small>`
+    : "";
+
+  return `
+    <strong class="dmicher-request-technical-title">${title}</strong>
+    <small class="dmicher-request-technical-meta">${details}</small>
+    ${resolver}`;
 }
 
 function getTechnicalMessageRecipients(authorId) {
@@ -456,7 +483,7 @@ function showSpeechGranted(payload) {
   });
   popup.append(image, text);
   document.body.append(popup);
-  void playRequestSound(payload.urgency, false);
+  void playSpeechGrantedSound();
 
   window.setTimeout(() => {
     popup.classList.add("is-closing");
@@ -480,36 +507,86 @@ function handleHotbarDrop(_hotbar, data, slot) {
   return false;
 }
 
-async function createRequestMacro(urgency, slot) {
+function handleRequestChatCommand(_chatLog, message) {
+  const pattern = new RegExp(`^${CHAT_MACRO_COMMAND}\\s+(common|urgent)\\s*$`, "i");
+  const match = pattern.exec(String(message).trim());
+  if (!match) return;
+
+  void submitRequest(normalizeUrgency(match[1].toLowerCase()));
+  return false;
+}
+
+async function createRequestMacro(urgency, slot, notify = true) {
   const request = REQUEST_TYPES[urgency];
   const label = localize(request.labelKey);
   const name = format("Requests.Hotbar.MacroName", {
     label,
     title: localize("Title")
   });
-  const command = `game.modules.get("${MODULE_ID}").api.submitRequest("${urgency}");`;
+  const command = getChatMacroCommand(urgency);
   const MacroClass = CONFIG.Macro.documentClass ?? foundry.documents.Macro;
 
   try {
-    if (!game.user.can("MACRO_SCRIPT")) {
-      ui.notifications.warn(localize("Requests.Hotbar.ScriptsDisabled"));
-      return;
-    }
-    let macro = game.macros.find((item) => item.name === name && item.command === command);
+    let macro = game.macros.find((item) => item.isOwner && isRequestMacro(item, urgency));
     if (!macro) {
       macro = await MacroClass.create({
         name,
-        type: "script",
+        type: "chat",
         img: request.image,
-        command
+        command,
+        flags: {
+          [MODULE_ID]: {
+            requestMacro: urgency
+          }
+        }
+      });
+    } else if ((macro.type !== "chat") || (macro.command !== command) || (macro.name !== name) || (macro.img !== request.image)) {
+      await macro.update({
+        name,
+        type: "chat",
+        img: request.image,
+        command,
+        [`flags.${MODULE_ID}.requestMacro`]: urgency
       });
     }
     await game.user.assignHotbarMacro(macro, slot);
-    ui.notifications.info(format("Requests.Hotbar.Added", { label }));
+    if (notify) ui.notifications.info(format("Requests.Hotbar.Added", { label }));
   } catch (error) {
     console.error(`${MODULE_ID} | Unable to create hotbar macro`, error);
     ui.notifications.error(localize("Requests.Hotbar.AddError"));
   }
+}
+
+async function migrateRequestMacros() {
+  const migrations = [];
+  for (const urgency of Object.keys(REQUEST_TYPES)) {
+    for (const macro of game.macros.filter((item) => item.isOwner && isRequestMacro(item, urgency))) {
+      if ((macro.type === "chat") && (macro.command === getChatMacroCommand(urgency))) continue;
+      migrations.push(macro.update({
+        type: "chat",
+        command: getChatMacroCommand(urgency),
+        [`flags.${MODULE_ID}.requestMacro`]: urgency
+      }));
+    }
+  }
+  if (migrations.length) await Promise.allSettled(migrations);
+
+  for (const [slot, macroId] of Object.entries(game.user.hotbar ?? {})) {
+    const macro = game.macros.get(macroId);
+    if (!macro || macro.isOwner) continue;
+    const urgency = Object.keys(REQUEST_TYPES).find((type) => isRequestMacro(macro, type));
+    if (urgency) await createRequestMacro(urgency, Number(slot), false);
+  }
+}
+
+function isRequestMacro(macro, urgency) {
+  const flaggedUrgency = macro.getFlag(MODULE_ID, "requestMacro");
+  const legacyCommand = `game.modules.get("${MODULE_ID}").api.submitRequest("${urgency}");`;
+  return (flaggedUrgency === urgency) || (macro.command === legacyCommand);
+}
+
+function getChatMacroCommand(urgency) {
+  return `${CHAT_MACRO_COMMAND} ${urgency}`;
 }
 
 async function playRequestSound(urgency, broadcast) {
@@ -526,12 +603,26 @@ async function playRequestSound(urgency, broadcast) {
   }
 }
 
+async function playSpeechGrantedSound() {
+  try {
+    await foundry.audio.AudioHelper.play({
+      src: SPEECH_GRANTED_SOUND,
+      volume: 1,
+      autoplay: true,
+      loop: false
+    }, false);
+  } catch (error) {
+    console.warn(`${MODULE_ID} | Unable to play speech granted sound`, error);
+  }
+}
+
 async function preloadAssets() {
   const work = [];
   for (const request of Object.values(REQUEST_TYPES)) {
     work.push(preloadImage(request.image));
     work.push(foundry.audio.AudioHelper.preloadSound(request.sound));
   }
+  work.push(foundry.audio.AudioHelper.preloadSound(SPEECH_GRANTED_SOUND));
   await Promise.allSettled(work);
 }
 
@@ -570,6 +661,17 @@ function formatDuration(milliseconds) {
   if (minutes || hours) parts.push(format("Duration.Minutes", { count: minutes }));
   parts.push(format("Duration.Seconds", { count: seconds }));
   return parts.join(" ");
+}
+
+function formatTimestamp(timestamp) {
+  const date = new Date(Number(timestamp) || game.time.serverTime);
+  try {
+    return new Intl.DateTimeFormat(game.i18n.lang, {
+      timeStyle: "medium"
+    }).format(date);
+  } catch (_error) {
+    return date.toLocaleTimeString();
+  }
 }
 
 function localize(key) {

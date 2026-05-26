@@ -42,8 +42,10 @@
         "ResolveError": "Could not close the request."
       },
       "Technical": {
-        "Completed": "Request completed. Author: {author}, type: {type}, time in queue: {duration}.",
-        "Cancelled": "Request cancelled. Cancelled by: {resolver}. Author: {author}, type: {type}, time in queue: {duration}."
+        "InGameTitle": "Floor granted for request from {author}",
+        "CancelledTitle": "Request cancelled: {author}",
+        "Details": "Submitted: {timestamp}, time in chat: {duration}",
+        "Resolver": "Cancelled by: {resolver}"
       },
       "Popup": {
         "Granted": "The floor is given to {name}{token}"

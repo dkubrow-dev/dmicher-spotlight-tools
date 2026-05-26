@@ -87,6 +87,16 @@
   resize: vertical;
 }
 
+.dmicher-request-settings-form .form-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.dmicher-request-settings-form .form-footer > button[type="submit"] {
+  flex: 0 0 auto;
+  width: auto;
+}
+
 .dmicher-tools-sidebar {
   border-top: 1px solid var(--color-border-light-primary);
   margin-top: 0.75rem;
@@ -149,8 +159,20 @@
 }
 
 .dmicher-request-technical {
-  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
   margin: 0;
+}
+
+.dmicher-request-technical-title {
+  font-weight: bold;
+}
+
+.dmicher-request-technical-meta {
+  color: var(--color-text-dark-secondary, #777);
+  font-size: var(--font-size-11);
+  line-height: 1.3;
 }
 
 .dmicher-speech-popup {
@@ -167,8 +189,8 @@
   padding: 0.65rem 0.85rem;
   pointer-events: none;
   position: fixed;
-  top: 2rem;
-  transform: translateX(-50%);
+  top: 25%;
+  transform: translate(-50%, -50%);
   transition: opacity 180ms ease, transform 180ms ease;
   z-index: 100000;
 }
@@ -188,7 +210,7 @@
 
 .dmicher-speech-popup.is-closing {
   opacity: 0;
-  transform: translate(-50%, -8px);
+  transform: translate(-50%, calc(-50% - 8px));
 }
 
 @media (max-width: 720px) {

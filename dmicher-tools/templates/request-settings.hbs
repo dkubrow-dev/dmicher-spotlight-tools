@@ -24,7 +24,7 @@
 
       <label class="dmicher-settings-field">
         <span>{{localize "DMICHERTOOLS.Requests.Settings.Text"}}</span>
-        <textarea name="{{urgency}}Text" rows="3" maxlength="500">{{text}}</textarea>
+        <textarea name="{{urgency}}Text" rows="3" maxlength="500" placeholder="{{placeholder}}">{{text}}</textarea>
       </label>
 
       <label class="dmicher-settings-field">
@@ -40,9 +40,9 @@
   </p>
 
   <footer class="form-footer">
-    <button type="submit">
-      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
-      {{localize "DMICHERTOOLS.Requests.Settings.Save"}}
-    </button>
+          <button type="submit">
+              <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+              {{localize "DMICHERTOOLS.Requests.Settings.Save"}}
+          </button>
   </footer>
 </form>

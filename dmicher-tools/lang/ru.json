@@ -42,8 +42,10 @@
         "ResolveError": "Не удалось закрыть заявку."
       },
       "Technical": {
-        "Completed": "Заявка выполнена. Автор: {author}, тип: {type}, время в очереди: {duration}.",
-        "Cancelled": "Заявка отменена. Отменил: {resolver}. Автор: {author}, тип: {type}, время в очереди: {duration}."
+        "InGameTitle": "Слово по заявке {author}",
+        "CancelledTitle": "Отмена заявки {author}",
+        "Details": "Заявка подана: {timestamp}, времени в чате: {duration}",
+        "Resolver": "Отменил: {resolver}"
       },
       "Popup": {
         "Granted": "Слово предоставлено {name}{token}"
