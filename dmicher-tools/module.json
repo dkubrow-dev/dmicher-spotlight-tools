@@ -32,6 +32,6 @@
   ],
   "socket": true,
   "url": "https://github.com/dkubrow-dev/dmicher-tools",
-  "manifest": "https://raw.githubusercontent.com/dkubrow-dev/dmicher-tools/main/dmicher-tools/module.json",
+  "manifest": "https://github.com/dkubrow-dev/dmicher-tools/releases/download/0.0.1/module.json",
   "download": "https://github.com/dkubrow-dev/dmicher-tools/releases/latest/download/dmicher-tools.zip"
 }
