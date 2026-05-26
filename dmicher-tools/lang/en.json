@@ -1,0 +1,70 @@
+{
+  "DMICHERTOOLS": {
+    "Title": "dmicher 🛠️ Tools | Utilities",
+    "Requests": {
+      "Common": {
+        "Label": "Regular request",
+        "Type": "regular",
+        "ImageAlt": "Raised hand: regular request",
+        "DefaultText": "I would like to speak."
+      },
+      "Urgent": {
+        "Label": "Urgent request",
+        "Type": "urgent",
+        "ImageAlt": "Raised hand: urgent request",
+        "DefaultText": "I urgently need to speak!"
+      },
+      "Stop": {
+        "Label": "Environment",
+        "Type": "environment",
+        "ImageAlt": "Stop for an environment action",
+        "DefaultText": "Environment action. Pay attention to the scene."
+      },
+      "Settings": {
+        "WindowTitle": "dmicher 🛠️ Tools | Utilities - Settings - Requests",
+        "MenuName": "dmicher 🛠️ Tools | Utilities - Requests",
+        "MenuLabel": "Open request settings",
+        "MenuHint": "Configure the text and style of your requests.",
+        "Intro": "Configure the text of your requests. Click an image to submit a request, or drag it to the hotbar.",
+        "ImageTitle": "Submit a request or drag it to the hotbar",
+        "ImageHint": "Click to submit or drag to the hotbar",
+        "Text": "Text",
+        "CssStyle": "CSS style",
+        "StyleNote": "Only safe text styling properties are saved in CSS style: color, background, font, alignment, spacing, padding, and border.",
+        "Save": "Save",
+        "Saved": "Request settings saved.",
+        "SaveError": "Could not save request settings."
+      },
+      "Chat": {
+        "Actions": "Request actions",
+        "Cancel": "Cancel",
+        "GiveFloor": "Give the floor",
+        "TakeFloor": "Take the floor",
+        "SubmitError": "Could not submit the request.",
+        "Forbidden": "You do not have permission for this action.",
+        "WhisperRequired": "The Game Master has disabled private messages. Ask the Game Master to cancel the request.",
+        "ResolveError": "Could not close the request."
+      },
+      "Technical": {
+        "InGameTitle": "Floor granted for request from {author}",
+        "CancelledTitle": "Request cancelled: {author}",
+        "Details": "Submitted: {timestamp}, time in chat: {duration}",
+        "Resolver": "Cancelled by: {resolver}",
+        "Type": "Type: {type}"
+      },
+      "Popup": {
+        "Granted": "The floor is given to {name}{token}"
+      },
+      "Hotbar": {
+        "MacroName": "{label} ({title})",
+        "Added": "The \"{label}\" macro has been added to the hotbar.",
+        "AddError": "Could not add the request to the hotbar."
+      }
+    },
+    "Duration": {
+      "Hours": "{count} h",
+      "Minutes": "{count} min",
+      "Seconds": "{count} sec"
+    }
+  }
+}
