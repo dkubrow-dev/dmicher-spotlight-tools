@@ -1,0 +1,19 @@
+Downloaded from:
+https://obsydianx.itch.io/interface-sfx-pack-1
+
+Status: Released
+Category: Assets
+Release date: Apr 21, 2016
+Author: ObsydianX
+Asset license: Creative Commons Zero v1.0 Universal
+Links: Soundcloud - https://soundcloud.com/obsydianx/
+Content: No generative AI was used
+
+License CC0:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Correspondence between the module's sound and the original sound set:
+1. request-common.ogg: back_style_1_001.ogg
+2. request-urgent.ogg: confirm_style_3_001.ogg, confirm_style_3_002.ogg, confirm_style_3_003.ogg
+3. next-request.ogg: cursor_style_2.ogg
+4. request-stop.ogg: error_style_4_001.ogg
