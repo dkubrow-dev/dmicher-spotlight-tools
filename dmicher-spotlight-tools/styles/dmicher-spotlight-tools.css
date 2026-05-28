@@ -1,0 +1,657 @@
+.dmicher-request-settings {
+  max-height: calc(100vh - 2rem);
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+}
+
+.dmicher-request-settings .window-content {
+  overflow-y: auto;
+}
+
+.dmicher-request-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 0.75rem;
+}
+
+.dmicher-settings-intro,
+.dmicher-style-note {
+  margin: 0;
+}
+
+.dmicher-settings-blocks {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(205px, 100%), 1fr));
+}
+
+.dmicher-settings-block {
+  border: 1px solid var(--color-border-light-primary);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  min-width: 0;
+  padding: 0.65rem;
+}
+
+.dmicher-settings-block legend {
+  font-weight: bold;
+  padding: 0 0.35rem;
+}
+
+.dmicher-settings-urgent legend {
+  color: #b4232d;
+}
+
+.dmicher-settings-stop legend {
+  color: #6e4616;
+}
+
+.dmicher-settings-preview {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.dmicher-settings-preview span {
+  color: var(--color-text-dark-secondary);
+  font-size: var(--font-size-12);
+}
+
+.dmicher-settings-image {
+  border: 1px solid var(--color-border-light-secondary);
+  border-radius: 5px;
+  cursor: grab;
+  height: 108px;
+  object-fit: contain;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  width: 108px;
+}
+
+.dmicher-settings-image:hover,
+.dmicher-settings-image:focus {
+  border-color: var(--color-border-highlight);
+  box-shadow: 0 0 6px var(--color-shadow-highlight);
+  outline: none;
+}
+
+.dmicher-settings-image:active {
+  cursor: grabbing;
+}
+
+.dmicher-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dmicher-settings-field span {
+  font-weight: bold;
+}
+
+.dmicher-settings-field textarea {
+  resize: vertical;
+}
+
+.dmicher-settings-field input,
+.dmicher-settings-field textarea {
+  max-width: 100%;
+}
+
+.dmicher-request-settings-form .form-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.dmicher-request-settings-form .form-footer > button[type="submit"] {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.dmicher-request-card {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.3rem 0;
+}
+
+.dmicher-request-card h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.dmicher-request-card.dmicher-request-urgent h3 {
+  color: #b4232d;
+}
+
+.dmicher-request-text {
+  margin: 0;
+  width: 100%;
+}
+
+.dmicher-request-card-image {
+  border: 0;
+  height: auto;
+  max-height: 260px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.dmicher-request-actions {
+  display: none;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.25rem;
+  width: 100%;
+}
+
+.dmicher-request-actions.is-available {
+  display: flex;
+}
+
+.dmicher-request-actions button[hidden] {
+  display: none;
+}
+
+.dmicher-request-technical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+}
+
+.dmicher-request-technical-title {
+  font-weight: bold;
+}
+
+.dmicher-request-technical-meta {
+  color: var(--color-text-dark-secondary, #777);
+  font-size: var(--font-size-11);
+  line-height: 1.3;
+}
+
+.dmicher-speech-popup {
+  align-items: center;
+  background: var(--color-cool-5-90, rgba(26, 28, 34, 0.95));
+  border: 1px solid var(--color-border-highlight);
+  border-radius: 8px;
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.45);
+  color: var(--color-text-light-highlight, #f5f5f5);
+  display: flex;
+  gap: 0.8rem;
+  left: 50%;
+  max-width: min(520px, calc(100vw - 2rem));
+  padding: 0.65rem 0.85rem;
+  pointer-events: none;
+  position: fixed;
+  top: 25%;
+  transform: translate(-50%, -50%);
+  transition: opacity 180ms ease, transform 180ms ease;
+  z-index: 100000;
+}
+
+.dmicher-speech-popup img {
+  border-radius: 4px;
+  height: 62px;
+  object-fit: contain;
+  width: 62px;
+}
+
+.dmicher-speech-popup p {
+  font-size: var(--font-size-18);
+  font-weight: bold;
+  margin: 0;
+}
+
+.dmicher-speech-popup.is-closing {
+  opacity: 0;
+  transform: translate(-50%, calc(-50% - 8px));
+}
+
+.dmicher-timer-manager {
+  max-height: calc(100vh - 2rem);
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+  width: min(900px, calc(100vw - 2rem));
+}
+
+.dmicher-timer-manager .window-content {
+  overflow-y: auto;
+}
+
+.dmicher-timer-manager-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 0.75rem;
+}
+
+.dmicher-timer-manager-form {
+  border-bottom: 1px solid var(--color-border-light-tertiary, #ccc);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-bottom: 0.75rem;
+}
+
+.dmicher-timer-manager-form h3,
+.dmicher-timer-table-section h3 {
+  color: var(--color-text-dark-secondary, #666);
+  font-size: var(--font-size-16);
+  margin: 0;
+}
+
+.dmicher-timer-create-grid {
+  align-items: start;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+}
+
+.dmicher-timer-field {
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.dmicher-timer-field legend,
+.dmicher-timer-field > span {
+  color: var(--color-text-dark-secondary, #666);
+  font-weight: bold;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+}
+
+.dmicher-timer-field-name {
+  grid-column: 1 / -1;
+}
+
+.dmicher-timer-field label {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+  line-height: 1.25;
+}
+
+.dmicher-timer-field input[type="text"] {
+  height: 1.9rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.dmicher-timer-manager-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.dmicher-timer-manager-actions button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.dmicher-timer-manager-action-group {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dmicher-timer-manager-action-group-right {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.dmicher-timer-table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.dmicher-timer-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.dmicher-timer-table {
+  border-collapse: collapse;
+  font-size: var(--font-size-13);
+  line-height: 1.25;
+  min-width: 760px;
+  width: 100%;
+}
+
+.dmicher-timer-table th,
+.dmicher-timer-table td {
+  border-bottom: 1px solid var(--color-border-light-tertiary, #ddd);
+  padding: 0.25rem 0.35rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.dmicher-timer-table th {
+  color: var(--color-text-dark-secondary, #666);
+  font-size: var(--font-size-12);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.dmicher-timer-table tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.dmicher-timer-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.dmicher-timer-table tbody tr.is-expired {
+  background: rgba(122, 33, 38, 0.16);
+  color: var(--color-text-dark-secondary, #666);
+}
+
+.dmicher-timer-table tbody tr.is-expired:hover {
+  background: rgba(122, 33, 38, 0.24);
+}
+
+.dmicher-timer-name-button {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  height: auto;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  width: auto;
+}
+
+.dmicher-timer-name-button:hover,
+.dmicher-timer-name-button:focus {
+  text-decoration: underline;
+}
+
+.dmicher-timer-row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dmicher-timer-row-actions button {
+  align-items: center;
+  display: inline-flex;
+  height: 1.55rem;
+  justify-content: center;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  vertical-align: middle;
+  width: 1.55rem;
+}
+
+.dmicher-timer-row-actions button + button {
+  margin-left: 0.25rem;
+}
+
+.dmicher-timer-empty {
+  margin: 0;
+}
+
+.dmicher-break-timer {
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+}
+
+.dmicher-break-timer-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 0.85rem;
+}
+
+.dmicher-break-timer-shell h3 {
+  color: var(--color-text-dark-secondary, #666);
+  font-size: var(--font-size-18);
+  margin: 0;
+  text-align: center;
+}
+
+.dmicher-break-options {
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.dmicher-break-options label {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.dmicher-break-deadline {
+  color: #f0b35a;
+  font-size: var(--font-size-36);
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+.dmicher-break-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.dmicher-break-actions button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.dmicher-timer-chat-card {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.35rem 0;
+  text-align: center;
+}
+
+.dmicher-timer-chat-card h3 {
+  margin: 0;
+}
+
+.dmicher-timer-chat-card small {
+  color: var(--color-text-dark-secondary, #777);
+  font-size: var(--font-size-11);
+  line-height: 1.3;
+}
+
+.dmicher-timer-chat-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.15rem;
+}
+
+.dmicher-timer-window {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: block;
+  margin: 0;
+  max-width: calc(100vw - 1rem);
+  min-width: 0;
+  position: fixed !important;
+  z-index: 100000;
+}
+
+.dmicher-timer-window .window-header {
+  display: none;
+}
+
+.dmicher-timer-window .window-content {
+  background: transparent;
+  border: 0;
+  margin: 0;
+  overflow: visible;
+  padding: 0;
+}
+
+.dmicher-timer-window-card {
+  background: var(--color-cool-5-90, rgba(26, 28, 34, 0.95));
+  border: 1px solid var(--color-border-highlight);
+  border-radius: 8px;
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.45);
+  color: var(--color-text-light-highlight, #f5f5f5);
+  cursor: grab;
+}
+
+.dmicher-timer-window-card.is-expired {
+  background: rgba(61, 24, 28, 0.94);
+  border-color: rgba(202, 77, 86, 0.68);
+  box-shadow: 0 3px 16px rgba(61, 8, 14, 0.48);
+}
+
+.dmicher-timer-window-card:active {
+  cursor: grabbing;
+}
+
+.dmicher-timer-window-card-prominent {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.75rem 0.85rem;
+  text-align: center;
+}
+
+.dmicher-timer-window-header {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+
+.dmicher-timer-window-header h2 {
+  font-size: var(--font-size-20);
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dmicher-timer-expired-badge {
+  color: #ffcf66;
+  font-size: var(--font-size-13);
+  text-transform: uppercase;
+}
+
+.dmicher-timer-time {
+  font-family: var(--font-monospace, monospace);
+  font-size: 3rem;
+  font-weight: bold;
+  line-height: 1;
+  tab-size: 4;
+}
+
+.dmicher-timer-deadline {
+  color: var(--color-text-light-7, #cfcfcf);
+  font-size: var(--font-size-13);
+}
+
+.dmicher-timer-window-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.dmicher-timer-window-actions button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.dmicher-timer-window-card-compact {
+  background: rgba(26, 28, 34, 0.62);
+  border-color: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.35rem;
+}
+
+.dmicher-timer-window-card-compact.is-expired {
+  background: rgba(88, 27, 34, 0.72);
+}
+
+.dmicher-timer-compact-row {
+  align-items: center;
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  min-height: 1.6rem;
+}
+
+.dmicher-timer-compact-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmicher-timer-compact-row span {
+  font-family: var(--font-monospace, monospace);
+  font-weight: bold;
+}
+
+.dmicher-timer-compact-row button {
+  align-items: center;
+  display: inline-flex;
+  height: 1.35rem;
+  justify-content: center;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  width: 1.35rem;
+}
+
+.dmicher-timer-window-card.is-missing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  .dmicher-request-settings {
+    min-width: 0;
+  }
+
+  .dmicher-settings-blocks {
+    grid-template-columns: 1fr;
+  }
+
+  .dmicher-timer-create-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dmicher-timer-time {
+    font-size: 2.35rem;
+  }
+}

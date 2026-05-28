@@ -1,0 +1,25 @@
+<section class="dmicher-break-timer-shell">
+  <h2 style="text-align:center">{{localize keys.heading}}</h2>
+
+  <fieldset class="dmicher-break-options">
+    {{#each options}}
+    <label>
+      <input type="radio" name="breakMinutes" value="{{minutes}}" {{#if checked}}checked{{/if}}>
+      {{label}}
+    </label>
+    {{/each}}
+  </fieldset>
+
+  <p class="dmicher-break-deadline" data-break-deadline>{{deadlineText}}</p>
+
+  <footer class="dmicher-break-actions">
+    <button type="button" data-break-action="cancel">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      {{localize keys.cancel}}
+    </button>
+    <button type="button" data-break-action="announce">
+      <i class="fa-solid fa-mug-saucer" aria-hidden="true"></i>
+      {{localize keys.announce}}
+    </button>
+  </footer>
+</section>

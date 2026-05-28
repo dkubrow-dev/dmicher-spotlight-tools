@@ -1,12 +1,23 @@
-export const MODULE_ID = "dmicher-tools";
-export const I18N_PREFIX = "DMICHERTOOLS";
+export const MODULE_ID = "dmicher-spotlight-tools";
+export const I18N_PREFIX = "DMICHERSPOTLIGHTTOOLS";
 export const SOCKET_CHANNEL = `module.${MODULE_ID}`;
-export const CHAT_MACRO_COMMAND = "/dmicher-tools-request";
+export const CHAT_MACRO_COMMAND = "/dmicher-spotlight-tools-request";
 export const SPEECH_GRANTED_SOUND = `modules/${MODULE_ID}/assets/requests/next-request.ogg`;
+export const TIMER_SOUND_SOURCES = Object.freeze({
+  signal1: `modules/${MODULE_ID}/assets/timers/ring1.ogg`,
+  signal2: `modules/${MODULE_ID}/assets/timers/ring2.ogg`,
+  signal3: `modules/${MODULE_ID}/assets/timers/ring3.ogg`
+});
+
+export const SETTINGS = Object.freeze({
+  timers: "timers",
+  timerAlertedExpirations: "timerAlertedExpirations"
+});
 
 export const FLAGS = Object.freeze({
   request: "request",
   resolution: "resolution",
+  timer: "timer",
   macro: "requestMacro"
 });
 

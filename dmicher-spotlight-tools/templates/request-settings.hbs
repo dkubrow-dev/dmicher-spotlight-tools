@@ -1,6 +1,6 @@
 <form class="dmicher-request-settings-form">
   <p class="dmicher-settings-intro">
-    {{localize "DMICHERTOOLS.Requests.Settings.Intro"}}
+    {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.Intro"}}
   </p>
 
   <div class="dmicher-settings-blocks">
@@ -12,23 +12,23 @@
           class="dmicher-settings-image"
           src="{{image}}"
           alt="{{imageAlt}}"
-          title="{{localize 'DMICHERTOOLS.Requests.Settings.ImageTitle'}}"
+          title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Settings.ImageTitle'}}"
           data-request-image
           data-urgency="{{urgency}}"
           role="button"
           tabindex="0"
           draggable="true"
         >
-        <span>{{localize "DMICHERTOOLS.Requests.Settings.ImageHint"}}</span>
+        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.ImageHint"}}</span>
       </div>
 
       <label class="dmicher-settings-field">
-        <span>{{localize "DMICHERTOOLS.Requests.Settings.Text"}}</span>
+        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.Text"}}</span>
         <textarea name="{{urgency}}Text" rows="3" maxlength="500" placeholder="{{placeholder}}">{{text}}</textarea>
       </label>
 
       <label class="dmicher-settings-field">
-        <span>{{localize "DMICHERTOOLS.Requests.Settings.CssStyle"}}</span>
+        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.CssStyle"}}</span>
         <input type="text" name="{{urgency}}Style" value="{{style}}" maxlength="1000">
       </label>
     </fieldset>
@@ -36,13 +36,13 @@
   </div>
 
   <p class="notes dmicher-style-note">
-    {{localize "DMICHERTOOLS.Requests.Settings.StyleNote"}}
+    {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.StyleNote"}}
   </p>
 
   <footer class="form-footer">
     <button type="submit">
       <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
-      {{localize "DMICHERTOOLS.Requests.Settings.Save"}}
+      {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.Save"}}
     </button>
   </footer>
 </form>

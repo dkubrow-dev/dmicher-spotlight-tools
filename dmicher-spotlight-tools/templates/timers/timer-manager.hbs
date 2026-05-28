@@ -1,0 +1,116 @@
+<section class="dmicher-timer-manager-shell">
+  <form
+    class="dmicher-timer-manager-form"
+    autocomplete="off"
+    data-timer-create-form
+    data-duration-default="{{durationDefault}}"
+    data-deadline-default="{{deadlineDefault}}"
+  >
+    <h3>{{localize keys.createTitle}}</h3>
+
+    <div class="dmicher-timer-create-grid">
+      <label class="dmicher-timer-field dmicher-timer-field-name">
+        <span>{{localize keys.title}}</span>
+        <input type="text" name="name" maxlength="120" value="{{defaultName}}">
+      </label>
+
+      <fieldset class="dmicher-timer-field">
+        <legend>{{localize keys.mode}}</legend>
+        <label><input type="radio" name="mode" value="duration" checked> {{labels.modeDuration}}</label>
+        <label><input type="radio" name="mode" value="deadline"> {{labels.modeDeadline}}</label>
+      </fieldset>
+
+      <label class="dmicher-timer-field">
+        <span>{{localize keys.time}}</span>
+        <input type="text" name="time" value="{{durationDefault}}" placeholder="{{localize 'DMICHERSPOTLIGHTTOOLS.Timers.Manager.TimePlaceholder'}}" data-timer-time-input>
+      </label>
+
+      <fieldset class="dmicher-timer-field">
+        <legend>{{localize keys.visibility}}</legend>
+        <label><input type="radio" name="visibility" value="public" checked> {{labels.visibilityPublic}}</label>
+        <label><input type="radio" name="visibility" value="private"> {{labels.visibilityPrivate}}</label>
+      </fieldset>
+
+      <fieldset class="dmicher-timer-field">
+        <legend>{{localize keys.style}}</legend>
+        <label><input type="radio" name="style" value="prominent" checked> {{labels.styleProminent}}</label>
+        <label><input type="radio" name="style" value="compact"> {{labels.styleCompact}}</label>
+      </fieldset>
+
+      <fieldset class="dmicher-timer-field">
+        <legend>{{localize keys.sound}}</legend>
+        <label><input type="radio" name="sound" value="none" checked> {{labels.soundNone}}</label>
+        <label><input type="radio" name="sound" value="signal1"> {{labels.soundSignal1}}</label>
+        <label><input type="radio" name="sound" value="signal2"> {{labels.soundSignal2}}</label>
+        <label><input type="radio" name="sound" value="signal3"> {{labels.soundSignal3}}</label>
+      </fieldset>
+    </div>
+
+    <footer class="dmicher-timer-manager-actions">
+      <div class="dmicher-timer-manager-action-group">
+        <button type="button" data-timer-action="reset">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+          {{localize keys.reset}}
+        </button>
+        <button type="button" data-timer-action="delete-expired">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          {{localize keys.deleteExpired}}
+        </button>
+      </div>
+      <div class="dmicher-timer-manager-action-group dmicher-timer-manager-action-group-right">
+        <button type="button" data-timer-action="preview-sound" title="{{localize keys.previewSound}}">
+          <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+        </button>
+        <button type="submit">
+          <i class="fa-solid fa-play" aria-hidden="true"></i>
+          {{localize keys.start}}
+        </button>
+      </div>
+    </footer>
+  </form>
+
+  <section class="dmicher-timer-table-section">
+    <h3>{{localize keys.tableTitle}}</h3>
+    {{#if hasTimers}}
+    <div class="dmicher-timer-table-scroll">
+    <table class="dmicher-timer-table">
+      <thead>
+        <tr>
+          <th>{{localize keys.columnName}}</th>
+          <th>{{localize keys.columnStartedBy}}</th>
+          <th>{{localize keys.columnStartedAt}}</th>
+          <th>{{localize keys.columnDeadline}}</th>
+          <th>{{localize keys.columnRemaining}}</th>
+          <th>{{localize keys.columnControls}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each timers}}
+        <tr class="{{#if expired}}is-expired{{/if}}" data-timer-row data-timer-id="{{id}}">
+          <td>
+            <button type="button" class="dmicher-timer-name-button" data-timer-action="open" data-timer-id="{{id}}">
+              {{name}}
+            </button>
+          </td>
+          <td>{{startedByText}}</td>
+          <td>{{startedAtText}}</td>
+          <td>{{deadlineText}}</td>
+          <td data-timer-remaining="{{id}}">{{remainingText}}</td>
+          <td class="dmicher-timer-row-actions">
+            <button type="button" data-timer-action="open" data-timer-id="{{id}}" title="{{localize ../keys.open}}">
+              <i class="fa-solid fa-eye" aria-hidden="true"></i>
+            </button>
+            <button type="button" data-timer-action="delete" data-timer-id="{{id}}" title="{{localize ../keys.delete}}">
+              <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    </div>
+    {{else}}
+    <p class="notes dmicher-timer-empty">{{localize keys.empty}}</p>
+    {{/if}}
+  </section>
+</section>

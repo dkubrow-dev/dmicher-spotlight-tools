@@ -8,7 +8,7 @@ let settingsWindow;
 
 class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
-    id: "dmicher-tools-request-settings",
+    id: "dmicher-spotlight-tools-request-settings",
     classes: ["dmicher-request-settings"],
     position: {
       width: 680,
@@ -16,7 +16,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     },
     window: {
       icon: "fa-solid fa-hand",
-      title: "DMICHERTOOLS.Requests.Settings.WindowTitle",
+      title: "DMICHERSPOTLIGHTTOOLS.Requests.Settings.WindowTitle",
       resizable: true
     }
   };

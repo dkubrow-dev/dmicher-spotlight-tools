@@ -66,6 +66,27 @@ export function formatDuration(milliseconds) {
   return parts.join(" ");
 }
 
+export function formatDigitalDuration(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil((Number(milliseconds) || 0) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return [hours, minutes, seconds].map((part) => String(part).padStart(2, "0")).join(":");
+}
+
+export function formatClockTime(timestamp) {
+  const date = new Date(Number(timestamp) || Date.now());
+  try {
+    return new Intl.DateTimeFormat(game.i18n.lang, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    }).format(date);
+  } catch (_error) {
+    return date.toLocaleTimeString();
+  }
+}
+
 export function formatTimestamp(timestamp) {
   const date = new Date(Number(timestamp) || game.time.serverTime);
   try {

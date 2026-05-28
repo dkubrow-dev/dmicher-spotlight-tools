@@ -1,0 +1,175 @@
+{
+  "DMICHERSPOTLIGHTTOOLS": {
+    "Title": "dmicher Spotlight Tools",
+    "Requests": {
+      "Common": {
+        "Label": "Regular request",
+        "Type": "regular",
+        "ImageAlt": "Raised hand: regular request",
+        "DefaultText": "I would like to speak."
+      },
+      "Urgent": {
+        "Label": "Urgent request",
+        "Type": "urgent",
+        "ImageAlt": "Raised hand: urgent request",
+        "DefaultText": "I urgently need to speak!"
+      },
+      "Stop": {
+        "Label": "Environment",
+        "Type": "environment",
+        "ImageAlt": "Stop for an environment action",
+        "DefaultText": "Environment action. Pay attention to the scene."
+      },
+      "Settings": {
+        "WindowTitle": "dmicher Spotlight Tools - Settings - Requests",
+        "MenuName": "dmicher Spotlight Tools - Requests",
+        "MenuLabel": "Open request settings",
+        "MenuHint": "Configure the text and style of your requests.",
+        "Intro": "Configure the text of your requests. Click an image to submit a request, or drag it to the hotbar.",
+        "ImageTitle": "Submit a request or drag it to the hotbar",
+        "ImageHint": "Click to submit or drag to the hotbar",
+        "Text": "Text",
+        "CssStyle": "CSS style",
+        "StyleNote": "Only safe text styling properties are saved in CSS style: color, background, font, alignment, spacing, padding, and border.",
+        "Save": "Save",
+        "Saved": "Request settings saved.",
+        "SaveError": "Could not save request settings."
+      },
+      "Chat": {
+        "Actions": "Request actions",
+        "Cancel": "Cancel",
+        "GiveFloor": "Give the floor",
+        "TakeFloor": "Take the floor",
+        "SubmitError": "Could not submit the request.",
+        "Forbidden": "You do not have permission for this action.",
+        "WhisperRequired": "The Game Master has disabled private messages. Ask the Game Master to cancel the request.",
+        "ResolveError": "Could not close the request."
+      },
+      "Technical": {
+        "InGameTitle": "Floor granted for request from {author}",
+        "CancelledTitle": "Request cancelled: {author}",
+        "Details": "Submitted: {timestamp}, time in chat: {duration}",
+        "Resolver": "Cancelled by: {resolver}",
+        "Type": "Type: {type}"
+      },
+      "Popup": {
+        "Granted": "The floor is given to {name}{token}"
+      },
+      "Hotbar": {
+        "MacroName": "{label} ({title})",
+        "Added": "The \"{label}\" macro has been added to the hotbar.",
+        "AddError": "Could not add the request to the hotbar."
+      }
+    },
+    "Controls": {
+      "Title": "Spotlight Tools",
+      "Timers": "Timers",
+      "Break": "Break",
+      "Stopwatch": "Stopwatch"
+    },
+    "Timers": {
+      "DefaultName": "Timer {number}",
+      "Mode": {
+        "Duration": "Duration",
+        "Deadline": "Deadline"
+      },
+      "Visibility": {
+        "Public": "Public",
+        "Private": "Private"
+      },
+      "Style": {
+        "Prominent": "Prominent",
+        "Compact": "Compact"
+      },
+      "Sound": {
+        "None": "No sound",
+        "Signal1": "Signal 1",
+        "Signal2": "Signal 2",
+        "Signal3": "Signal 3"
+      },
+      "Placeholders": {
+        "Stopwatch": "Stopwatches will be added next."
+      },
+      "Break": {
+        "WindowTitle": "Break",
+        "Heading": "Announce a break",
+        "Option": "{count} min.",
+        "Until": "until {time}",
+        "Cancel": "Cancel",
+        "Announce": "Announce break",
+        "TimerName": "Break",
+        "Error": "Could not announce the break."
+      },
+      "Manager": {
+        "WindowTitle": "Timers",
+        "CreateTitle": "New timer",
+        "Name": "Name",
+        "Mode": "Mode",
+        "Time": "Time",
+        "TimePlaceholder": "HH:MM:SS",
+        "Visibility": "Visibility",
+        "Style": "Style",
+        "Sound": "Sound",
+        "Reset": "Reset",
+        "DeleteExpired": "Delete expired",
+        "PreviewSound": "Preview sound",
+        "NoSoundSelected": "The \"No sound\" signal is selected: the timer will expire without a sound signal.",
+        "Start": "Start",
+        "TableTitle": "Current timers",
+        "Empty": "No timers yet.",
+        "Open": "Open timer",
+        "Delete": "Delete timer",
+        "Columns": {
+          "Name": "Name",
+          "StartedBy": "Started by",
+          "StartedAt": "Started at",
+          "Deadline": "Deadline",
+          "Remaining": "Remaining",
+          "Controls": "Controls"
+        },
+        "UnknownUser": "Unknown"
+      },
+      "Chat": {
+        "StartedTitle": "Timer started",
+        "Details": "Deadline {deadline}. Duration {duration}.",
+        "Watch": "Watch",
+        "Missing": "Timer is no longer available."
+      },
+      "Window": {
+        "Title": "Timer",
+        "Expired": "Time is up",
+        "Deadline": "Deadline",
+        "Compact": "Compact",
+        "Prominent": "Prominent",
+        "Close": "Close",
+        "Delete": "Delete timer",
+        "Missing": "Timer is no longer available."
+      },
+      "Delete": {
+        "Title": "Delete timer",
+        "Confirm": "Delete timer \"{name}\"?",
+        "Yes": "Delete",
+        "No": "Cancel"
+      },
+      "DeleteExpired": {
+        "Title": "Delete expired timers",
+        "Confirm": "Delete {count} expired timer(s)?",
+        "Yes": "Delete",
+        "No": "Cancel",
+        "None": "There are no expired timers to delete."
+      },
+      "Errors": {
+        "Forbidden": "You do not have permission for this action.",
+        "BadTime": "Enter time in HH:MM:SS format.",
+        "StartFailed": "Could not start the timer.",
+        "SoundPreviewFailed": "Could not play the selected signal.",
+        "NotFound": "Timer is no longer available."
+      }
+    },
+    "Duration": {
+      "Hours": "{count} h",
+      "Minutes": "{count} min",
+      "Seconds": "{count} sec"
+    }
+  }
+}

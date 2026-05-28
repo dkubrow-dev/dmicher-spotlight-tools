@@ -1,0 +1,54 @@
+{{#if missing}}
+<section class="dmicher-timer-window-card is-missing">
+  <p>{{localize keys.missing}}</p>
+  <button type="button" data-timer-action="close">
+    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    {{localize keys.close}}
+  </button>
+</section>
+{{else}}
+<section class="dmicher-timer-window-card dmicher-timer-window-card-{{displayStyle}}{{#if expired}} is-expired{{/if}}" data-timer-drag>
+  {{#if prominent}}
+  <header class="dmicher-timer-window-header">
+    <h2>{{timer.name}}</h2>
+    {{#if expired}}
+    <strong class="dmicher-timer-expired-badge">{{localize keys.expired}}</strong>
+    {{/if}}
+  </header>
+
+  <div class="dmicher-timer-time" data-timer-remaining>{{remainingText}}</div>
+  <div class="dmicher-timer-deadline">{{localize keys.deadline}} {{deadlineText}}</div>
+
+  <footer class="dmicher-timer-window-actions">
+    {{#if expired}}
+      {{#if canDelete}}
+      <button type="button" data-timer-action="delete">
+        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        {{localize keys.delete}}
+      </button>
+      {{/if}}
+    {{else}}
+    <button type="button" data-timer-action="compact">
+      <i class="fa-solid fa-compress" aria-hidden="true"></i>
+      {{localize keys.compact}}
+    </button>
+    {{/if}}
+    <button type="button" data-timer-action="close">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      {{localize keys.close}}
+    </button>
+  </footer>
+  {{else}}
+  <div class="dmicher-timer-compact-row">
+    <strong>{{timer.name}}</strong>
+    <span data-timer-remaining>{{remainingText}}</span>
+    <button type="button" data-timer-action="prominent" title="{{localize keys.prominent}}">
+      <i class="fa-solid fa-expand" aria-hidden="true"></i>
+    </button>
+    <button type="button" data-timer-action="close" title="{{localize keys.close}}">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  {{/if}}
+</section>
+{{/if}}
