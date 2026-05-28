@@ -69,7 +69,6 @@
         "Ago": "{duration} ago",
         "UnknownAuthor": "Unknown",
         "OpenMessage": "Go to request message",
-        "Grant": "Give the floor",
         "Cancel": "Cancel request",
         "Clear": "Clear",
         "ClearTitle": "Clear active requests",
@@ -180,8 +179,7 @@
       "Chat": {
         "StartedTitle": "Timer started",
         "Details": "Deadline {deadline}. Duration {duration}.",
-        "Watch": "Watch",
-        "Missing": "Timer is no longer available."
+        "Watch": "Watch"
       },
       "Window": {
         "Title": "Timer",

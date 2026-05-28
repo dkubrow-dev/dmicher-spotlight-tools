@@ -9,7 +9,8 @@ import {
   formatDigitalDuration,
   i18nKey,
   isModerator,
-  localize
+  localize,
+  playAudio
 } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -162,12 +163,7 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
     }
 
     try {
-      await foundry.audio.AudioHelper.play({
-        src,
-        volume: 1,
-        autoplay: true,
-        loop: false
-      }, false);
+      await playAudio(src);
     } catch (error) {
       console.warn(`${MODULE_ID} | Unable to preview timer sound`, error);
       ui.notifications.error(localize("Timers.Errors.SoundPreviewFailed"));

@@ -69,7 +69,6 @@
         "Ago": "{duration} назад",
         "UnknownAuthor": "Неизвестно",
         "OpenMessage": "Перейти к сообщению-заявке",
-        "Grant": "Дать слово",
         "Cancel": "Отменить заявку",
         "Clear": "Очистить",
         "ClearTitle": "Очистить активные заявки",
@@ -180,8 +179,7 @@
       "Chat": {
         "StartedTitle": "Таймер запущен",
         "Details": "Срок {deadline}. Длительность {duration}.",
-        "Watch": "Следить",
-        "Missing": "Таймер больше недоступен."
+        "Watch": "Следить"
       },
       "Window": {
         "Title": "Таймер",

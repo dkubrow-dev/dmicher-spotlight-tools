@@ -6,13 +6,15 @@ import {
   TIMER_SOUND_SOURCES
 } from "../../config.js";
 import {
+  confirmDialog,
   escapeHTML,
   format,
   formatClockTime,
   formatDigitalDuration,
   getChatMessageClass,
   isModerator,
-  localize
+  localize,
+  playAudio
 } from "../../utils.js";
 import { BreakTimerApplication } from "./break-timer.js";
 import { TimerManagerApplication } from "./timer-manager.js";
@@ -31,8 +33,6 @@ import {
   parseDeadlineInput,
   parseDurationInput
 } from "./timer-utils.js";
-
-const { DialogV2 } = foundry.applications.api;
 
 export class TimerTool {
   constructor() {
@@ -316,11 +316,12 @@ export class TimerTool {
       return;
     }
 
-    const confirmed = await this.confirm({
+    const confirmed = await confirmDialog({
       title: localize("Timers.Delete.Title"),
       content: `<p>${escapeHTML(format("Timers.Delete.Confirm", { name: timer.name }))}</p>`,
       yes: localize("Timers.Delete.Yes"),
-      no: localize("Timers.Delete.No")
+      no: localize("Timers.Delete.No"),
+      icon: "fa-solid fa-trash"
     });
     if (!confirmed) return;
 
@@ -339,34 +340,16 @@ export class TimerTool {
       return;
     }
 
-    const confirmed = await this.confirm({
+    const confirmed = await confirmDialog({
       title: localize("Timers.DeleteExpired.Title"),
       content: `<p>${escapeHTML(format("Timers.DeleteExpired.Confirm", { count: expiredTimers.length }))}</p>`,
       yes: localize("Timers.DeleteExpired.Yes"),
-      no: localize("Timers.DeleteExpired.No")
+      no: localize("Timers.DeleteExpired.No"),
+      icon: "fa-solid fa-trash"
     });
     if (!confirmed) return;
 
     await this.deleteTimers(expiredTimers.map((timer) => timer.id));
-  }
-
-  async confirm({ title, content, yes, no }) {
-    if (DialogV2?.confirm) {
-      return DialogV2.confirm({
-        window: { title },
-        content,
-        modal: true,
-        rejectClose: false,
-        yes: {
-          label: yes,
-          icon: "fa-solid fa-trash"
-        },
-        no: {
-          label: no
-        }
-      });
-    }
-    return window.confirm(`${title}\n\n${content.replace(/<[^>]+>/g, "")}`);
   }
 
   async deleteTimer(timerId) {
@@ -471,12 +454,7 @@ export class TimerTool {
     if (!src) return;
 
     try {
-      await foundry.audio.AudioHelper.play({
-        src,
-        volume: 1,
-        autoplay: true,
-        loop: false
-      }, false);
+      await playAudio(src);
     } catch (error) {
       console.warn(`${MODULE_ID} | Unable to play timer expiration sound`, error);
     }

@@ -72,8 +72,8 @@
   <section class="dmicher-timer-table-section">
     <h3 class="dmicher-tool-window-heading">{{localize keys.tableTitle}}</h3>
     {{#if hasTimers}}
-    <div class="dmicher-timer-table-scroll">
-    <table class="dmicher-timer-table">
+    <div class="dmicher-tool-table-scroll dmicher-timer-table-scroll">
+    <table class="dmicher-tool-table dmicher-timer-table">
       <thead>
         <tr>
           <th>{{localize keys.columnName}}</th>
@@ -96,7 +96,7 @@
           <td>{{startedAtText}}</td>
           <td>{{deadlineText}}</td>
           <td data-timer-remaining="{{id}}">{{remainingText}}</td>
-          <td class="dmicher-timer-row-actions">
+          <td class="dmicher-tool-row-actions">
             <button type="button" data-timer-action="open" data-timer-id="{{id}}" title="{{localize ../keys.open}}">
               <i class="fa-solid fa-eye" aria-hidden="true"></i>
             </button>

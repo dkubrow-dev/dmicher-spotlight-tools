@@ -1,9 +1,9 @@
 <section class="dmicher-active-requests-shell">
   <h2 class="dmicher-tool-window-heading">{{localize keys.heading}}</h2>
 
-  <div class="dmicher-active-requests-table-wrap">
+  <div class="dmicher-tool-table-scroll dmicher-active-requests-table-wrap">
     {{#if hasRequests}}
-    <table class="dmicher-active-requests-table">
+    <table class="dmicher-tool-table dmicher-active-requests-table">
       <thead>
         <tr>
           <th>{{localize keys.columnIcon}}</th>
@@ -20,7 +20,7 @@
           </td>
           <td>{{submittedText}}</td>
           <td>{{authorText}}</td>
-          <td class="dmicher-active-request-actions">
+          <td class="dmicher-tool-row-actions">
             <button type="button" data-active-request-action="open" data-message-id="{{messageId}}" title="{{localize ../keys.openMessage}}">
               <i class="fa-solid fa-eye" aria-hidden="true"></i>
             </button>

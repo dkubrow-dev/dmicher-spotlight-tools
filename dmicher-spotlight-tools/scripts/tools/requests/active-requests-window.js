@@ -25,9 +25,9 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
     }
   };
 
-  constructor(requestTool, options = {}) {
+  constructor(activeRequests, options = {}) {
     super(options);
-    this.requestTool = requestTool;
+    this.activeRequests = activeRequests;
     this.tickHandle = null;
   }
 
@@ -37,7 +37,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const requests = this.requestTool.getActiveRequestRows();
+    const requests = this.activeRequests.getRows();
     return {
       ...context,
       requests,
@@ -64,13 +64,13 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   async _onClose(options) {
     this.stopTicking();
-    this.requestTool.forgetActiveRequestsWindow(this);
+    this.activeRequests.forgetWindow(this);
     await super._onClose(options);
   }
 
   activateListeners() {
     this.element.querySelector("[data-active-request-action='clear']")?.addEventListener("click", () => {
-      void this.requestTool.confirmClearActiveRequests();
+      void this.activeRequests.confirmClear();
     });
 
     for (const button of this.element.querySelectorAll("[data-active-request-action][data-message-id]")) {
@@ -79,13 +79,13 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
         const messageId = button.dataset.messageId;
         switch (button.dataset.activeRequestAction) {
           case "open":
-            void this.requestTool.goToActiveRequestMessage(messageId);
+            void this.activeRequests.goToMessage(messageId);
             break;
           case "grant":
-            void this.requestTool.resolveActiveRequest(messageId, "grant");
+            void this.activeRequests.resolve(messageId, "grant");
             break;
           case "cancel":
-            void this.requestTool.resolveActiveRequest(messageId, "cancel");
+            void this.activeRequests.resolve(messageId, "cancel");
             break;
         }
       });

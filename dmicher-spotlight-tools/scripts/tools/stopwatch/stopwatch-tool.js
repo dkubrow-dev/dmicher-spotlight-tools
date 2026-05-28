@@ -8,7 +8,8 @@ import {
   getChatMessageClass,
   getMacroClass,
   isModerator,
-  localize
+  localize,
+  preloadImage
 } from "../../utils.js";
 import {
   formatStopwatchElapsed,
@@ -36,7 +37,7 @@ export class StopwatchTool {
 
   activate() {
     for (const [, eventConfig] of getStopwatchEventEntries()) {
-      void this.preloadImage(eventConfig.image);
+      void preloadImage(eventConfig.image);
     }
   }
 
@@ -240,14 +241,5 @@ export class StopwatchTool {
 
   isStopwatchMacro(macro, eventType) {
     return macro.getFlag(MODULE_ID, FLAGS.stopwatchMacro) === eventType || macro.command === `${STOPWATCH_CHAT_MACRO_COMMAND} ${eventType}`;
-  }
-
-  preloadImage(src) {
-    return new Promise((resolve) => {
-      const image = new Image();
-      image.addEventListener("load", resolve, { once: true });
-      image.addEventListener("error", resolve, { once: true });
-      image.src = src;
-    });
   }
 }

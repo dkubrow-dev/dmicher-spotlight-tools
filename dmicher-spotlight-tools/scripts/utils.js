@@ -116,3 +116,41 @@ export function getChatMessageClass() {
 export function getMacroClass() {
   return CONFIG.Macro.documentClass ?? foundry.documents.Macro;
 }
+
+export function preloadImage(src) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.addEventListener("load", resolve, { once: true });
+    image.addEventListener("error", resolve, { once: true });
+    image.src = src;
+  });
+}
+
+export function playAudio(src, { broadcast = false, volume = 1 } = {}) {
+  return foundry.audio.AudioHelper.play({
+    src,
+    volume,
+    autoplay: true,
+    loop: false
+  }, broadcast);
+}
+
+export async function confirmDialog({ title, content, yes, no, icon = "fa-solid fa-check" }) {
+  const { DialogV2 } = foundry.applications.api;
+  if (DialogV2?.confirm) {
+    return DialogV2.confirm({
+      window: { title },
+      content,
+      modal: true,
+      rejectClose: false,
+      yes: {
+        label: yes,
+        icon
+      },
+      no: {
+        label: no
+      }
+    });
+  }
+  return window.confirm(`${title}\n\n${String(content).replace(/<[^>]+>/g, "")}`);
+}
