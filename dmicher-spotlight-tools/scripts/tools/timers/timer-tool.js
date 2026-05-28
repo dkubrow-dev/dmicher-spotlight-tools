@@ -33,7 +33,6 @@ import {
 } from "./timer-utils.js";
 
 const { DialogV2 } = foundry.applications.api;
-const MENU_ROOT_TOOL = "spotlight-tools-root";
 
 export class TimerTool {
   constructor() {
@@ -43,7 +42,6 @@ export class TimerTool {
     this.timerWindows = new Map();
     this.pendingForcedOpens = new Map();
     this.tickHandle = null;
-    this.renderSceneControls = this.renderSceneControls.bind(this);
     this.renderChatMessage = this.renderChatMessage.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
     this.tick = this.tick.bind(this);
@@ -66,10 +64,6 @@ export class TimerTool {
     });
   }
 
-  registerControls() {
-    Hooks.on("getSceneControlButtons", this.renderSceneControls);
-  }
-
   activate() {
     this.state = normalizeTimerState(game.settings.get(MODULE_ID, SETTINGS.timers));
     game.socket.on(SOCKET_CHANNEL, this.receiveSocketMessage);
@@ -79,55 +73,6 @@ export class TimerTool {
     }
     window.setTimeout(() => this.openExistingPublicTimers(), 250);
     this.tick();
-  }
-
-  renderSceneControls(controls) {
-    controls[MODULE_ID] = {
-      name: MODULE_ID,
-      title: localize("Controls.Title"),
-      icon: "fa-solid fa-bullseye",
-      order: 90,
-      visible: isModerator(),
-      activeTool: MENU_ROOT_TOOL,
-      tools: {
-        [MENU_ROOT_TOOL]: {
-          name: MENU_ROOT_TOOL,
-          title: localize("Controls.Title"),
-          icon: "fa-solid fa-bullseye",
-          order: -1,
-          button: false,
-          visible: false,
-          onChange: () => {}
-        },
-        timers: {
-          name: "timers",
-          title: localize("Controls.Timers"),
-          icon: "fa-solid fa-hourglass-half",
-          order: 10,
-          button: true,
-          visible: isModerator(),
-          onChange: () => this.openManager()
-        },
-        break: {
-          name: "break",
-          title: localize("Controls.Break"),
-          icon: "fa-solid fa-mug-saucer",
-          order: 20,
-          button: true,
-          visible: isModerator(),
-          onChange: () => this.openBreakTimer()
-        },
-        stopwatch: {
-          name: "stopwatch",
-          title: localize("Controls.Stopwatch"),
-          icon: "fa-solid fa-stopwatch",
-          order: 30,
-          button: true,
-          visible: isModerator(),
-          onChange: () => ui.notifications.info(localize("Timers.Placeholders.Stopwatch"))
-        }
-      }
-    };
   }
 
   openManager() {

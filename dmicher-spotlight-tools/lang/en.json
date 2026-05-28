@@ -1,6 +1,9 @@
 {
   "DMICHERSPOTLIGHTTOOLS": {
     "Title": "dmicher Spotlight Tools",
+    "Hints": {
+      "ClickOrDragHotbarMacro": "Click to use; drag to the hotbar to create a macro"
+    },
     "Requests": {
       "Common": {
         "Label": "Regular request",
@@ -27,7 +30,6 @@
         "MenuHint": "Configure the text and style of your requests.",
         "Intro": "Configure the text of your requests. Click an image to submit a request, or drag it to the hotbar.",
         "ImageTitle": "Submit a request or drag it to the hotbar",
-        "ImageHint": "Click to submit or drag to the hotbar",
         "Text": "Text",
         "CssStyle": "CSS style",
         "StyleNote": "Only safe text styling properties are saved in CSS style: color, background, font, alignment, spacing, padding, and border.",
@@ -87,9 +89,6 @@
         "Signal2": "Signal 2",
         "Signal3": "Signal 3"
       },
-      "Placeholders": {
-        "Stopwatch": "Stopwatches will be added next."
-      },
       "Break": {
         "WindowTitle": "Break",
         "Heading": "Announce a break",
@@ -99,6 +98,28 @@
         "Announce": "Announce break",
         "TimerName": "Break",
         "Error": "Could not announce the break."
+      },
+      "Stopwatch": {
+        "Title": "Stopwatch",
+        "Start": "Start",
+        "Pause": "Pause",
+        "StopReset": "Stop and reset",
+        "PostToChat": "Post events to chat",
+        "ClearEvents": "Clear events",
+        "NoEvents": "No events yet.",
+        "NotStarted": "Start the stopwatch before recording events.",
+        "MacroAdded": "Stopwatch event macro has been added to the hotbar.",
+        "MacroError": "Could not add the stopwatch event macro to the hotbar.",
+        "Events": {
+          "Sign1": "Event - circle",
+          "Sign2": "Event - square",
+          "Sign3": "Event - plus",
+          "Sign4": "Event - minus"
+        },
+        "Chat": {
+          "Event": "Event",
+          "Time": "Time"
+        }
       },
       "Manager": {
         "WindowTitle": "Timers",
