@@ -14,6 +14,7 @@ const requestHotbar = new RequestHotbar(requestTool.submitRequest);
 const stopwatchTool = new StopwatchTool();
 const timerTool = new TimerTool();
 const spotlightControls = new SpotlightControls({
+  openRequests: () => requestTool.openActiveRequestsWindow(),
   openTimers: () => timerTool.openManager(),
   openBreakTimer: () => timerTool.openBreakTimer(),
   openStopwatch: () => stopwatchTool.openWindow()
@@ -25,11 +26,13 @@ Hooks.once("init", () => {
     onRequestDragStart: requestHotbar.onRequestDragStart
   });
   timerTool.registerSettings();
+  requestTool.registerHooks();
   spotlightControls.registerControls();
   stopwatchTool.registerHooks();
 
   game.modules.get(MODULE_ID).api = {
     openRequestSettings,
+    openActiveRequests: () => requestTool.openActiveRequestsWindow(),
     openTimers: () => timerTool.openManager(),
     openTimer: (timerId) => timerTool.openTimerWindow(timerId, { force: true }),
     openStopwatch: () => stopwatchTool.openWindow(),
@@ -37,7 +40,6 @@ Hooks.once("init", () => {
     submitRequest: requestTool.submitRequest
   };
 
-  Hooks.on("renderChatMessageHTML", requestTool.renderChatMessage);
   Hooks.on("renderChatMessageHTML", timerTool.renderChatMessage);
   Hooks.on("chatMessage", requestHotbar.handleChatMessage);
   Hooks.on("hotbarDrop", requestHotbar.handleHotbarDrop);

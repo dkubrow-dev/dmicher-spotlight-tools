@@ -9,20 +9,54 @@ import {
   isModerator,
   localize
 } from "../../utils.js";
+import { ActiveRequestsApplication } from "./active-requests-window.js";
 import { getRequestStyle, getRequestText } from "./request-settings.js";
+
+const { DialogV2 } = foundry.applications.api;
+const CHAT_RENDER_BATCH_SIZE = 50;
+const CHAT_RENDER_BATCH_MAX_ATTEMPTS = 60;
 
 export class RequestTool {
   constructor() {
+    this.activeRequests = [];
+    this.activeRequestsWindow = null;
     this.resolvingRequests = new Set();
     this.shownNotifications = new Set();
     this.submitRequest = this.submitRequest.bind(this);
     this.renderChatMessage = this.renderChatMessage.bind(this);
+    this.handleChatMessageCreated = this.handleChatMessageCreated.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
+  }
+
+  registerHooks() {
+    Hooks.on("renderChatMessageHTML", this.renderChatMessage);
+    Hooks.on("createChatMessage", this.handleChatMessageCreated);
   }
 
   activate() {
     game.socket.on(SOCKET_CHANNEL, this.receiveSocketMessage);
+    this.rebuildActiveRequests();
     void this.preloadAssets();
+  }
+
+  openActiveRequestsWindow() {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Requests.Chat.Forbidden"));
+      return null;
+    }
+
+    if (this.activeRequestsWindow?.rendered) {
+      this.activeRequestsWindow.bringToFront();
+      return this.activeRequestsWindow;
+    }
+
+    this.activeRequestsWindow = new ActiveRequestsApplication(this);
+    void this.activeRequestsWindow.render({ force: true });
+    return this.activeRequestsWindow;
+  }
+
+  forgetActiveRequestsWindow(app) {
+    if (this.activeRequestsWindow === app) this.activeRequestsWindow = null;
   }
 
   async submitRequest(type) {
@@ -86,12 +120,22 @@ export class RequestTool {
 
   renderChatMessage(message, html) {
     const requestData = message.getFlag(MODULE_ID, FLAGS.request);
-    if (requestData) this.activateRequestMessageActions(message, html, requestData);
+    if (requestData) {
+      this.attachRequestAnchor(message, html);
+      this.activateRequestMessageActions(message, html, requestData);
+    }
 
     const resolutionData = message.getFlag(MODULE_ID, FLAGS.resolution);
     if (!resolutionData || (typeof resolutionData !== "object")) return;
     const technicalMessage = html.querySelector(".dmicher-request-technical");
     if (technicalMessage) technicalMessage.innerHTML = this.buildTechnicalMessageLines(resolutionData);
+  }
+
+  attachRequestAnchor(message, html) {
+    const card = html.querySelector(".dmicher-request-card");
+    if (!card) return;
+    card.id = this.getRequestAnchorId(message.id);
+    card.dataset.dmicherRequestMessageId = message.id;
   }
 
   activateRequestMessageActions(message, html, requestData) {
@@ -143,36 +187,40 @@ export class RequestTool {
 
   async resolveRequest(message, action) {
     const requestData = message.getFlag(MODULE_ID, FLAGS.request);
-    if (!requestData) return;
+    if (!requestData) return false;
 
     const completed = action === "grant";
     const permitted = completed ? isModerator() : (isModerator() || requestData.authorId === game.user.id);
     if (!permitted) {
       ui.notifications.warn(localize("Requests.Chat.Forbidden"));
-      return;
+      return false;
     }
     if (!completed && !isModerator() && !game.user.can("MESSAGE_WHISPER")) {
       ui.notifications.warn(localize("Requests.Chat.WhisperRequired"));
-      return;
+      return false;
     }
 
-    if (this.resolvingRequests.has(message.id)) return;
+    if (this.resolvingRequests.has(message.id)) return false;
     this.resolvingRequests.add(message.id);
 
     try {
-      if (!game.messages.get(message.id)) return;
+      if (!game.messages.get(message.id)) return false;
       const createdAt = Number(requestData.createdAt ?? message.timestamp ?? game.time.serverTime);
       const elapsed = game.time.serverTime - createdAt;
       if (completed && normalizeRequestType(requestData.urgency) === "stop") {
         await game.togglePause(true, { broadcast: true });
       }
       await message.delete();
+      this.removeActiveRequest(message.id);
+      this.broadcastRequestResolved(message.id);
 
       if (completed) this.broadcastSpeechGranted(requestData);
       await this.createTechnicalMessage(requestData, completed, elapsed);
+      return true;
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to resolve request`, error);
       ui.notifications.error(localize("Requests.Chat.ResolveError"));
+      return false;
     } finally {
       this.resolvingRequests.delete(message.id);
     }
@@ -239,6 +287,215 @@ export class RequestTool {
     return Array.from(recipients);
   }
 
+  handleChatMessageCreated(message) {
+    const requestData = message.getFlag(MODULE_ID, FLAGS.request);
+    if (requestData) this.registerActiveRequest(message, requestData);
+  }
+
+  rebuildActiveRequests() {
+    this.activeRequests = [];
+    for (const message of game.messages ?? []) {
+      const requestData = message.getFlag(MODULE_ID, FLAGS.request);
+      if (requestData) this.registerActiveRequest(message, requestData, { notify: false });
+    }
+    this.sortActiveRequests();
+  }
+
+  registerActiveRequest(message, requestData, { notify = true } = {}) {
+    const entry = this.createActiveRequestEntry(message, requestData);
+    const existingIndex = this.activeRequests.findIndex((request) => request.messageId === entry.messageId);
+    if (existingIndex >= 0) this.activeRequests[existingIndex] = entry;
+    else this.activeRequests.push(entry);
+    this.sortActiveRequests();
+    if (notify) this.onActiveRequestsChanged();
+  }
+
+  createActiveRequestEntry(message, requestData) {
+    return {
+      messageId: message.id,
+      urgency: normalizeRequestType(requestData.urgency),
+      authorId: String(requestData.authorId ?? ""),
+      authorName: String(requestData.authorName ?? message.user?.name ?? "").slice(0, 100),
+      submittedAt: Number(requestData.submittedAt ?? requestData.createdAt ?? message.timestamp ?? Date.now()),
+      createdAt: Number(requestData.createdAt ?? message.timestamp ?? Date.now())
+    };
+  }
+
+  sortActiveRequests() {
+    this.activeRequests.sort((left, right) => Number(left.submittedAt) - Number(right.submittedAt));
+  }
+
+  removeActiveRequest(messageId) {
+    const initialLength = this.activeRequests.length;
+    this.activeRequests = this.activeRequests.filter((request) => request.messageId !== messageId);
+    if (this.activeRequests.length === initialLength) return false;
+    this.onActiveRequestsChanged();
+    return true;
+  }
+
+  onActiveRequestsChanged() {
+    this.activeRequestsWindow?.onActiveRequestsChanged();
+  }
+
+  getActiveRequestRows() {
+    return this.activeRequests.map((entry, index) => {
+      const request = REQUEST_TYPES[normalizeRequestType(entry.urgency)];
+      return {
+        ...entry,
+        rowNumber: index + 1,
+        image: request.image,
+        typeLabel: localize(request.labelKey),
+        authorText: entry.authorName || localize("Requests.Active.UnknownAuthor"),
+        submittedText: format("Requests.Active.Ago", {
+          duration: formatDuration(Date.now() - Number(entry.submittedAt))
+        }),
+        grantLabel: localize(this.getGrantActionKey(entry.urgency))
+      };
+    });
+  }
+
+  async goToActiveRequestMessage(messageId) {
+    const message = game.messages.get(messageId);
+    if (!message) {
+      await this.confirmMissingRequestCleanup(messageId);
+      return;
+    }
+
+    await this.activateChatSidebar();
+    const element = await this.findRequestMessageAnchor(message.id);
+    if (!element) {
+      ui.notifications.warn(localize("Requests.Active.MessageNotRendered"));
+      return;
+    }
+
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+    element.classList.add("dmicher-request-message-highlight");
+    window.setTimeout(() => element.classList.remove("dmicher-request-message-highlight"), 1600);
+  }
+
+  async resolveActiveRequest(messageId, action) {
+    const message = game.messages.get(messageId);
+    if (!message) {
+      await this.confirmMissingRequestCleanup(messageId);
+      return;
+    }
+    await this.resolveRequest(message, action);
+  }
+
+  async confirmClearActiveRequests() {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Requests.Chat.Forbidden"));
+      return;
+    }
+
+    if (!this.activeRequests.length) {
+      ui.notifications.warn(localize("Requests.Active.Empty"));
+      return;
+    }
+
+    const confirmed = await this.confirm({
+      title: localize("Requests.Active.ClearTitle"),
+      content: `<p>${escapeHTML(localize("Requests.Active.ClearConfirm"))}</p>`,
+      yes: localize("Requests.Active.ClearYes"),
+      no: localize("Requests.Active.ClearNo"),
+      icon: "fa-solid fa-trash"
+    });
+    if (!confirmed) return;
+
+    for (const entry of Array.from(this.activeRequests)) {
+      const message = game.messages.get(entry.messageId);
+      if (!message) {
+        if (this.removeActiveRequest(entry.messageId)) this.broadcastRequestResolved(entry.messageId);
+        continue;
+      }
+      await this.resolveRequest(message, "cancel");
+    }
+  }
+
+  async confirmMissingRequestCleanup(messageId) {
+    const confirmed = await this.confirm({
+      title: localize("Requests.Active.MissingTitle"),
+      content: `<p>${escapeHTML(localize("Requests.Active.MissingContent"))}</p>`,
+      yes: localize("Requests.Active.MissingDelete"),
+      no: localize("Requests.Active.MissingKeep"),
+      icon: "fa-solid fa-trash"
+    });
+    if (confirmed) this.removeActiveRequest(messageId);
+  }
+
+  async confirm({ title, content, yes, no, icon }) {
+    if (DialogV2?.confirm) {
+      return DialogV2.confirm({
+        window: { title },
+        content,
+        modal: true,
+        rejectClose: false,
+        yes: {
+          label: yes,
+          icon
+        },
+        no: {
+          label: no
+        }
+      });
+    }
+    return window.confirm(`${title}\n\n${content.replace(/<[^>]+>/g, "")}`);
+  }
+
+  async activateChatSidebar() {
+    ui.chat?.activate?.();
+    ui.sidebar?.changeTab?.("chat", "primary");
+    ui.sidebar?.activateTab?.("chat");
+    if ((typeof ui.chat?.render === "function") && !ui.chat.rendered) {
+      await ui.chat.render({ force: true });
+    }
+    await this.wait(50);
+  }
+
+  async findRequestMessageAnchor(messageId) {
+    const batchAttempts = this.getChatRenderBatchAttempts(messageId);
+    for (let attempt = 0; attempt <= batchAttempts; attempt += 1) {
+      const element = document.getElementById(this.getRequestAnchorId(messageId));
+      if (element) return element;
+      if (attempt >= batchAttempts) break;
+      if (!await this.renderOlderChatBatch()) break;
+      await this.wait(50);
+    }
+    return null;
+  }
+
+  async renderOlderChatBatch() {
+    if (typeof ui.chat?.renderBatch !== "function") return false;
+    try {
+      await ui.chat.renderBatch(CHAT_RENDER_BATCH_SIZE);
+      return true;
+    } catch (error) {
+      console.warn(`${MODULE_ID} | Unable to render older chat messages while looking for active request`, error);
+      return false;
+    }
+  }
+
+  getChatRenderBatchAttempts(messageId) {
+    const message = game.messages.get(messageId);
+    if (!message) return 0;
+
+    const messages = Array.from(game.messages ?? []);
+    const targetTimestamp = Number(message.timestamp ?? message.createdAt ?? 0);
+    const newerMessages = targetTimestamp
+      ? messages.filter((item) => Number(item.timestamp ?? item.createdAt ?? 0) > targetTimestamp).length
+      : messages.length;
+    const requiredAttempts = Math.ceil((newerMessages + 1) / CHAT_RENDER_BATCH_SIZE) + 2;
+    return Math.min(CHAT_RENDER_BATCH_MAX_ATTEMPTS, Math.max(6, requiredAttempts));
+  }
+
+  getRequestAnchorId(messageId) {
+    return `dmicher-request-message-${messageId}`;
+  }
+
+  wait(milliseconds) {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  }
+
   broadcastSpeechGranted(requestData) {
     const payload = {
       action: "speechGranted",
@@ -253,8 +510,21 @@ export class RequestTool {
   }
 
   receiveSocketMessage(payload) {
-    if (payload?.action !== "speechGranted") return;
-    this.showSpeechGranted(payload);
+    switch (payload?.action) {
+      case "speechGranted":
+        this.showSpeechGranted(payload);
+        break;
+      case "requestResolved":
+        this.removeActiveRequest(payload.messageId);
+        break;
+    }
+  }
+
+  broadcastRequestResolved(messageId) {
+    game.socket.emit(SOCKET_CHANNEL, {
+      action: "requestResolved",
+      messageId
+    });
   }
 
   showSpeechGranted(payload) {

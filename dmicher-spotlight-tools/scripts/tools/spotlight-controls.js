@@ -4,7 +4,8 @@ import { isModerator, localize } from "../utils.js";
 const MENU_ROOT_TOOL = "spotlight-tools-root";
 
 export class SpotlightControls {
-  constructor({ openTimers, openBreakTimer, openStopwatch }) {
+  constructor({ openRequests, openTimers, openBreakTimer, openStopwatch }) {
+    this.openRequests = openRequests;
     this.openTimers = openTimers;
     this.openBreakTimer = openBreakTimer;
     this.openStopwatch = openStopwatch;
@@ -32,6 +33,15 @@ export class SpotlightControls {
           button: false,
           visible: false,
           onChange: () => {}
+        },
+        requests: {
+          name: "requests",
+          title: localize("Controls.Requests"),
+          icon: "fa-solid fa-hand",
+          order: 5,
+          button: true,
+          visible: isModerator(),
+          onChange: this.openRequests
         },
         timers: {
           name: "timers",

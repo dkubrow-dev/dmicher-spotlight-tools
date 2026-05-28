@@ -61,10 +61,37 @@
         "MacroName": "{label} ({title})",
         "Added": "The \"{label}\" macro has been added to the hotbar.",
         "AddError": "Could not add the request to the hotbar."
+      },
+      "Active": {
+        "WindowTitle": "Active Requests",
+        "Heading": "Active Requests",
+        "Empty": "There are no active requests yet.",
+        "Ago": "{duration} ago",
+        "UnknownAuthor": "Unknown",
+        "OpenMessage": "Go to request message",
+        "Grant": "Give the floor",
+        "Cancel": "Cancel request",
+        "Clear": "Clear",
+        "ClearTitle": "Clear active requests",
+        "ClearConfirm": "Cancel all active requests and delete their linked chat messages?",
+        "ClearYes": "Clear",
+        "ClearNo": "Cancel",
+        "MissingTitle": "Message not found",
+        "MissingContent": "This request message is no longer in chat. Remove the row from the active requests window?",
+        "MissingDelete": "Remove row",
+        "MissingKeep": "Keep",
+        "MessageNotRendered": "The message exists in the chat log, but is not currently rendered. Open the chat log and try again.",
+        "Columns": {
+          "Icon": "#",
+          "Submitted": "Submitted",
+          "Author": "Author",
+          "Controls": "Controls"
+        }
       }
     },
     "Controls": {
       "Title": "Spotlight Tools",
+      "Requests": "Requests",
       "Timers": "Timers",
       "Break": "Break",
       "Stopwatch": "Stopwatch"
