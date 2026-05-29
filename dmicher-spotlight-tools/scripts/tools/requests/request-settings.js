@@ -11,7 +11,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     id: "dmicher-spotlight-tools-request-settings",
     classes: ["dmicher-request-settings"],
     position: {
-      width: 680,
+      width: 750,
       height: "auto"
     },
     window: {
