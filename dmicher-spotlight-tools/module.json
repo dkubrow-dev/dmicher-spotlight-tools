@@ -1,8 +1,8 @@
 {
   "id": "dmicher-spotlight-tools",
   "title": "dmicher 🛠️ Spotlight Tools | Приспособы фокуса",
-  "description": "Dmicher Spotlight Tools is a small, system-agnostic tools set for gaming on Foundry VTT. Currently implemented: a player requests queue. Planned features: timers, readiness checks, AFK statuses, and spotlight monitoring for the GM.",
-  "version": "0.1.1",
+  "description": "Dmicher Spotlight Tools is a small, system-agnostic tool set for gaming on Foundry VTT: player requests, timers, breaks, stopwatch events, readiness checks, player statuses, and focus audit for the GM.",
+  "version": "1.0.0",
   "authors": [
     {
       "name": "dmicher abathur kubrow"
@@ -32,6 +32,8 @@
   ],
   "socket": true,
   "url": "https://github.com/dkubrow-dev/dmicher-spotlight-tools",
-  "manifest": "https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/0.1.1/module.json",
-  "download": "https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/dmicher-spotlight-tools.zip"
+  "manifest": "https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/module.json",
+  "download": "https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.0.0/dmicher-spotlight-tools-1.0.0.zip",
+  "readme": "https://github.com/dkubrow-dev/dmicher-spotlight-tools/blob/main/README.md",
+  "bugs": "https://github.com/dkubrow-dev/dmicher-spotlight-tools/issues"
 }

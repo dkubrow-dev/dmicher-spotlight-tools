@@ -2,6 +2,7 @@ import { I18N_PREFIX, MODULE_ID, REQUEST_TYPES } from "../../config.js";
 import { canUseRequest, i18nKey, localize, sanitizeTextStyle } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const THANK_AUTHOR_URL = "https://boosty.to/dmicher";
 
 let actions;
 let settingsWindow;
@@ -90,6 +91,21 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
   }
 }
 
+class ThankAuthorApplication extends ApplicationV2 {
+  static DEFAULT_OPTIONS = {
+    id: "dmicher-spotlight-tools-thank-author",
+    window: {
+      title: "DMICHERSPOTLIGHTTOOLS.Support.Thanks.MenuLabel"
+    }
+  };
+
+  async render(_options = {}, _context = {}) {
+    const opened = window.open(THANK_AUTHOR_URL, "_blank", "noopener,noreferrer");
+    if (!opened) ui.notifications.warn(localize("Support.Thanks.PopupBlocked"));
+    return this;
+  }
+}
+
 export function registerRequestSettings(requestActions) {
   actions = requestActions;
 
@@ -116,6 +132,15 @@ export function registerRequestSettings(requestActions) {
     hint: i18nKey("Requests.Settings.MenuHint"),
     icon: "fa-solid fa-hand",
     type: RequestSettingsApplication,
+    restricted: false
+  });
+
+  game.settings.registerMenu(MODULE_ID, "thankAuthor", {
+    name: i18nKey("Support.Thanks.MenuName"),
+    label: i18nKey("Support.Thanks.MenuLabel"),
+    hint: i18nKey("Support.Thanks.MenuHint"),
+    icon: "fa-solid fa-heart",
+    type: ThankAuthorApplication,
     restricted: false
   });
 }
