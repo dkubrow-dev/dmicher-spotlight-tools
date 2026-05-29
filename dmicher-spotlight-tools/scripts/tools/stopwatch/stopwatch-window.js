@@ -108,11 +108,11 @@ export class StopwatchWindowApplication extends HandlebarsApplicationMixin(Appli
   }
 
   onStopwatchStateChanged() {
-    if (this.rendered) void this.render({ force: true });
+    if (this.rendered) void this.render({ parts: ["main"] });
   }
 
   onStopwatchEventsChanged() {
-    if (this.rendered) void this.render({ force: true }).then(() => this.scrollEventsToBottom());
+    if (this.rendered) void this.render({ parts: ["main"] }).then(() => this.scrollEventsToBottom());
   }
 
   refreshTime() {

@@ -93,7 +93,136 @@
       "Requests": "Requests",
       "Timers": "Timers",
       "Break": "Break",
-      "Stopwatch": "Stopwatch"
+      "Stopwatch": "Stopwatch",
+      "FocusAudit": "Focus Audit",
+      "Readiness": "Readiness Check"
+    },
+    "Focus": {
+      "Indicators": {
+        "Good": "Good",
+        "Doubt": "Doubt",
+        "Problem": "Problem",
+        "Deadline": "Deadline",
+        "Muted": "Not applicable"
+      },
+      "Status": {
+        "SelectLabel": "Your game status",
+        "Playing": {
+          "Label": "Playing",
+          "Description": "Fully immersed in the game context and available for requests."
+        },
+        "Listening": {
+          "Label": "Listening",
+          "Description": "Hearing and/or seeing the game, but not ready to act actively right now."
+        },
+        "Away": {
+          "Label": "Away",
+          "Description": "Temporarily distracted or away from the computer; not following the game, but should return soon or can be called for urgent matters."
+        },
+        "Unavailable": {
+          "Label": "Unavailable",
+          "Description": "Away and not following the game; do not wait, continue without this player."
+        },
+        "ChatTitle": "{player} - {newStatus}",
+        "ChatDetails": "Player {player} changes status from {oldStatus} to {newStatus}. Meaning: {description}"
+      },
+      "Audit": {
+        "WindowTitle": "Focus Audit",
+        "Heading": "Focus Audit",
+        "ResetAll": "Reset audit",
+        "ResetAllTitle": "Reset audit",
+        "ResetAllConfirm": "Reset audit data for all players?",
+        "ResetPlayerTitle": "Reset player audit",
+        "ResetPlayerConfirm": "Reset audit data for {player}?",
+        "ResetYes": "Reset",
+        "ResetNo": "Cancel",
+        "Grant": "Floor granted",
+        "ResetPlayer": "Reset player data",
+        "FoundryOnline": "Foundry status: online",
+        "FoundryOffline": "Foundry status: offline",
+        "MetricTooltip": "{label}: {elapsed} ago. Zone: {level}.",
+        "Columns": {
+          "ActivateHint": "Activate audit",
+          "Player": "Player",
+          "PlayerHint": "Foundry player",
+          "FoundryStatus": "FS",
+          "FoundryStatusHint": "Foundry player status: green if online, red if offline.",
+          "SelfStatus": "SS",
+          "SelfStatusHint": "Player self-selected status.",
+          "LastRequest": "LR",
+          "ActiveRequest": "AR",
+          "LastChat": "CH",
+          "LastGranted": "FG",
+          "Controls": "Controls",
+          "ControlsHint": "Control buttons"
+        },
+        "Metrics": {
+          "LastRequest": {
+            "Title": "Last request",
+            "Description": "Time when the player last submitted a request through the module"
+          },
+          "ActiveRequest": {
+            "Title": "Active request",
+            "Description": "Time elapsed since the first current active request that has not been granted or cancelled"
+          },
+          "LastChat": {
+            "Title": "Chat messages",
+            "Description": "Time when a chat message was last published on behalf of the player, regardless of cause or content"
+          },
+          "LastGranted": {
+            "Title": "Floor granted",
+            "Description": "Time elapsed since the player was last granted the floor through module requests or manually from the audit window"
+          }
+        }
+      },
+      "Settings": {
+        "WindowTitle": "Focus Audit Settings",
+        "Save": "Save settings",
+        "Minutes": "min.",
+        "Saved": "Focus audit settings saved.",
+        "SaveError": "Could not save focus audit settings.",
+        "ValidationError": "Enter non-negative values where each stricter level is not lower than the previous one."
+      }
+    },
+    "Readiness": {
+      "WindowTitle": "Readiness Check",
+      "Heading": "Readiness Check",
+      "Request": "Check readiness",
+      "Clear": "Clear",
+      "Post": "Post to chat",
+      "NoPlayers": "Select at least one player.",
+      "ClearFirst": "Clear the current readiness check before starting another one.",
+      "Columns": {
+        "SelectedHint": "Request readiness from this player?",
+        "Player": "Player",
+        "PlayerHint": "Player name",
+        "Status": "Status",
+        "StatusHint": "Readiness check result"
+      },
+      "Status": {
+        "Ready": "Ready",
+        "Pending": "No answer",
+        "NotReady": "Not ready",
+        "Waiting": "Waiting for request"
+      },
+      "Message": {
+        "Title": "Readiness Check",
+        "Text": "Game Master {gm} asks you to confirm readiness to continue the game",
+        "Ready": "Ready",
+        "NotReady": "Not ready"
+      },
+      "Technical": {
+        "ReadyTitle": "Ready to continue",
+        "NotReadyTitle": "Not ready to continue",
+        "NoAnswerTitle": "Player did not answer",
+        "ResponseDetails": "Player {player} answered the readiness request from {timestamp}. Status: {status}.",
+        "NoAnswerDetails": "Player {player} did not answer the readiness request from {timestamp}."
+      },
+      "Results": {
+        "Title": "Readiness Check Results",
+        "Name": "Name",
+        "Status": "Status"
+      }
     },
     "Timers": {
       "DefaultName": "Timer {number}",
@@ -118,6 +247,7 @@
       "Break": {
         "WindowTitle": "Break",
         "Heading": "Announce a break",
+        "Description": "Approximate break period rounded up to 5 minutes.",
         "Option": "{count} min.",
         "Until": "until {time}",
         "Cancel": "Cancel",

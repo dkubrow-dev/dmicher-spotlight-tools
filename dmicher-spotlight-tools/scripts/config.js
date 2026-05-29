@@ -30,7 +30,10 @@ export const STOPWATCH_EVENTS = Object.freeze({
 
 export const SETTINGS = Object.freeze({
   timers: "timers",
-  timerAlertedExpirations: "timerAlertedExpirations"
+  timerAlertedExpirations: "timerAlertedExpirations",
+  focusAuditState: "focusAuditState",
+  focusAuditThresholds: "focusAuditThresholds",
+  readinessState: "readinessState"
 });
 
 export const FLAGS = Object.freeze({
@@ -38,6 +41,9 @@ export const FLAGS = Object.freeze({
   resolution: "resolution",
   timer: "timer",
   stopwatchMacro: "stopwatchMacro",
+  playerStatus: "playerStatus",
+  readinessRequest: "readinessRequest",
+  readinessResult: "readinessResult",
   macro: "requestMacro"
 });
 

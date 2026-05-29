@@ -12,6 +12,7 @@ import {
   formatClockTime,
   formatDigitalDuration,
   getChatMessageClass,
+  getModeratorUserIds,
   isModerator,
   localize,
   playAudio
@@ -217,7 +218,7 @@ export class TimerTool {
       user: game.user.id,
       speaker: ChatMessageClass.getSpeaker(),
       content: this.buildTimerChatMessageContent(timer),
-      whisper: timer.visibility === TIMER_VISIBILITY.private ? this.getModeratorUserIds() : undefined,
+      whisper: timer.visibility === TIMER_VISIBILITY.private ? getModeratorUserIds() : undefined,
       flags: {
         [MODULE_ID]: {
           [FLAGS.timer]: messageData
@@ -460,7 +461,4 @@ export class TimerTool {
     }
   }
 
-  getModeratorUserIds() {
-    return game.users.filter((user) => isModerator(user)).map((user) => user.id);
-  }
 }

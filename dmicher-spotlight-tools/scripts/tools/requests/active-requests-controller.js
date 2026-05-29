@@ -4,6 +4,7 @@ import {
   escapeHTML,
   format,
   formatDuration,
+  getMessageAuthorName,
   isModerator,
   localize
 } from "../../utils.js";
@@ -64,7 +65,7 @@ export class ActiveRequestsController {
       messageId: message.id,
       urgency: normalizeRequestType(requestData.urgency),
       authorId: String(requestData.authorId ?? ""),
-      authorName: String(requestData.authorName ?? message.user?.name ?? "").slice(0, 100),
+      authorName: String(requestData.authorName ?? getMessageAuthorName(message)).slice(0, 100),
       submittedAt: Number(requestData.submittedAt ?? requestData.createdAt ?? message.timestamp ?? Date.now()),
       createdAt: Number(requestData.createdAt ?? message.timestamp ?? Date.now())
     };

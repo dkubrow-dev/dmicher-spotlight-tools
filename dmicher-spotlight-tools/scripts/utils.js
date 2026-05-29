@@ -109,12 +109,56 @@ export function escapeHTML(value) {
   })[character]);
 }
 
+export function getRenderedElement(html) {
+  if (html instanceof HTMLElement) return html;
+  if (html?.[0] instanceof HTMLElement) return html[0];
+  if (html?.element instanceof HTMLElement) return html.element;
+  return null;
+}
+
 export function getChatMessageClass() {
   return CONFIG.ChatMessage.documentClass ?? foundry.documents.ChatMessage;
 }
 
 export function getMacroClass() {
   return CONFIG.Macro.documentClass ?? foundry.documents.Macro;
+}
+
+export function getMessageAuthorId(message, fallback = "") {
+  const author = message?.author;
+  const legacyUser = message?.user;
+  return String(
+    author?.id
+    ?? (typeof author === "string" ? author : undefined)
+    ?? legacyUser?.id
+    ?? (typeof legacyUser === "string" ? legacyUser : undefined)
+    ?? message?._source?.author
+    ?? message?._source?.user
+    ?? fallback
+    ?? ""
+  );
+}
+
+export function getMessageAuthorName(message) {
+  const authorId = getMessageAuthorId(message);
+  return String(message?.author?.name ?? game.users.get(authorId)?.name ?? "");
+}
+
+export function getModeratorUserIds() {
+  return game.users.filter((user) => isModerator(user)).map((user) => user.id);
+}
+
+export function getWhisperRecipientsWithModerators(userId) {
+  const recipients = new Set(getModeratorUserIds());
+  if (userId) recipients.add(userId);
+  return Array.from(recipients);
+}
+
+export function isPrimaryModerator() {
+  const moderators = game.users
+    .filter((user) => user.active && isModerator(user))
+    .sort((left, right) => left.id.localeCompare(right.id));
+  return moderators[0]?.id === game.user.id;
 }
 
 export function preloadImage(src) {

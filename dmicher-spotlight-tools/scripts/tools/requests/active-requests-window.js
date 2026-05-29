@@ -104,6 +104,6 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   }
 
   onActiveRequestsChanged() {
-    if (this.rendered) void this.render({ force: true });
+    if (this.rendered) void this.render({ parts: ["main"] });
   }
 }

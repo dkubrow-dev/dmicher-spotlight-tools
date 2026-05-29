@@ -54,6 +54,7 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
       deadlineText: this.getDeadlineText(),
       keys: {
         heading: i18nKey("Timers.Break.Heading"),
+        description: i18nKey("Timers.Break.Description"),
         until: i18nKey("Timers.Break.Until"),
         cancel: i18nKey("Timers.Break.Cancel"),
         announce: i18nKey("Timers.Break.Announce")

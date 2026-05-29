@@ -47,10 +47,22 @@ export function renderRequestChatMessage(message, html, { resolveRequest }) {
   const resolutionData = message.getFlag(MODULE_ID, FLAGS.resolution);
   if (!resolutionData || (typeof resolutionData !== "object")) return;
   const technicalMessage = html.querySelector(".dmicher-request-technical");
-  if (technicalMessage) technicalMessage.innerHTML = buildTechnicalMessageLines(resolutionData);
+  if (technicalMessage) renderTechnicalMessageContent(technicalMessage, resolutionData);
 }
 
 export function buildTechnicalMessageLines(resolutionData) {
+  const content = getTechnicalMessageContent(resolutionData);
+  const resolver = content.resolver
+    ? `<small class="dmicher-request-technical-meta">${escapeHTML(content.resolver)}</small>`
+    : "";
+  return `
+    <strong class="dmicher-request-technical-title">${escapeHTML(content.title)}</strong>
+    <small class="dmicher-request-technical-meta">${escapeHTML(content.details)}</small>
+    ${resolver}
+    <small class="dmicher-request-technical-meta">${escapeHTML(content.type)}</small>`;
+}
+
+function getTechnicalMessageContent(resolutionData) {
   const requestData = resolutionData.requestData ?? {};
   const request = REQUEST_TYPES[normalizeRequestType(requestData.urgency)];
   const author = requestData.tokenName
@@ -67,18 +79,37 @@ export function buildTechnicalMessageLines(resolutionData) {
   const titleKey = resolutionData.outcome === "completed"
     ? "Requests.Technical.InGameTitle"
     : "Requests.Technical.CancelledTitle";
-  const title = escapeHTML(format(titleKey, data));
-  const details = escapeHTML(format("Requests.Technical.Details", data));
-  const resolver = resolutionData.outcome === "cancelled"
-    ? `<small class="dmicher-request-technical-meta">${escapeHTML(format("Requests.Technical.Resolver", data))}</small>`
-    : "";
-  const type = escapeHTML(format("Requests.Technical.Type", data));
+  return {
+    title: format(titleKey, data),
+    details: format("Requests.Technical.Details", data),
+    resolver: resolutionData.outcome === "cancelled" ? format("Requests.Technical.Resolver", data) : "",
+    type: format("Requests.Technical.Type", data)
+  };
+}
 
-  return `
-    <strong class="dmicher-request-technical-title">${title}</strong>
-    <small class="dmicher-request-technical-meta">${details}</small>
-    ${resolver}
-    <small class="dmicher-request-technical-meta">${type}</small>`;
+function renderTechnicalMessageContent(element, resolutionData) {
+  const content = getTechnicalMessageContent(resolutionData);
+  const title = document.createElement("strong");
+  title.className = "dmicher-request-technical-title";
+  title.textContent = content.title;
+
+  const details = document.createElement("small");
+  details.className = "dmicher-request-technical-meta";
+  details.textContent = content.details;
+
+  const type = document.createElement("small");
+  type.className = "dmicher-request-technical-meta";
+  type.textContent = content.type;
+
+  const nodes = [title, details];
+  if (content.resolver) {
+    const resolver = document.createElement("small");
+    resolver.className = "dmicher-request-technical-meta";
+    resolver.textContent = content.resolver;
+    nodes.push(resolver);
+  }
+  nodes.push(type);
+  element.replaceChildren(...nodes);
 }
 
 function attachRequestAnchor(message, html) {

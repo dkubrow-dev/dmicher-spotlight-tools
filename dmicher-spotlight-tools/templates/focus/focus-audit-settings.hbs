@@ -1,0 +1,50 @@
+<form class="dmicher-focus-audit-settings-form">
+  <div class="dmicher-tool-action-bar">
+    <button type="submit">
+      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+      {{localize keys.save}}
+    </button>
+  </div>
+
+  <div class="dmicher-settings-blocks">
+    {{#each blocks}}
+    <fieldset class="dmicher-settings-block dmicher-focus-threshold-block">
+      <legend>{{title}}</legend>
+      <p class="notes">{{description}}</p>
+      <div class="dmicher-focus-threshold-fields">
+        <label class="dmicher-focus-threshold-field">
+          <span class="dmicher-focus-threshold-label">
+            <i class="dmicher-indicator dmicher-indicator-doubt" aria-hidden="true"></i>
+            {{localize ../keys.doubt}}
+          </span>
+          <span class="dmicher-focus-threshold-input">
+            <input type="number" name="{{metricId}}.doubt" value="{{doubt}}" min="0" step="0.1">
+            <span class="dmicher-focus-threshold-unit">{{localize ../keys.minutes}}</span>
+          </span>
+        </label>
+        <label class="dmicher-focus-threshold-field">
+          <span class="dmicher-focus-threshold-label">
+            <i class="dmicher-indicator dmicher-indicator-problem" aria-hidden="true"></i>
+            {{localize ../keys.problem}}
+          </span>
+          <span class="dmicher-focus-threshold-input">
+            <input type="number" name="{{metricId}}.problem" value="{{problem}}" min="0" step="0.1">
+            <span class="dmicher-focus-threshold-unit">{{localize ../keys.minutes}}</span>
+          </span>
+        </label>
+        <label class="dmicher-focus-threshold-field">
+          <span class="dmicher-focus-threshold-label">
+            <i class="dmicher-indicator dmicher-indicator-deadline" aria-hidden="true"></i>
+            {{localize ../keys.deadline}}
+          </span>
+          <span class="dmicher-focus-threshold-input">
+            <input type="number" name="{{metricId}}.deadline" value="{{deadline}}" min="0" step="0.1">
+            <span class="dmicher-focus-threshold-unit">{{localize ../keys.minutes}}</span>
+          </span>
+        </label>
+      </div>
+    </fieldset>
+    {{/each}}
+  </div>
+
+</form>

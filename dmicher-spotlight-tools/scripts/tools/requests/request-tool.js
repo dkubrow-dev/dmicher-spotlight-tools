@@ -3,6 +3,7 @@ import {
   canUseRequest,
   format,
   getChatMessageClass,
+  getWhisperRecipientsWithModerators,
   isModerator,
   localize,
   playAudio,
@@ -17,7 +18,8 @@ import {
 import { getRequestStyle, getRequestText } from "./request-settings.js";
 
 export class RequestTool {
-  constructor() {
+  constructor({ focusAuditTool = null } = {}) {
+    this.focusAuditTool = focusAuditTool;
     this.resolvingRequests = new Set();
     this.shownNotifications = new Set();
     this.submitRequest = this.submitRequest.bind(this);
@@ -39,6 +41,7 @@ export class RequestTool {
   activate() {
     game.socket.on(SOCKET_CHANNEL, this.receiveSocketMessage);
     this.activeRequests.rebuild();
+    this.focusAuditTool?.rebuildRequestsFromMessages(game.messages);
     void this.preloadAssets();
   }
 
@@ -92,7 +95,9 @@ export class RequestTool {
 
   handleChatMessageCreated(message) {
     const requestData = message.getFlag(MODULE_ID, FLAGS.request);
-    if (requestData) this.activeRequests.register(message, requestData);
+    if (!requestData) return;
+    this.activeRequests.register(message, requestData);
+    this.focusAuditTool?.recordRequestSubmitted(message, requestData);
   }
 
   async resolveRequest(message, action) {
@@ -122,6 +127,7 @@ export class RequestTool {
       }
       await message.delete();
       this.activeRequests.remove(message.id);
+      this.focusAuditTool?.recordRequestResolved(message.id, requestData, completed);
       this.broadcastRequestResolved(message.id);
 
       if (completed) this.broadcastSpeechGranted(requestData);
@@ -159,11 +165,7 @@ export class RequestTool {
   }
 
   getTechnicalMessageRecipients(authorId) {
-    const recipients = new Set([authorId]);
-    for (const user of game.users) {
-      if (isModerator(user)) recipients.add(user.id);
-    }
-    return Array.from(recipients);
+    return getWhisperRecipientsWithModerators(authorId);
   }
 
   broadcastSpeechGranted(requestData) {

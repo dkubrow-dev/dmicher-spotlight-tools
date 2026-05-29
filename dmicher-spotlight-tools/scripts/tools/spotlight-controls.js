@@ -4,11 +4,13 @@ import { isModerator, localize } from "../utils.js";
 const MENU_ROOT_TOOL = "spotlight-tools-root";
 
 export class SpotlightControls {
-  constructor({ openRequests, openTimers, openBreakTimer, openStopwatch }) {
+  constructor({ openRequests, openTimers, openBreakTimer, openStopwatch, openFocusAudit, openReadiness }) {
     this.openRequests = openRequests;
     this.openTimers = openTimers;
     this.openBreakTimer = openBreakTimer;
     this.openStopwatch = openStopwatch;
+    this.openFocusAudit = openFocusAudit;
+    this.openReadiness = openReadiness;
     this.renderSceneControls = this.renderSceneControls.bind(this);
   }
 
@@ -69,6 +71,24 @@ export class SpotlightControls {
           button: true,
           visible: isModerator(),
           onChange: this.openStopwatch
+        },
+        focusAudit: {
+          name: "focusAudit",
+          title: localize("Controls.FocusAudit"),
+          icon: "fa-solid fa-chart-simple",
+          order: 40,
+          button: true,
+          visible: isModerator(),
+          onChange: this.openFocusAudit
+        },
+        readiness: {
+          name: "readiness",
+          title: localize("Controls.Readiness"),
+          icon: "fa-solid fa-clipboard-check",
+          order: 50,
+          button: true,
+          visible: isModerator(),
+          onChange: this.openReadiness
         }
       }
     };

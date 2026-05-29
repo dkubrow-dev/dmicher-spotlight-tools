@@ -123,7 +123,7 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
     form.addEventListener("submit", (event) => void this.handleSubmit(event));
     form.querySelector("[data-timer-action='reset']")?.addEventListener("click", () => {
       this.defaultDeadlineBase = Date.now();
-      void this.render({ force: true });
+      void this.render({ parts: ["main"] });
     });
     form.querySelector("[data-timer-action='delete-expired']")?.addEventListener("click", () => {
       void this.timerTool.confirmDeleteExpiredTimers();
@@ -192,7 +192,7 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
         sound: elements.namedItem("sound")?.value ?? TIMER_SOUND.none
       });
       this.defaultDeadlineBase = Date.now();
-      await this.render({ force: true });
+      await this.render({ parts: ["main"] });
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to start timer`, error);
       ui.notifications.error(error?.message || localize("Timers.Errors.StartFailed"));
@@ -201,7 +201,7 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
   }
 
   onTimerStateChanged() {
-    if (this.rendered) void this.render({ force: true });
+    if (this.rendered) void this.render({ parts: ["main"] });
   }
 
   onTimerTick() {
