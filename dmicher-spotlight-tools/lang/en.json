@@ -4,6 +4,14 @@
     "Hints": {
       "ClickOrDragHotbarMacro": "Click to use; drag to the hotbar to create a macro"
     },
+    "Support": {
+      "Thanks": {
+        "MenuName": "dmicher Spotlight Tools - Say Thanks",
+        "MenuLabel": "Say thanks to the author",
+        "MenuHint": "Open dmicher's Boosty page.",
+        "PopupBlocked": "Could not open the Boosty page. Check the browser popup blocker."
+      }
+    },
     "Requests": {
       "Common": {
         "Label": "Regular request",

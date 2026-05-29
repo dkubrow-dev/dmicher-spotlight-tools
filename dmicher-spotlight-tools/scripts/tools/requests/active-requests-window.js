@@ -32,7 +32,11 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   }
 
   get title() {
-    return localize("Requests.Active.WindowTitle");
+    return this.getWindowTitle();
+  }
+
+  getWindowTitle() {
+    return `${localize("Requests.Active.WindowTitle")} - ${this.activeRequests?.getCount?.() ?? 0}`;
   }
 
   async _prepareContext(options) {
@@ -58,6 +62,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   async _onRender(context, options) {
     await super._onRender(context, options);
+    this.updateWindowTitle();
     this.activateListeners();
     this.startTicking();
   }
@@ -103,7 +108,19 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
     this.tickHandle = null;
   }
 
+  updateWindowTitle() {
+    const title = this.getWindowTitle();
+    if (typeof this.setTitle === "function") {
+      this.setTitle(title);
+      return;
+    }
+    this.element?.querySelector(".window-title")?.replaceChildren(title);
+    this.element?.setAttribute("aria-label", title);
+  }
+
   onActiveRequestsChanged() {
-    if (this.rendered) void this.render({ parts: ["main"] });
+    if (!this.rendered) return;
+    this.updateWindowTitle();
+    void this.render({ parts: ["main"] }).then(() => this.updateWindowTitle());
   }
 }
