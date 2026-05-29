@@ -1,0 +1,12 @@
+Downloaded from:
+	https://freesound.org
+License:
+	Creative Commons Zero v1.0 Universal
+	https://creativecommons.org/publicdomain/zero/1.0/
+
+Some sounds were pre-processed personally by the author of the module.
+
+Correspondence of module sounds to links to the authors of the original sound:
+ring1.ogg -> https://freesound.org/people/cryptidcat/sounds/743963/
+ring2.ogg -> https://freesound.org/people/israra/sounds/434055/
+ring3.ogg -> https://freesound.org/people/ZyryTSounds/sounds/219244/

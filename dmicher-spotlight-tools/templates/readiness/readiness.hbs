@@ -1,0 +1,49 @@
+<section class="dmicher-readiness-shell">
+  <h2 class="dmicher-tool-window-heading">{{localize keys.heading}}</h2>
+
+  <div class="dmicher-tool-action-bar">
+    <button type="button" data-readiness-action="request">
+      <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i>
+      {{localize keys.request}}
+    </button>
+  </div>
+
+  <div class="dmicher-tool-table-scroll dmicher-readiness-table-wrap">
+    <table class="dmicher-tool-table dmicher-readiness-table">
+      <thead>
+        <tr>
+          <th title="{{localize keys.selectedHint}}">#</th>
+          <th title="{{localize keys.playerHint}}">{{localize keys.player}}</th>
+          <th title="{{localize keys.statusHint}}">{{localize keys.status}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each rows}}
+        <tr class="{{inactive}}">
+          <td>
+            <input type="checkbox" data-readiness-action="selected" data-user-id="{{userId}}" {{#if selected}}checked{{/if}}>
+          </td>
+          <td>{{name}}</td>
+          <td>
+            <span class="dmicher-readiness-status">
+              <span class="dmicher-indicator dmicher-indicator-{{statusLevel}}" aria-hidden="true"></span>
+              {{statusLabel}}
+            </span>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="dmicher-readiness-footer">
+    <button type="button" data-readiness-action="clear">
+      <i class="fa-solid fa-eraser" aria-hidden="true"></i>
+      {{localize keys.clear}}
+    </button>
+    <button type="button" data-readiness-action="post">
+      <i class="fa-solid fa-message" aria-hidden="true"></i>
+      {{localize keys.post}}
+    </button>
+  </footer>
+</section>

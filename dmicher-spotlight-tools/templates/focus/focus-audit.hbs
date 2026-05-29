@@ -1,0 +1,60 @@
+<section class="dmicher-focus-audit-shell">
+  <h2 class="dmicher-tool-window-heading">{{localize keys.heading}}</h2>
+
+  <div class="dmicher-tool-action-bar">
+    <button type="button" data-focus-action="settings">
+      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+      {{localize keys.settings}}
+    </button>
+    <button type="button" data-focus-action="reset-all">
+      <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+      {{localize keys.resetAll}}
+    </button>
+  </div>
+
+  <div class="dmicher-tool-table-scroll dmicher-focus-audit-table-wrap">
+    <table class="dmicher-tool-table dmicher-focus-audit-table">
+      <thead>
+        <tr>
+          <th title="{{localize keys.activate}}">#</th>
+          <th title="{{localize keys.playerHint}}">{{localize keys.player}}</th>
+          <th title="{{localize keys.foundryStatusHint}}">{{localize keys.foundryStatus}}</th>
+          <th title="{{localize keys.selfStatusHint}}">{{localize keys.selfStatus}}</th>
+          {{#each metrics}}
+          <th title="{{title}}">{{localize labelKey}}</th>
+          {{/each}}
+          <th title="{{localize keys.controlsHint}}">{{localize keys.controls}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each rows}}
+        <tr class="{{inactive}}">
+          <td>
+            <input type="checkbox" data-focus-action="toggle-enabled" data-user-id="{{userId}}" {{#if enabled}}checked{{/if}}>
+          </td>
+          <td>{{name}}</td>
+          <td>
+            <span class="dmicher-indicator dmicher-indicator-{{foundryLevel}}" title="{{foundryTitle}}"></span>
+          </td>
+          <td>
+            <span class="dmicher-indicator dmicher-indicator-{{selfIndicator}}" title="{{selfStatusTitle}}" role="img" aria-label="{{selfStatusTitle}}"></span>
+          </td>
+          {{#each metricCells}}
+          <td>
+            <span class="dmicher-indicator dmicher-indicator-{{level}}" title="{{title}}"></span>
+          </td>
+          {{/each}}
+          <td class="dmicher-tool-row-actions">
+            <button type="button" data-focus-action="grant" data-user-id="{{userId}}" title="{{localize ../keys.grant}}" {{controlsDisabled}}>
+              <i class="fa-solid fa-comment" aria-hidden="true"></i>
+            </button>
+            <button type="button" data-focus-action="reset-player" data-user-id="{{userId}}" title="{{localize ../keys.resetPlayer}}" {{controlsDisabled}}>
+              <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            </button>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</section>

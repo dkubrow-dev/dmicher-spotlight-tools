@@ -1,0 +1,60 @@
+<section class="dmicher-stopwatch-shell">
+  <h2 class="dmicher-tool-window-heading">{{localize keys.title}}</h2>
+
+  <div class="dmicher-stopwatch-time" aria-live="polite">
+    <span data-stopwatch-time-main>{{elapsed.main}}</span><small data-stopwatch-time-fraction>{{elapsed.fraction}}</small>
+  </div>
+
+  <div class="dmicher-stopwatch-controls">
+    <button type="button" data-stopwatch-action="start-pause" title="{{startPauseTitle}}">
+      {{#if running}}
+      <i class="fa-solid fa-pause" aria-hidden="true"></i>
+      {{else}}
+      <i class="fa-solid fa-play" aria-hidden="true"></i>
+      {{/if}}
+    </button>
+    <button type="button" data-stopwatch-action="stop-reset" title="{{localize keys.stopReset}}">
+      <i class="fa-solid fa-stop" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="dmicher-stopwatch-event-buttons">
+    {{#each eventButtons}}
+    <img
+      src="{{image}}"
+      alt="{{label}}"
+      title="{{label}}"
+      data-stopwatch-event="{{eventType}}"
+      role="button"
+      tabindex="0"
+      draggable="true"
+    >
+    {{/each}}
+  </div>
+  <p class="dmicher-hotbar-macro-hint dmicher-stopwatch-event-hint">{{localize keys.macroHint}}</p>
+
+  <section class="dmicher-stopwatch-events">
+    {{#if hasEvents}}
+      {{#each events}}
+      <div class="dmicher-stopwatch-event-row">
+        <img src="{{image}}" alt="{{label}}">
+        <span>{{label}}</span>
+        <time>{{time}}</time>
+      </div>
+      {{/each}}
+    {{else}}
+      <p class="notes">{{localize keys.noEvents}}</p>
+    {{/if}}
+  </section>
+
+  <footer class="dmicher-stopwatch-footer">
+    <button type="button" data-stopwatch-action="post">
+      <i class="fa-solid fa-message" aria-hidden="true"></i>
+      {{localize keys.post}}
+    </button>
+    <button type="button" data-stopwatch-action="clear">
+      <i class="fa-solid fa-trash" aria-hidden="true"></i>
+      {{localize keys.clear}}
+    </button>
+  </footer>
+</section>
