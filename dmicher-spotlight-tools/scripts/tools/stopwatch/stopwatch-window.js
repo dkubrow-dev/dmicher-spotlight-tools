@@ -14,8 +14,8 @@ export class StopwatchWindowApplication extends HandlebarsApplicationMixin(Appli
     id: "dmicher-spotlight-tools-stopwatch",
     classes: ["dmicher-stopwatch"],
     position: {
-      width: 460,
-      height: "auto"
+      width: 320,
+      height: 550
     },
     window: {
       icon: "fa-solid fa-stopwatch",

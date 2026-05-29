@@ -22,7 +22,7 @@ export class SpotlightControls {
     controls[MODULE_ID] = {
       name: MODULE_ID,
       title: localize("Controls.Title"),
-      icon: "fa-solid fa-bullseye",
+      icon: "fa-solid fa-person-rays",
       order: 90,
       visible: isModerator(),
       activeTool: MENU_ROOT_TOOL,
@@ -30,7 +30,7 @@ export class SpotlightControls {
         [MENU_ROOT_TOOL]: {
           name: MENU_ROOT_TOOL,
           title: localize("Controls.Title"),
-          icon: "fa-solid fa-bullseye",
+          icon: "fa-solid fa-person-rays",
           order: -1,
           button: false,
           visible: false,
@@ -40,34 +40,43 @@ export class SpotlightControls {
           name: "requests",
           title: localize("Controls.Requests"),
           icon: "fa-solid fa-hand",
-          order: 5,
+          order: 10,
           button: true,
           visible: isModerator(),
           onChange: this.openRequests
         },
-        timers: {
-          name: "timers",
-          title: localize("Controls.Timers"),
-          icon: "fa-solid fa-hourglass-half",
-          order: 10,
+        readiness: {
+          name: "readiness",
+          title: localize("Controls.Readiness"),
+          icon: "fa-solid fa-clipboard-check",
+          order: 20,
           button: true,
           visible: isModerator(),
-          onChange: this.openTimers
+          onChange: this.openReadiness
         },
         break: {
           name: "break",
           title: localize("Controls.Break"),
           icon: "fa-solid fa-mug-saucer",
-          order: 20,
+          order: 30,
           button: true,
           visible: isModerator(),
           onChange: this.openBreakTimer
+        },
+        timers: {
+          name: "timers",
+          title: localize("Controls.Timers"),
+          icon: "fa-solid fa-hourglass-half",
+          order: 40,
+          button: true,
+          visible: isModerator(),
+          onChange: this.openTimers
         },
         stopwatch: {
           name: "stopwatch",
           title: localize("Controls.Stopwatch"),
           icon: "fa-solid fa-stopwatch",
-          order: 30,
+          order: 50,
           button: true,
           visible: isModerator(),
           onChange: this.openStopwatch
@@ -76,19 +85,10 @@ export class SpotlightControls {
           name: "focusAudit",
           title: localize("Controls.FocusAudit"),
           icon: "fa-solid fa-chart-simple",
-          order: 40,
+          order: 60,
           button: true,
           visible: isModerator(),
           onChange: this.openFocusAudit
-        },
-        readiness: {
-          name: "readiness",
-          title: localize("Controls.Readiness"),
-          icon: "fa-solid fa-clipboard-check",
-          order: 50,
-          button: true,
-          visible: isModerator(),
-          onChange: this.openReadiness
         }
       }
     };

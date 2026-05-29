@@ -425,9 +425,11 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
+.dmicher-tool-row-actions-heading,
 .dmicher-tool-row-actions {
   text-align: right;
   white-space: nowrap;
+  width: 1%;
 }
 
 .dmicher-tool-row-actions button {
@@ -1029,6 +1031,7 @@
   flex-direction: column;
   max-height: calc(100vh - 2rem);
   max-width: calc(100vw - 2rem);
+  min-height: 550px;
   min-width: 320px;
 }
 

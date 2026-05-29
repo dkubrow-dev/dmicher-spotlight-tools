@@ -49,6 +49,7 @@ export class ActiveRequestsController {
       if (requestData) this.register(message, requestData, { notify: false });
     }
     this.sort();
+    this.notifyChanged();
   }
 
   register(message, requestData, { notify = true } = {}) {
@@ -86,6 +87,10 @@ export class ActiveRequestsController {
 
   notifyChanged() {
     this.window?.onActiveRequestsChanged();
+  }
+
+  getCount() {
+    return this.entries.length;
   }
 
   getRows() {
