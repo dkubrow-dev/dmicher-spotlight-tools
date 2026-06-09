@@ -1,0 +1,95 @@
+{{#if hasTemplate}}
+<form class="dmicher-poll-launch-shell" autocomplete="off" data-poll-launch-form>
+  <h2 class="dmicher-tool-window-heading">{{localize keys.heading}}</h2>
+
+  <dl class="dmicher-poll-launch-meta">
+    <div>
+      <dt>{{localize keys.type}}</dt>
+      <dd>{{typeLabel}}</dd>
+    </div>
+    <div>
+      <dt>{{localize keys.selectedPlayers}}</dt>
+      <dd>{{selectedCount}}</dd>
+    </div>
+  </dl>
+
+  <label class="dmicher-poll-field">
+    <span>{{localize keys.name}}</span>
+    <input type="text" name="name" maxlength="120" value="{{template.name}}">
+  </label>
+
+  <label class="dmicher-poll-field">
+    <span>{{localize keys.question}}</span>
+    <input type="text" name="question" maxlength="240" value="{{template.question}}">
+  </label>
+
+  <fieldset class="dmicher-poll-field dmicher-poll-timer-field">
+    <legend>{{localize keys.timerBlock}}</legend>
+    <label class="dmicher-poll-inline-check">
+      <input type="checkbox" name="timerEnabled" data-poll-launch-timer-enabled {{#if template.timerEnabled}}checked{{/if}}>
+      <span>{{localize keys.timerEnabled}}</span>
+    </label>
+    <div class="dmicher-poll-timer-block" data-poll-launch-timer-block>
+      <label>
+        <span>{{localize keys.timerMinutes}}</span>
+        <span class="dmicher-poll-number-input">
+          <input type="number" name="timerMinutes" min="1" max="180" step="1" value="{{template.timerMinutes}}" data-poll-launch-timer-field>
+          <small>{{localize keys.minutesUnit}}</small>
+        </span>
+      </label>
+      <label>
+        <span>{{localize keys.timerSound}}</span>
+        <select name="timerSound" data-poll-launch-timer-field>
+          {{#each timerSoundChoices}}
+          <option value="{{value}}" {{selected}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </label>
+    </div>
+  </fieldset>
+
+  {{#if usesOptions}}
+  <fieldset class="dmicher-poll-field dmicher-poll-launch-options">
+    <legend>{{localize keys.options}}</legend>
+    <div class="dmicher-poll-option-inputs">
+      {{#each optionsRows}}
+      <label data-poll-launch-option-row data-option-id="{{id}}">
+        <span>{{number}}</span>
+        <input type="checkbox" title="{{localize ../keys.optionEnabled}}" data-poll-launch-option-enabled {{#if enabled}}checked{{/if}}>
+        <input type="text" maxlength="80" value="{{label}}" placeholder="{{localize ../keys.optionPlaceholder}}" data-poll-launch-option-label>
+      </label>
+      {{/each}}
+    </div>
+  </fieldset>
+  {{else}}
+  <p class="notes dmicher-poll-launch-no-options">{{localize keys.noOptions}}</p>
+  {{/if}}
+
+  <footer class="dmicher-poll-manager-actions">
+    {{#if hasActivePoll}}
+    <button type="button" data-poll-launch-action="clear-active">
+      <i class="fa-solid fa-square-check" aria-hidden="true"></i>
+      {{localize keys.clearActive}}
+    </button>
+    {{/if}}
+    <button type="button" data-poll-launch-action="cancel">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      {{localize keys.cancel}}
+    </button>
+    <button type="submit">
+      <i class="fa-solid fa-play" aria-hidden="true"></i>
+      {{localize keys.start}}
+    </button>
+  </footer>
+</form>
+{{else}}
+<section class="dmicher-poll-launch-shell">
+  <p class="notes dmicher-poll-empty">{{localize keys.missing}}</p>
+  <footer class="dmicher-poll-manager-actions">
+    <button type="button" data-poll-launch-action="cancel">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      {{localize keys.cancel}}
+    </button>
+  </footer>
+</section>
+{{/if}}

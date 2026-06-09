@@ -1,0 +1,158 @@
+<section class="dmicher-poll-manager-shell">
+  <form class="dmicher-poll-template-form" autocomplete="off" data-poll-template-form>
+    <h3 class="dmicher-tool-window-heading">{{localize keys.createTitle}}</h3>
+
+    <div class="dmicher-poll-template-grid">
+      <label class="dmicher-poll-field dmicher-poll-field-wide">
+        <span>{{localize keys.name}}</span>
+        <input type="text" name="name" maxlength="120" value="{{draft.name}}">
+      </label>
+
+      <label class="dmicher-poll-field dmicher-poll-field-wide">
+        <span>{{localize keys.question}}</span>
+        <input type="text" name="question" maxlength="240" value="{{draft.question}}">
+      </label>
+
+      <label class="dmicher-poll-field">
+        <span>{{localize keys.type}}</span>
+        <select name="type" data-poll-type-select>
+          {{#each typeOptions}}
+          <option value="{{value}}" {{selected}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </label>
+
+      <fieldset class="dmicher-poll-field dmicher-poll-timer-field">
+        <legend>{{localize keys.timerBlock}}</legend>
+        <label class="dmicher-poll-inline-check">
+          <input type="checkbox" name="timerEnabled" data-poll-timer-enabled {{#if draft.timerEnabled}}checked{{/if}}>
+          <span>{{localize keys.timerEnabled}}</span>
+        </label>
+        <div class="dmicher-poll-timer-block" data-poll-timer-block>
+          <label>
+            <span>{{localize keys.timerMinutes}}</span>
+            <span class="dmicher-poll-number-input">
+              <input type="number" name="timerMinutes" min="1" max="180" step="1" value="{{draft.timerMinutes}}" data-poll-timer-field>
+              <small>{{localize keys.minutesUnit}}</small>
+            </span>
+          </label>
+          <label>
+            <span>{{localize keys.timerSound}}</span>
+            <select name="timerSound" data-poll-timer-field>
+              {{#each timerSoundChoices}}
+              <option value="{{value}}" {{selected}}>{{label}}</option>
+              {{/each}}
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="dmicher-poll-field dmicher-poll-options-field">
+        <legend>{{localize keys.options}}</legend>
+        <p class="notes" data-poll-text-no-options hidden>{{localize keys.textNoOptions}}</p>
+        <div class="dmicher-poll-option-inputs">
+          {{#each optionRows}}
+          <label data-poll-option-row data-option-index="{{@index}}" data-buttons-visible="{{buttonsVisible}}" data-table-visible="{{tableVisible}}">
+            <span>{{number}}</span>
+            <input type="checkbox" title="{{localize 'DMICHERSPOTLIGHTTOOLS.Polls.Manager.OptionEnabled'}}" data-poll-option-enabled {{#if enabled}}checked{{/if}}>
+            <input type="text" maxlength="80" value="{{value}}" placeholder="{{localize ../keys.optionPlaceholder}}" data-poll-option-input>
+          </label>
+          {{/each}}
+        </div>
+      </fieldset>
+    </div>
+
+    <footer class="dmicher-poll-manager-actions">
+      <div class="dmicher-poll-manager-action-group">
+        <button type="button" data-poll-action="reset-form">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+          {{localize keys.reset}}
+        </button>
+        {{#if hasActivePoll}}
+        <button type="button" data-poll-action="clear-active">
+          <i class="fa-solid fa-square-check" aria-hidden="true"></i>
+          {{localize keys.clearActive}}
+        </button>
+        {{/if}}
+      </div>
+      <div class="dmicher-poll-manager-action-group dmicher-poll-manager-action-group-right">
+        <button type="submit">
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+          {{localize keys.save}}
+        </button>
+      </div>
+    </footer>
+  </form>
+
+  <section class="dmicher-poll-participant-section">
+    <h3 class="dmicher-tool-window-heading">{{localize keys.participants}}</h3>
+    <div class="dmicher-tool-table-scroll dmicher-poll-participant-scroll">
+      <table class="dmicher-tool-table dmicher-poll-participant-table">
+        <thead>
+          <tr>
+            <th title="{{localize keys.participantsHint}}">#</th>
+            <th>{{localize 'DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Player'}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each participants}}
+          <tr class="{{#unless active}}is-inactive{{/unless}}">
+            <td>
+              <input type="checkbox" data-poll-participant data-user-id="{{userId}}" {{#if selected}}checked{{/if}}>
+            </td>
+            <td>{{name}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="dmicher-poll-template-section">
+    <h3 class="dmicher-tool-window-heading">{{localize keys.tableTitle}}</h3>
+    {{#if hasTemplates}}
+    <div class="dmicher-tool-table-scroll dmicher-poll-template-scroll">
+      <table class="dmicher-tool-table dmicher-poll-template-table">
+        <thead>
+          <tr>
+            <th>{{localize keys.columnName}}</th>
+            <th>{{localize keys.columnType}}</th>
+            <th>{{localize keys.columnLastResult}}</th>
+            <th class="dmicher-tool-row-actions-heading">{{localize keys.columnControls}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each templates}}
+          <tr class="{{active}}">
+            <td>
+              <button type="button" class="dmicher-poll-template-name-button" data-poll-template-action="edit" data-template-id="{{id}}">
+                {{name}}
+              </button>
+              <small>{{question}}</small>
+            </td>
+            <td>{{typeLabel}}</td>
+            <td>{{resultSummary}}</td>
+            <td class="dmicher-tool-row-actions">
+              <button type="button" data-poll-template-action="edit" data-template-id="{{id}}" title="{{localize ../keys.edit}}">
+                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+              </button>
+              <button type="button" data-poll-template-action="start" data-template-id="{{id}}" title="{{localize ../keys.start}}">
+                <i class="fa-solid fa-play" aria-hidden="true"></i>
+              </button>
+              <button type="button" data-poll-template-action="results" data-template-id="{{id}}" title="{{localize ../keys.results}}" {{#unless hasResults}}disabled{{/unless}}>
+                <i class="fa-solid fa-chart-simple" aria-hidden="true"></i>
+              </button>
+              <button type="button" data-poll-template-action="delete" data-template-id="{{id}}" title="{{localize ../keys.delete}}">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="notes dmicher-poll-empty">{{localize keys.empty}}</p>
+    {{/if}}
+  </section>
+</section>
