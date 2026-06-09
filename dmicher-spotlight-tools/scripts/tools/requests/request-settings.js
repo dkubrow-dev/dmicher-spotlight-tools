@@ -1,4 +1,5 @@
 import { I18N_PREFIX, MODULE_ID, REQUEST_TYPES } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import { canUseRequest, i18nKey, localize, sanitizeTextStyle } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -10,7 +11,7 @@ let settingsWindow;
 class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-request-settings",
-    classes: ["dmicher-request-settings"],
+    classes: getThemedWindowClasses("dmicher-request-settings"),
     position: {
       width: 750,
       height: "auto"

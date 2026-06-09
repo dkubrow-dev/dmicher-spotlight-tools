@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import { format, i18nKey, localize } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -6,12 +7,14 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const BREAK_OPTIONS = Object.freeze([5, 10, 15, 20, 30]);
 const DEFAULT_BREAK_MINUTES = 15;
 const BREAK_REFRESH_MS = 5000;
-const BREAK_ROUNDING_MINUTES = 5;
+const SHORT_BREAK_MAX_MINUTES = 10;
+const SHORT_BREAK_ROUNDING_MINUTES = 1;
+const LONG_BREAK_ROUNDING_MINUTES = 3;
 
 export class BreakTimerApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-break-timer",
-    classes: ["dmicher-break-timer"],
+    classes: getThemedWindowClasses("dmicher-break-timer"),
     position: {
       width: 550,
       height: "auto"
@@ -110,14 +113,21 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
     if (target.getSeconds() || target.getMilliseconds()) target.setMinutes(target.getMinutes() + 1, 0, 0);
     else target.setSeconds(0, 0);
 
+    const roundingMinutes = this.getRoundingMinutes();
     const minute = target.getMinutes();
-    const roundedMinute = Math.ceil(minute / BREAK_ROUNDING_MINUTES) * BREAK_ROUNDING_MINUTES;
+    const roundedMinute = Math.ceil(minute / roundingMinutes) * roundingMinutes;
     if (roundedMinute >= 60) {
       target.setHours(target.getHours() + 1, 0, 0, 0);
     } else {
       target.setMinutes(roundedMinute, 0, 0);
     }
     return target.getTime();
+  }
+
+  getRoundingMinutes() {
+    return this.selectedMinutes <= SHORT_BREAK_MAX_MINUTES
+      ? SHORT_BREAK_ROUNDING_MINUTES
+      : LONG_BREAK_ROUNDING_MINUTES;
   }
 
   getDeadlineText() {

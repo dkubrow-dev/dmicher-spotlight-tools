@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import {
   TIMER_DISPLAY_STYLE,
   getRemainingMilliseconds,
@@ -16,7 +17,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class TimerWindowApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
-    classes: ["dmicher-timer-window"],
+    classes: getThemedWindowClasses("dmicher-timer-window"),
     position: {
       width: 380,
       height: "auto"

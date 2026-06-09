@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import { i18nKey, localize } from "../../utils.js";
 import {
   formatStopwatchElapsed,
@@ -12,7 +13,7 @@ const STOPWATCH_TICK_MS = 50;
 export class StopwatchWindowApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-stopwatch",
-    classes: ["dmicher-stopwatch"],
+    classes: getThemedWindowClasses("dmicher-stopwatch"),
     position: {
       width: 320,
       height: 550

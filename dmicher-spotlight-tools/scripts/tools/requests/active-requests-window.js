@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import { i18nKey, localize } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -7,7 +8,7 @@ const ACTIVE_REQUESTS_TICK_MS = 15000;
 export class ActiveRequestsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-active-requests",
-    classes: ["dmicher-active-requests"],
+    classes: getThemedWindowClasses("dmicher-active-requests"),
     position: {
       width: 720,
       height: 420

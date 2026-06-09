@@ -20,6 +20,7 @@ import {
   INDICATOR_LEVEL,
   PLAYER_STATUS,
   PLAYER_STATUS_CONFIG,
+  PLAYER_STATUS_OPTIONS,
   createCleanAuditEntry,
   createEmptyFocusAuditState,
   getActiveRequestTimestamp,
@@ -71,7 +72,8 @@ export class FocusAuditTool {
     this.thresholds = normalizeAuditThresholds(game.settings.get(MODULE_ID, SETTINGS.focusAuditThresholds));
     game.socket.on(SOCKET_CHANNEL, this.receiveSocketMessage);
     window.setTimeout(() => {
-      if (isPrimaryModerator()) void this.setPlayerStatus(game.user.id, PLAYER_STATUS.playing);
+      if (isPrimaryModerator()) void this.markActivePlayersPlaying();
+      else this.requestOwnStatusChange(PLAYER_STATUS.playing);
       this.renderPlayersList();
     }, 250);
   }
@@ -111,15 +113,19 @@ export class FocusAuditTool {
     return normalizePlayerStatus(this.state.players[userId]?.selfStatus);
   }
 
-  getPlayerStatusOptions(selectedStatus = PLAYER_STATUS.unavailable) {
+  getPlayerStatusOptions(selectedStatus = PLAYER_STATUS.playing) {
     selectedStatus = normalizePlayerStatus(selectedStatus);
-    return Object.entries(PLAYER_STATUS_CONFIG).map(([value, config]) => ({
-      value,
-      label: localize(config.labelKey),
-      title: localize(config.descriptionKey),
-      indicator: config.indicator,
-      selected: value === selectedStatus ? "selected" : ""
-    }));
+    if (selectedStatus === PLAYER_STATUS.unknown) selectedStatus = PLAYER_STATUS.playing;
+    return PLAYER_STATUS_OPTIONS.map((value) => {
+      const config = PLAYER_STATUS_CONFIG[value];
+      return {
+        value,
+        label: localize(config.labelKey),
+        title: localize(config.descriptionKey),
+        indicator: config.indicator,
+        selected: value === selectedStatus ? "selected" : ""
+      };
+    });
   }
 
   renderPlayers(_app, html) {
@@ -269,6 +275,19 @@ export class FocusAuditTool {
     if (isPrimaryModerator()) void this.setPlayerStatus(user.id, PLAYER_STATUS.playing);
     this.renderPlayersList();
     this.auditWindow?.onAuditChanged();
+  }
+
+  async markActivePlayersPlaying() {
+    if (!isPrimaryModerator()) return;
+    await this.updateState((state) => {
+      for (const user of game.users) {
+        if (!user.active) continue;
+        const entry = state.players[user.id] ?? createCleanAuditEntry({}, Date.now());
+        if (normalizePlayerStatus(entry.selfStatus) !== PLAYER_STATUS.unknown) continue;
+        entry.selfStatus = PLAYER_STATUS.playing;
+        state.players[user.id] = entry;
+      }
+    });
   }
 
   handleChatMessageCreated(message, _options, userId) {
@@ -429,7 +448,7 @@ export class FocusAuditTool {
       const enabled = Boolean(entry.enabled);
       if (!enabled) return this.getDisabledAuditRow(user);
 
-      const selfStatus = normalizePlayerStatus(entry.selfStatus);
+      const selfStatus = user.active ? normalizePlayerStatus(entry.selfStatus) : PLAYER_STATUS.unknown;
       const statusConfig = PLAYER_STATUS_CONFIG[selfStatus];
       const selfStatusLabel = localize(statusConfig.labelKey);
       const selfStatusDescription = localize(statusConfig.descriptionKey);

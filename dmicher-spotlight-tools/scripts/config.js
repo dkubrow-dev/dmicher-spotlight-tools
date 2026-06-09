@@ -29,11 +29,17 @@ export const STOPWATCH_EVENTS = Object.freeze({
 });
 
 export const SETTINGS = Object.freeze({
+  theme: "theme",
   timers: "timers",
   timerAlertedExpirations: "timerAlertedExpirations",
   focusAuditState: "focusAuditState",
   focusAuditThresholds: "focusAuditThresholds",
   readinessState: "readinessState"
+});
+
+export const THEME = Object.freeze({
+  dark: "dark",
+  light: "light"
 });
 
 export const FLAGS = Object.freeze({

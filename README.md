@@ -130,7 +130,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 В открывшемся окне выберите примерную длительность перерыва и нажмите "Объявить перерыв".
 
-> **Обратите внимание**: время в таймере будет задано не точно на 5, 10, 15 и так далее минут, а до ближайшего времени с округлением до 5 минут вверх. Это означает, что при запуске таймера в 16:00:03 на 15 минут таймер перерыва предложит перерыв "до 16:20". Это сделано намеренно, чтобы выбранное время перерыва было гарантировано, а игрокам было удобнее ориентироваться по обычным часам, когда им следует вернуться к экрану.
+> **Обратите внимание**: время в таймере будет задано не точно на 5, 10, 15 и так далее минут. Перерывы на 5 и 10 минут округляются вверх до ближайшей полной минуты, а более длинные перерывы - до ближайшей отметки с шагом 3 минуты. Это означает, что при запуске таймера в 16:00:03 на 15 минут таймер перерыва предложит перерыв "до 16:18". Это сделано намеренно, чтобы выбранное время перерыва было гарантировано, а игрокам было удобнее ориентироваться по обычным часам, когда им следует вернуться к экрану.
 
 При объявлении перерыва:
 - будет создан таймер "Перерыв", который попадёт в таблицу "Текущие таймеры" в окне "Таймеры" (вы сможете управлять им оттуда);
@@ -298,7 +298,7 @@ Go to the "Spotlight Tools" section in the left canvas controls, then click "Bre
 
 In the window that opens, choose the approximate break duration and click "Announce break".
 
-> **Please note**: the timer time is not set to exactly 5, 10, 15, and so on minutes, but to the nearest time rounded up to 5 minutes. This means that if the timer is started at 16:00:03 for 15 minutes, the break timer will suggest a break "until 16:20". This is intentional: the selected break time is guaranteed, and it is easier for players to use the regular clock to know when they should return to the screen.
+> **Please note**: the timer time is not set to exactly 5, 10, 15, and so on minutes. Breaks of 5 and 10 minutes round up to the next full minute, while longer breaks round up to the next 3-minute mark. This means that if the timer is started at 16:00:03 for 15 minutes, the break timer will suggest a break "until 16:18". This is intentional: the selected break time is guaranteed, and it is easier for players to use the regular clock to know when they should return to the screen.
 
 When a break is announced:
 - a "Break" timer is created and added to the "Current timers" table in the "Timers" window (you can manage it from there);
