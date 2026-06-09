@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import { i18nKey, localize } from "../../utils.js";
 import { openFocusAuditSettings } from "./focus-audit-settings.js";
 import { AUDIT_METRICS } from "./focus-utils.js";
@@ -9,7 +10,7 @@ const FOCUS_AUDIT_TICK_MS = 5000;
 export class FocusAuditApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-focus-audit",
-    classes: ["dmicher-focus-audit"],
+    classes: getThemedWindowClasses("dmicher-focus-audit"),
     position: {
       width: 920,
       height: 520

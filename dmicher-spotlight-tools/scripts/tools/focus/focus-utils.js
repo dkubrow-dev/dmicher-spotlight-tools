@@ -1,4 +1,5 @@
 export const PLAYER_STATUS = Object.freeze({
+  unknown: "unknown",
   playing: "playing",
   listening: "listening",
   away: "away",
@@ -6,6 +7,11 @@ export const PLAYER_STATUS = Object.freeze({
 });
 
 export const PLAYER_STATUS_CONFIG = Object.freeze({
+  [PLAYER_STATUS.unknown]: Object.freeze({
+    labelKey: "Focus.Status.Unknown.Label",
+    descriptionKey: "Focus.Status.Unknown.Description",
+    indicator: "muted"
+  }),
   [PLAYER_STATUS.playing]: Object.freeze({
     labelKey: "Focus.Status.Playing.Label",
     descriptionKey: "Focus.Status.Playing.Description",
@@ -27,6 +33,13 @@ export const PLAYER_STATUS_CONFIG = Object.freeze({
     indicator: "deadline"
   })
 });
+
+export const PLAYER_STATUS_OPTIONS = Object.freeze([
+  PLAYER_STATUS.playing,
+  PLAYER_STATUS.listening,
+  PLAYER_STATUS.away,
+  PLAYER_STATUS.unavailable
+]);
 
 export const INDICATOR_LEVEL = Object.freeze({
   good: "good",
@@ -85,7 +98,7 @@ export function createEmptyFocusAuditState() {
 }
 
 export function normalizePlayerStatus(status) {
-  return Object.hasOwn(PLAYER_STATUS_CONFIG, status) ? status : PLAYER_STATUS.unavailable;
+  return Object.hasOwn(PLAYER_STATUS_CONFIG, status) ? status : PLAYER_STATUS.unknown;
 }
 
 export function normalizeFocusAuditState(rawState) {

@@ -1,4 +1,5 @@
 import { MODULE_ID, TIMER_SOUND_SOURCES } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import {
   TIMER_MODE,
   TIMER_SOUND,
@@ -18,7 +19,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export class TimerManagerApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-timer-manager",
-    classes: ["dmicher-timer-manager"],
+    classes: getThemedWindowClasses("dmicher-timer-manager"),
     position: {
       width: 900,
       height: "auto"

@@ -11,6 +11,7 @@ import { RequestTool } from "./tools/requests/request-tool.js";
 import { SpotlightControls } from "./tools/spotlight-controls.js";
 import { StopwatchTool } from "./tools/stopwatch/stopwatch-tool.js";
 import { TimerTool } from "./tools/timers/timer-tool.js";
+import { applySpotlightTheme, registerThemeSetting } from "./theme.js";
 
 const focusAuditTool = new FocusAuditTool();
 const requestTool = new RequestTool({ focusAuditTool });
@@ -28,6 +29,7 @@ const spotlightControls = new SpotlightControls({
 });
 
 Hooks.once("init", () => {
+  registerThemeSetting();
   focusAuditTool.registerSettings();
   readinessTool.registerSettings();
   registerRequestSettings({
@@ -60,6 +62,7 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", () => {
+  applySpotlightTheme();
   focusAuditTool.activate();
   requestTool.activate();
   readinessTool.activate();

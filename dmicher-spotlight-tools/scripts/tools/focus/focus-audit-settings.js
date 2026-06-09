@@ -1,4 +1,5 @@
 import { MODULE_ID, SETTINGS } from "../../config.js";
+import { getThemedWindowClasses } from "../../theme.js";
 import { i18nKey, localize } from "../../utils.js";
 import {
   AUDIT_METRICS,
@@ -12,7 +13,7 @@ let settingsWindow;
 class FocusAuditSettingsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-focus-audit-settings",
-    classes: ["dmicher-focus-audit-settings"],
+    classes: getThemedWindowClasses("dmicher-focus-audit-settings"),
     position: {
       width: 700,
       height: "auto"
