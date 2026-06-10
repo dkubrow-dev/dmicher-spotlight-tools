@@ -54,6 +54,7 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
       label: option.label,
       enabled: option.enabled !== false
     })) : [];
+    const participantRows = template ? this.pollTool.getParticipantRows(template) : [];
 
     return {
       ...context,
@@ -62,9 +63,11 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
       hasActivePoll: Boolean(this.pollTool.state.activePoll),
       usesOptions,
       optionsRows,
-      timerSoundChoices: this.pollTool.getTimerSoundChoices(template?.timerSound),
       typeLabel: template ? localize(POLL_TYPE_CONFIG[template.type].labelKey) : "",
-      selectedCount: this.pollTool.getParticipantRows().filter((row) => row.selected).length,
+      selectedCount: participantRows.filter((row) => row.selected).length,
+      participantRows,
+      timerTimeText: template?.timerTime ?? "",
+      timerSoundLabel: this.pollTool.getTimerSoundLabel(template?.timerSound),
       keys: {
         missing: i18nKey("Polls.Launch.Missing"),
         heading: i18nKey("Polls.Launch.Heading"),
@@ -78,9 +81,10 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
         noOptions: i18nKey("Polls.Launch.NoOptions"),
         timerEnabled: i18nKey("Polls.Launch.TimerEnabled"),
         timerBlock: i18nKey("Polls.Launch.TimerBlock"),
-        timerMinutes: i18nKey("Polls.Launch.TimerMinutes"),
+        timerTime: i18nKey("Polls.Launch.TimerTime"),
         timerSound: i18nKey("Polls.Launch.TimerSound"),
-        minutesUnit: i18nKey("Focus.Settings.Minutes"),
+        participants: i18nKey("Polls.Launch.Participants"),
+        participantsHint: i18nKey("Polls.Launch.ParticipantsHint"),
         clearActive: i18nKey("Polls.Launch.ClearActive"),
         cancel: i18nKey("Polls.Launch.Cancel"),
         start: i18nKey("Polls.Launch.Start")
@@ -112,15 +116,21 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
     this.element.querySelector("[data-poll-launch-timer-enabled]")?.addEventListener("change", () => {
       this.refreshTimerBlock();
     });
+    for (const checkbox of this.element.querySelectorAll("[data-poll-launch-participant]")) {
+      checkbox.addEventListener("change", () => this.refreshParticipantCount());
+    }
   }
 
   refreshTimerBlock() {
     const enabled = this.element.querySelector("[data-poll-launch-timer-enabled]")?.checked ?? false;
-    const block = this.element.querySelector("[data-poll-launch-timer-block]");
-    if (block) block.classList.toggle("is-disabled", !enabled);
-    for (const input of this.element.querySelectorAll("[data-poll-launch-timer-field]")) {
-      input.disabled = !enabled;
-    }
+    this.element.querySelector("[data-poll-launch-timer-block]")?.classList.toggle("is-disabled", !enabled);
+  }
+
+  refreshParticipantCount() {
+    const count = Array.from(this.element.querySelectorAll("[data-poll-launch-participant]"))
+      .filter((input) => input.checked).length;
+    const counter = this.element.querySelector("[data-poll-launch-selected-count]");
+    if (counter) counter.textContent = String(count);
   }
 
   async handleSubmit(event) {
@@ -135,13 +145,14 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
         label: row.querySelector("[data-poll-launch-option-label]")?.value,
         enabled: row.querySelector("[data-poll-launch-option-enabled]")?.checked ?? true
       }));
+      const participants = {};
+      for (const checkbox of form.querySelectorAll("[data-poll-launch-participant]")) {
+        if (checkbox.checked) participants[checkbox.dataset.userId] = true;
+      }
 
       const run = await this.pollTool.launchPoll(this.templateId, {
-        name: form.elements.namedItem("name")?.value,
-        question: form.elements.namedItem("question")?.value,
         timerEnabled: form.elements.namedItem("timerEnabled")?.checked ?? false,
-        timerMinutes: form.elements.namedItem("timerMinutes")?.value,
-        timerSound: form.elements.namedItem("timerSound")?.value,
+        participants,
         options
       });
       if (run) await this.close();

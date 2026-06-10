@@ -35,6 +35,8 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     super(options);
     this.pollTool = pollTool;
     this.editTemplateId = "";
+    this.formVisible = false;
+    this.focusFormOnRender = false;
   }
 
   get title() {
@@ -47,6 +49,8 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
       ? this.pollTool.getTemplate(this.editTemplateId) ?? this.pollTool.getBlankTemplateDraft()
       : this.pollTool.getBlankTemplateDraft();
     const optionRows = this.prepareOptionRows(draft);
+    const participants = this.pollTool.getParticipantRows(draft);
+    const templates = this.pollTool.getTemplateRows();
     const typeOptions = Object.values(POLL_TYPE).map((type) => ({
       value: type,
       label: localize(POLL_TYPE_CONFIG[type].labelKey),
@@ -57,12 +61,13 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
       ...context,
       draft,
       editing: Boolean(this.editTemplateId),
+      formVisible: this.formVisible,
       typeOptions,
       timerSoundChoices: this.pollTool.getTimerSoundChoices(draft.timerSound),
       optionRows,
-      participants: this.pollTool.getParticipantRows(),
-      templates: this.pollTool.getTemplateRows(),
-      hasTemplates: this.pollTool.getTemplateRows().length > 0,
+      participants,
+      templates,
+      hasTemplates: templates.length > 0,
       hasActivePoll: Boolean(this.pollTool.state.activePoll),
       labels: {
         buttons: localize(POLL_TYPE_CONFIG.buttons.labelKey),
@@ -80,16 +85,20 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
         textNoOptions: i18nKey("Polls.Manager.TextNoOptions"),
         timerEnabled: i18nKey("Polls.Manager.TimerEnabled"),
         timerBlock: i18nKey("Polls.Manager.TimerBlock"),
-        timerMinutes: i18nKey("Polls.Manager.TimerMinutes"),
+        timerTime: i18nKey("Polls.Manager.TimerTime"),
+        timerTimePlaceholder: i18nKey("Timers.Manager.TimePlaceholder"),
         timerSound: i18nKey("Polls.Manager.TimerSound"),
-        minutesUnit: i18nKey("Focus.Settings.Minutes"),
         participants: i18nKey("Polls.Manager.Participants"),
         participantsHint: i18nKey("Polls.Manager.ParticipantsHint"),
         save: i18nKey(this.editTemplateId ? "Polls.Manager.SaveChanges" : "Polls.Manager.Create"),
-        reset: i18nKey("Polls.Manager.Reset"),
+        newTemplate: i18nKey("Polls.Manager.NewTemplate"),
+        cancelEdit: i18nKey("Polls.Manager.CancelEdit"),
         clearActive: i18nKey("Polls.Manager.ClearActive"),
         tableTitle: i18nKey("Polls.Manager.TableTitle"),
+        restoreDefaults: i18nKey("Polls.Manager.RestoreDefaults"),
+        restoreDefaultsHint: i18nKey("Polls.Manager.RestoreDefaultsHint"),
         empty: i18nKey("Polls.Manager.Empty"),
+        columnMacro: i18nKey("Polls.Manager.Columns.Macro"),
         columnName: i18nKey("Polls.Manager.Columns.Name"),
         columnType: i18nKey("Polls.Manager.Columns.Type"),
         columnLastResult: i18nKey("Polls.Manager.Columns.LastResult"),
@@ -117,10 +126,10 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
   async _onRender(context, options) {
     await super._onRender(context, options);
     this.activateForm();
-    this.activateParticipants();
     this.activateTable();
     this.refreshOptionVisibility();
     this.refreshTimerBlock();
+    if (this.focusFormOnRender) this.focusTemplateForm();
   }
 
   async _onClose(options) {
@@ -130,30 +139,30 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
 
   activateForm() {
     const form = this.element.querySelector("[data-poll-template-form]");
-    if (!form) return;
+    if (form) {
+      form.addEventListener("submit", (event) => void this.handleSubmit(event));
+      form.querySelector("[data-poll-action='cancel-form']")?.addEventListener("click", () => {
+        this.editTemplateId = "";
+        this.formVisible = false;
+        void this.render({ parts: ["main"] });
+      });
+      form.querySelector("[data-poll-type-select]")?.addEventListener("change", () => {
+        this.refreshOptionVisibility();
+      });
+      form.querySelector("[data-poll-timer-enabled]")?.addEventListener("change", () => {
+        this.refreshTimerBlock();
+      });
+    }
 
-    form.addEventListener("submit", (event) => void this.handleSubmit(event));
-    form.querySelector("[data-poll-action='reset-form']")?.addEventListener("click", () => {
-      this.editTemplateId = "";
-      void this.render({ parts: ["main"] });
-    });
-    form.querySelector("[data-poll-type-select]")?.addEventListener("change", () => {
-      this.refreshOptionVisibility();
-    });
-    form.querySelector("[data-poll-timer-enabled]")?.addEventListener("change", () => {
-      this.refreshTimerBlock();
+    this.element.querySelector("[data-poll-action='new-template']")?.addEventListener("click", () => {
+      this.openTemplateForm("");
     });
     this.element.querySelector("[data-poll-action='clear-active']")?.addEventListener("click", () => {
       void this.pollTool.clearActivePoll();
     });
-  }
-
-  activateParticipants() {
-    for (const checkbox of this.element.querySelectorAll("[data-poll-participant]")) {
-      checkbox.addEventListener("change", () => {
-        void this.pollTool.setSelected(checkbox.dataset.userId, checkbox.checked);
-      });
-    }
+    this.element.querySelector("[data-poll-action='restore-defaults']")?.addEventListener("click", () => {
+      void this.pollTool.restoreStarterTemplates();
+    });
   }
 
   activateTable() {
@@ -162,8 +171,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
         const templateId = button.dataset.templateId;
         const action = button.dataset.pollTemplateAction;
         if (action === "edit") {
-          this.editTemplateId = templateId;
-          void this.render({ parts: ["main"] });
+          this.openTemplateForm(templateId);
         } else if (action === "start") {
           void this.pollTool.startPoll(templateId);
         } else if (action === "results") {
@@ -173,6 +181,29 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
         }
       });
     }
+
+    for (const image of this.element.querySelectorAll("[data-poll-template-drag]")) {
+      image.addEventListener("dragstart", (event) => {
+        this.pollTool.onTemplateDragStart(event);
+      });
+    }
+  }
+
+  openTemplateForm(templateId) {
+    this.editTemplateId = String(templateId ?? "");
+    this.formVisible = true;
+    this.focusFormOnRender = true;
+    void this.render({ parts: ["main"] });
+  }
+
+  focusTemplateForm() {
+    this.focusFormOnRender = false;
+    requestAnimationFrame(() => {
+      const block = this.element.querySelector("[data-poll-template-form-block]");
+      if (!block) return;
+      block.scrollIntoView({ block: "start", behavior: "smooth" });
+      block.querySelector("input[name='name'], input[name='question'], select, button")?.focus({ preventScroll: true });
+    });
   }
 
   refreshOptionVisibility() {
@@ -219,18 +250,24 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
           enabled: row.querySelector("[data-poll-option-enabled]")?.checked ?? true
         }))
         .filter((option) => String(option.label ?? "").trim());
+      const participants = {};
+      for (const checkbox of form.querySelectorAll("[data-poll-template-participant]")) {
+        if (checkbox.checked) participants[checkbox.dataset.userId] = true;
+      }
 
-      const template = await this.pollTool.saveTemplate({
+      await this.pollTool.saveTemplate({
         id: this.editTemplateId,
         name: form.elements.namedItem("name")?.value,
         question: form.elements.namedItem("question")?.value,
         type,
         timerEnabled: form.elements.namedItem("timerEnabled")?.checked ?? false,
-        timerMinutes: form.elements.namedItem("timerMinutes")?.value,
+        timerTime: form.elements.namedItem("timerTime")?.value,
         timerSound: form.elements.namedItem("timerSound")?.value,
+        participants,
         options
       });
-      this.editTemplateId = template.id;
+      this.editTemplateId = "";
+      this.formVisible = false;
       await this.render({ parts: ["main"] });
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to save poll template`, error);

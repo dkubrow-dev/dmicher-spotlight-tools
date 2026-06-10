@@ -1,12 +1,11 @@
 import { I18N_PREFIX } from "../../config.js";
-import { TIMER_SOUND } from "../timers/timer-utils.js";
+import { parseDurationInput, TIMER_SOUND } from "../timers/timer-utils.js";
 
-export const POLL_DEFAULTS_VERSION = 1;
+export const POLL_DEFAULTS_VERSION = 2;
 export const POLL_MAX_BUTTON_OPTIONS = 4;
 export const POLL_MAX_TABLE_OPTIONS = 12;
 export const POLL_MAX_TEXT_LENGTH = 500;
-export const POLL_DEFAULT_TIMER_MINUTES = 1;
-export const POLL_MAX_TIMER_MINUTES = 180;
+export const POLL_DEFAULT_TIMER_TIME = "00:01:00";
 
 export const POLL_TYPE = Object.freeze({
   buttons: "buttons",
@@ -110,10 +109,49 @@ function trimText(value, maxLength) {
   return String(value ?? "").trim().slice(0, maxLength);
 }
 
-export function normalizePollTimerMinutes(minutes) {
+function formatDurationSeconds(totalSeconds) {
+  const seconds = Math.max(1, Math.round(Number(totalSeconds) || 0));
+  const hours = Math.floor(seconds / 3600);
+  const remainingSeconds = seconds % 3600;
+  const minutes = Math.floor(remainingSeconds / 60);
+  const lastSeconds = remainingSeconds % 60;
+  return [hours, minutes, lastSeconds].map((part) => String(part).padStart(2, "0")).join(":");
+}
+
+function timerMinutesToTime(minutes) {
   const value = Number(minutes);
-  if (!Number.isFinite(value)) return POLL_DEFAULT_TIMER_MINUTES;
-  return Math.max(1, Math.min(POLL_MAX_TIMER_MINUTES, Math.round(value)));
+  if (!Number.isFinite(value) || value <= 0) return POLL_DEFAULT_TIMER_TIME;
+  return formatDurationSeconds(value * 60);
+}
+
+function getPlayerUsers() {
+  try {
+    const assistantRole = Number(CONST?.USER_ROLES?.ASSISTANT ?? 3);
+    const players = Array.from(game?.users ?? []).filter((user) => {
+      return user?.id && user?.name && Number(user?.role ?? 0) < assistantRole;
+    });
+    if (players.length) return players;
+    return Array.from(game?.users ?? []).filter((user) => user?.id && user?.name);
+  } catch (_error) {
+    return [];
+  }
+}
+
+export function normalizePollTimerTime(value, fallbackValue = POLL_DEFAULT_TIMER_TIME) {
+  const text = String(value ?? "").trim();
+  if (parseDurationInput(text)) return text;
+
+  const fallback = String(fallbackValue ?? "").trim();
+  if (parseDurationInput(fallback)) return fallback;
+  return POLL_DEFAULT_TIMER_TIME;
+}
+
+export function isPollTimerTimeValid(value) {
+  return Boolean(parseDurationInput(String(value ?? "").trim()));
+}
+
+export function getPollTimerDurationMs(value) {
+  return parseDurationInput(normalizePollTimerTime(value));
 }
 
 export function normalizePollTimerSound(sound) {
@@ -140,50 +178,51 @@ export function getPollTypeMaxOptions(type) {
   return POLL_TYPE_CONFIG[normalizePollType(type)].maxOptions;
 }
 
-export function createDefaultReadinessTemplate(now = Date.now()) {
-  return {
-    id: "readiness",
-    preset: POLL_PRESET.readiness,
-    name: safeLocalize("Polls.Presets.Readiness.Name", "Readiness Check"),
-    question: safeLocalize("Polls.Presets.Readiness.Question", "Are you ready to continue?"),
-    type: POLL_TYPE.buttons,
-    options: [
-      {
-        id: "ready",
-        label: safeLocalize("Polls.Presets.Readiness.Options.Ready", "Ready"),
-        icon: "fa-solid fa-check",
-        tone: "good",
-        enabled: true
-      },
-      {
-        id: "notReady",
-        label: safeLocalize("Polls.Presets.Readiness.Options.NotReady", "Not ready"),
-        icon: "fa-solid fa-xmark",
-        tone: "bad",
-        enabled: true
-      }
-    ],
-    timerEnabled: false,
-    timerMinutes: POLL_DEFAULT_TIMER_MINUTES,
-    timerSound: TIMER_SOUND.none,
-    createdAt: now,
-    updatedAt: now
-  };
+export function getDefaultPollParticipants() {
+  const participants = {};
+  for (const user of getPlayerUsers()) {
+    participants[user.id] = true;
+  }
+  return participants;
 }
 
-export function getBestPlayerOptions() {
-  let users = [];
-  try {
-    users = Array.from(game.users ?? []).filter((user) => {
-      return Number(user?.role ?? 0) < Number(CONST.USER_ROLES.ASSISTANT);
-    });
-    if (!users.length) users = Array.from(game.users ?? []);
-  } catch (_error) {
-    users = [];
-  }
+export function normalizePollParticipants(rawParticipants, fallbackParticipants = null) {
+  const source = rawParticipants && (typeof rawParticipants === "object")
+    ? rawParticipants
+    : fallbackParticipants && (typeof fallbackParticipants === "object")
+      ? fallbackParticipants
+      : getDefaultPollParticipants();
 
-  const options = users
-    .filter((user) => user?.id && user?.name)
+  const participants = {};
+  for (const [userId, value] of Object.entries(source ?? {})) {
+    const id = trimText(userId, 80);
+    if (id && value !== false) participants[id] = true;
+  }
+  return participants;
+}
+
+function buildReadinessOptions(language) {
+  const isRu = language === "ru";
+  return [
+    {
+      id: "ready",
+      label: isRu ? "Готов" : "Ready",
+      icon: "fa-solid fa-check",
+      tone: "good",
+      enabled: true
+    },
+    {
+      id: "notReady",
+      label: isRu ? "Не готов" : "Not ready",
+      icon: "fa-solid fa-xmark",
+      tone: "bad",
+      enabled: true
+    }
+  ];
+}
+
+export function getBestPlayerOptions(fallbackLabel = "Player 1") {
+  const options = getPlayerUsers()
     .slice(0, POLL_MAX_TABLE_OPTIONS)
     .map((user) => ({
       id: String(user.id),
@@ -195,49 +234,85 @@ export function getBestPlayerOptions() {
   return [
     {
       id: "player-1",
-      label: safeFormat("Polls.DefaultOption", { number: 1 }, "Option 1"),
+      label: fallbackLabel,
       enabled: true
     }
   ];
 }
 
-export function createDefaultBestPlayerTemplate(now = Date.now()) {
+function createStarterTemplate(config, index, now, { uniqueIds = false } = {}) {
+  const timestamp = now + index;
   return {
-    id: "best-player",
-    preset: POLL_PRESET.bestPlayer,
-    name: safeLocalize("Polls.Presets.BestPlayer.Name", "Best Player"),
-    question: safeLocalize("Polls.Presets.BestPlayer.Question", "Who was the best player today?"),
-    type: POLL_TYPE.radio,
-    options: getBestPlayerOptions(),
+    ...config,
+    id: uniqueIds ? randomId("starter-poll") : config.id,
+    options: foundry.utils.deepClone(config.options ?? []),
+    participants: getDefaultPollParticipants(),
     timerEnabled: false,
-    timerMinutes: POLL_DEFAULT_TIMER_MINUTES,
+    timerTime: POLL_DEFAULT_TIMER_TIME,
     timerSound: TIMER_SOUND.none,
-    createdAt: now,
-    updatedAt: now
+    createdAt: timestamp,
+    updatedAt: timestamp
   };
 }
 
-export function createDefaultPollTemplates(now = Date.now()) {
-  return [
-    createDefaultReadinessTemplate(now),
-    createDefaultBestPlayerTemplate(now)
+export function createStarterPollTemplates(now = Date.now(), options = {}) {
+  const configs = [
+    {
+      id: "readiness-ru",
+      preset: POLL_PRESET.readiness,
+      name: "Проверка готовности",
+      question: "Вы готовы продолжить?",
+      type: POLL_TYPE.buttons,
+      options: buildReadinessOptions("ru")
+    },
+    {
+      id: "best-player-ru",
+      preset: POLL_PRESET.bestPlayer,
+      name: "Лучший игрок",
+      question: "Кто сегодня был лучшим игроком?",
+      type: POLL_TYPE.radio,
+      options: getBestPlayerOptions("Игрок 1")
+    },
+    {
+      id: "readiness-en",
+      preset: POLL_PRESET.readiness,
+      name: "Readiness Check",
+      question: "Are you ready to continue?",
+      type: POLL_TYPE.buttons,
+      options: buildReadinessOptions("en")
+    },
+    {
+      id: "best-player-en",
+      preset: POLL_PRESET.bestPlayer,
+      name: "Best Player",
+      question: "Who was the best player today?",
+      type: POLL_TYPE.radio,
+      options: getBestPlayerOptions("Player 1")
+    }
   ];
+  return configs.map((config, index) => createStarterTemplate(config, index, now, options));
+}
+
+export function createDefaultReadinessTemplate(now = Date.now()) {
+  return createStarterPollTemplates(now)[0];
+}
+
+export function createDefaultBestPlayerTemplate(now = Date.now()) {
+  return createStarterPollTemplates(now)[1];
+}
+
+export function createDefaultPollTemplates(now = Date.now()) {
+  return createStarterPollTemplates(now);
 }
 
 export function createEmptyPollState() {
-  const state = {
-    defaultsVersion: POLL_DEFAULTS_VERSION,
+  return {
+    defaultsVersion: 0,
     selected: {},
     templates: {},
     activePoll: null,
     lastRuns: {}
   };
-
-  for (const template of createDefaultPollTemplates()) {
-    state.templates[template.id] = template;
-  }
-
-  return state;
 }
 
 export function normalizePollOptions(rawOptions, type) {
@@ -273,7 +348,7 @@ export function normalizePollOptions(rawOptions, type) {
   return options;
 }
 
-export function normalizePollTemplate(rawTemplate, fallbackId = "") {
+export function normalizePollTemplate(rawTemplate, fallbackId = "", fallbackParticipants = null) {
   const template = rawTemplate && (typeof rawTemplate === "object") ? rawTemplate : {};
   const id = trimText(template.id || fallbackId || randomId("template"), 80);
   const type = normalizePollType(template.type);
@@ -281,6 +356,7 @@ export function normalizePollTemplate(rawTemplate, fallbackId = "") {
     || safeLocalize("Polls.Manager.Untitled", "Untitled poll");
   const question = trimText(template.question, MAX_TEMPLATE_QUESTION_LENGTH)
     || safeLocalize("Polls.Manager.DefaultQuestion", "Choose an answer.");
+  const fallbackTimerTime = timerMinutesToTime(template.timerMinutes);
 
   return {
     id,
@@ -289,8 +365,9 @@ export function normalizePollTemplate(rawTemplate, fallbackId = "") {
     question,
     type,
     options: normalizePollOptions(template.options, type),
+    participants: normalizePollParticipants(template.participants, fallbackParticipants),
     timerEnabled: Boolean(template.timerEnabled),
-    timerMinutes: normalizePollTimerMinutes(template.timerMinutes),
+    timerTime: normalizePollTimerTime(template.timerTime, fallbackTimerTime),
     timerSound: normalizePollTimerSound(template.timerSound),
     createdAt: Number(template.createdAt) || Date.now(),
     updatedAt: Number(template.updatedAt) || Date.now()
@@ -306,15 +383,16 @@ export function createBlankPollTemplateDraft() {
     type: POLL_TYPE.buttons,
     options: [
       {
-      id: "option-1",
-      label: safeFormat("Polls.DefaultOption", { number: 1 }, "Option 1"),
-      icon: "",
-      tone: "",
-      enabled: true
+        id: "option-1",
+        label: safeFormat("Polls.DefaultOption", { number: 1 }, "Option 1"),
+        icon: "",
+        tone: "",
+        enabled: true
       }
     ],
+    participants: getDefaultPollParticipants(),
     timerEnabled: false,
-    timerMinutes: POLL_DEFAULT_TIMER_MINUTES,
+    timerTime: POLL_DEFAULT_TIMER_TIME,
     timerSound: TIMER_SOUND.none,
     createdAt: 0,
     updatedAt: 0
@@ -357,13 +435,6 @@ export function normalizePollRun(rawRun) {
   const run = rawRun && (typeof rawRun === "object") ? rawRun : null;
   if (!run) return null;
 
-  const template = normalizePollTemplate({
-    id: run.templateId || run.id,
-    name: run.name,
-    question: run.question,
-    type: run.type,
-    options: run.options
-  });
   const id = trimText(run.id, 80);
   const templateId = trimText(run.templateId, 80);
   if (!id || !templateId) return null;
@@ -372,6 +443,21 @@ export function normalizePollRun(rawRun) {
   for (const [userId, value] of Object.entries(run.selected ?? {})) {
     selected[userId] = Boolean(value);
   }
+
+  const template = normalizePollTemplate({
+    id: run.templateId || run.id,
+    name: run.name,
+    question: run.question,
+    type: run.type,
+    options: run.options,
+    participants: selected,
+    timerEnabled: run.timerEnabled,
+    timerTime: run.timerTime,
+    timerMinutes: run.timerMinutes,
+    timerSound: run.timerSound,
+    createdAt: run.requestedAt,
+    updatedAt: run.requestedAt
+  }, templateId, selected);
 
   const responses = {};
   for (const [userId, response] of Object.entries(run.responses ?? {})) {
@@ -396,7 +482,7 @@ export function normalizePollRun(rawRun) {
     requestedBy: trimText(run.requestedBy, 80),
     requestedByName: trimText(run.requestedByName, MAX_TEMPLATE_NAME_LENGTH),
     timerEnabled: Boolean(run.timerEnabled),
-    timerMinutes: normalizePollTimerMinutes(run.timerMinutes),
+    timerTime: normalizePollTimerTime(run.timerTime, timerMinutesToTime(run.timerMinutes)),
     timerSound: normalizePollTimerSound(run.timerSound),
     timerId: trimText(run.timerId, 80),
     timerStartedAt: Number(run.timerStartedAt) || 0,
@@ -420,16 +506,19 @@ export function normalizePollState(rawState) {
   }
 
   for (const [templateId, rawTemplate] of Object.entries(source.templates ?? {})) {
-    const template = normalizePollTemplate(rawTemplate, templateId);
+    const hasTemplateParticipants = rawTemplate?.participants && (typeof rawTemplate.participants === "object");
+    const hasSelectedFallback = Object.values(state.selected).some(Boolean);
+    const fallbackParticipants = hasTemplateParticipants || !hasSelectedFallback ? null : state.selected;
+    const template = normalizePollTemplate(rawTemplate, templateId, fallbackParticipants);
     state.templates[template.id] = template;
   }
 
-  if (state.defaultsVersion < POLL_DEFAULTS_VERSION) {
-    for (const template of createDefaultPollTemplates()) {
-      if (!state.templates[template.id]) state.templates[template.id] = template;
+  if (!Object.keys(state.templates).length && state.defaultsVersion < POLL_DEFAULTS_VERSION) {
+    for (const template of createStarterPollTemplates()) {
+      state.templates[template.id] = template;
     }
-    state.defaultsVersion = POLL_DEFAULTS_VERSION;
   }
+  if (state.defaultsVersion < POLL_DEFAULTS_VERSION) state.defaultsVersion = POLL_DEFAULTS_VERSION;
 
   for (const [templateId, rawRun] of Object.entries(source.lastRuns ?? {})) {
     const run = normalizePollRun(rawRun);
@@ -446,10 +535,10 @@ export function clonePollState(state) {
 
 export function listPollTemplates(state) {
   return Object.values(normalizePollState(state).templates).sort((left, right) => {
-    const leftUpdated = Number(left.updatedAt) || 0;
-    const rightUpdated = Number(right.updatedAt) || 0;
-    if (leftUpdated !== rightUpdated) return rightUpdated - leftUpdated;
-    return left.name.localeCompare(right.name, game.i18n.lang);
+    const leftCreated = Number(left.createdAt) || 0;
+    const rightCreated = Number(right.createdAt) || 0;
+    if (leftCreated !== rightCreated) return leftCreated - rightCreated;
+    return left.name.localeCompare(right.name, game?.i18n?.lang);
   });
 }
 

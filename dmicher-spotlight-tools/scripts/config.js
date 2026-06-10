@@ -53,6 +53,7 @@ export const FLAGS = Object.freeze({
   readinessResult: "readinessResult",
   pollRequest: "pollRequest",
   pollResult: "pollResult",
+  pollMacro: "pollMacro",
   macro: "requestMacro"
 });
 

@@ -51,6 +51,7 @@ Hooks.once("init", () => {
     openTimers: () => timerTool.openManager(),
     openTimer: (timerId) => timerTool.openTimerWindow(timerId, { force: true }),
     openPolls: () => pollTool.openManager(),
+    openPollLaunch: (templateId) => pollTool.openLaunchWindow(templateId),
     openReadiness: () => pollTool.openManager(),
     openStopwatch: () => stopwatchTool.openWindow(),
     recordStopwatchEvent: (eventType) => stopwatchTool.recordEvent(eventType),

@@ -10,6 +10,7 @@ import {
   isPrimaryModerator,
   localize
 } from "../../utils.js";
+import { createOrUpdateHotbarMacro, isHotbarDrop, setHotbarDragData } from "../hotbar-macro.js";
 import {
   TIMER_DISPLAY_STYLE,
   TIMER_MODE,
@@ -27,19 +28,26 @@ import {
   clonePollState,
   createBlankPollTemplateDraft,
   createEmptyPollState,
+  createStarterPollTemplates,
   getPollOptionLabel,
   getPollOptionNumber,
+  getPollTimerDurationMs,
   getPollTypeMaxOptions,
+  isPollTimerTimeValid,
+  listPollTemplates,
   normalizePollResponse,
   normalizePollResponseStatus,
   normalizePollResponseValue,
+  normalizePollParticipants,
   normalizePollState,
   normalizePollTemplate,
-  normalizePollTimerMinutes,
   normalizePollTimerSound,
+  normalizePollTimerTime,
   normalizePollType,
   pollTypeUsesOptions
 } from "./poll-utils.js";
+
+const POLL_MACRO_IMAGE = `modules/${MODULE_ID}/assets/polls/macros-icon.webp`;
 
 const POLL_CARD_STYLES = Object.freeze({
   "align-items": "stretch",
@@ -106,6 +114,7 @@ export class PollTool {
     this.resultsTemplateId = "";
     this.renderChatMessage = this.renderChatMessage.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
+    this.handleHotbarDrop = this.handleHotbarDrop.bind(this);
   }
 
   registerSettings() {
@@ -120,6 +129,7 @@ export class PollTool {
 
   registerHooks() {
     Hooks.on("renderChatMessageHTML", this.renderChatMessage);
+    Hooks.on("hotbarDrop", this.handleHotbarDrop);
   }
 
   activate() {
@@ -231,12 +241,7 @@ export class PollTool {
   }
 
   getTemplateRows() {
-    return Object.values(this.state.templates).sort((left, right) => {
-      const leftPreset = left.preset === "custom" ? 1 : 0;
-      const rightPreset = right.preset === "custom" ? 1 : 0;
-      if (leftPreset !== rightPreset) return leftPreset - rightPreset;
-      return left.name.localeCompare(right.name, game.i18n.lang);
-    }).map((template) => {
+    return listPollTemplates(this.state).map((template) => {
       const lastRun = this.getLastRun(template.id);
       const answered = lastRun ? Object.values(lastRun.responses)
         .filter((response) => response.status === POLL_RESPONSE_STATUS.answered).length : 0;
@@ -245,6 +250,8 @@ export class PollTool {
         id: template.id,
         name: template.name,
         question: template.question,
+        macroImage: POLL_MACRO_IMAGE,
+        macroTitle: format("Polls.Hotbar.DragTitle", { name: template.name }),
         typeLabel: localize(POLL_TYPE_CONFIG[template.type].labelKey),
         hasResults: Boolean(lastRun),
         resultSummary: lastRun
@@ -255,13 +262,16 @@ export class PollTool {
     });
   }
 
-  getParticipantRows() {
+  getParticipantRows(template = null, { selectedOnly = false } = {}) {
+    const selected = template?.participants ?? this.state.selected;
     return Array.from(game.users).map((user) => ({
       userId: user.id,
       name: user.name,
       active: user.active,
-      selected: Boolean(this.state.selected[user.id])
-    })).sort((left, right) => {
+      selected: Boolean(selected[user.id])
+    })).filter((row) => {
+      return !selectedOnly || row.selected;
+    }).sort((left, right) => {
       if (left.selected !== right.selected) return left.selected ? -1 : 1;
       if (left.active !== right.active) return left.active ? -1 : 1;
       return left.name.localeCompare(right.name, game.i18n.lang);
@@ -281,6 +291,11 @@ export class PollTool {
     }));
   }
 
+  getTimerSoundLabel(sound = TIMER_SOUND.none) {
+    return this.getTimerSoundChoices(sound).find((choice) => choice.value === normalizePollTimerSound(sound))?.label
+      ?? localize("Timers.Sound.None");
+  }
+
   async setSelected(userId, selected) {
     if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
     await this.updateState((state) => {
@@ -294,17 +309,23 @@ export class PollTool {
     const now = Date.now();
     const existing = input.id ? this.getTemplate(input.id) : null;
     const type = normalizePollType(input.type);
+    const timerEnabled = Boolean(input.timerEnabled);
     const maxOptions = getPollTypeMaxOptions(type);
     const rawOptions = (input.options ?? []).slice(0, maxOptions)
       .filter((option) => String(option?.label ?? "").trim());
     if (pollTypeUsesOptions(type) && !rawOptions.length) {
       throw new Error(localize("Polls.Errors.OptionsRequired"));
     }
+    if (timerEnabled && !isPollTimerTimeValid(input.timerTime)) {
+      throw new Error(localize("Timers.Errors.BadTime"));
+    }
 
     const options = pollTypeUsesOptions(type)
       ? rawOptions.map((option, index) => ({
         id: existing?.options?.[index]?.id || `option-${index + 1}`,
         label: option.label,
+        icon: existing?.options?.[index]?.icon ?? "",
+        tone: existing?.options?.[index]?.tone ?? "",
         enabled: option.enabled !== false
       }))
       : [];
@@ -317,8 +338,9 @@ export class PollTool {
       question: input.question,
       type,
       options,
-      timerEnabled: Boolean(input.timerEnabled),
-      timerMinutes: normalizePollTimerMinutes(input.timerMinutes),
+      participants: normalizePollParticipants(input.participants),
+      timerEnabled,
+      timerTime: normalizePollTimerTime(input.timerTime),
       timerSound: normalizePollTimerSound(input.timerSound),
       createdAt: existing?.createdAt || now,
       updatedAt: now
@@ -328,6 +350,22 @@ export class PollTool {
       state.templates[template.id] = template;
     });
     return template;
+  }
+
+  async restoreStarterTemplates() {
+    if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
+
+    await this.updateState((state) => {
+      for (const template of createStarterPollTemplates(Date.now(), { uniqueIds: true })) {
+        let id = template.id;
+        while (state.templates[id]) id = foundry.utils.randomID();
+        state.templates[id] = {
+          ...template,
+          id
+        };
+      }
+    });
+    ui.notifications.info(localize("Polls.Manager.RestoredDefaults"));
   }
 
   async confirmDeleteTemplate(templateId) {
@@ -366,6 +404,65 @@ export class PollTool {
     return this.openLaunchWindow(templateId);
   }
 
+  onTemplateDragStart(event) {
+    const templateId = String(event.currentTarget?.dataset?.templateId ?? "");
+    if (!this.getTemplate(templateId)) return;
+
+    setHotbarDragData(event, "poll-template", { templateId });
+  }
+
+  handleHotbarDrop(_hotbar, data, slot) {
+    if (!isHotbarDrop(data, "poll-template")) return;
+    void this.createTemplateMacro(data.templateId, slot);
+    return false;
+  }
+
+  async createTemplateMacro(templateId, slot, notify = true) {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Polls.Errors.Forbidden"));
+      return;
+    }
+
+    const template = this.getTemplate(templateId);
+    if (!template) {
+      ui.notifications.warn(localize("Polls.Errors.TemplateNotFound"));
+      return;
+    }
+
+    const name = format("Polls.Hotbar.MacroName", { name: template.name });
+    const command = this.getPollMacroCommand(template.id);
+
+    await createOrUpdateHotbarMacro({
+      slot,
+      name,
+      type: "script",
+      img: POLL_MACRO_IMAGE,
+      command,
+      flags: {
+        [MODULE_ID]: {
+          [FLAGS.pollMacro]: template.id
+        }
+      },
+      findExisting: (macro) => this.isPollMacro(macro, template.id),
+      updateFlags: {
+        [`flags.${MODULE_ID}.${FLAGS.pollMacro}`]: template.id
+      },
+      notify,
+      addedMessage: format("Polls.Hotbar.Added", { name: template.name }),
+      errorMessage: localize("Polls.Hotbar.AddError"),
+      logMessage: "Unable to create poll hotbar macro"
+    });
+  }
+
+  isPollMacro(macro, templateId) {
+    const flaggedTemplateId = macro.getFlag(MODULE_ID, FLAGS.pollMacro);
+    return (flaggedTemplateId === templateId) || (macro.command === this.getPollMacroCommand(templateId));
+  }
+
+  getPollMacroCommand(templateId) {
+    return `game.modules.get("${MODULE_ID}")?.api?.openPollLaunch("${templateId}");`;
+  }
+
   async launchPoll(templateId, overrides = {}) {
     if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
 
@@ -381,7 +478,10 @@ export class PollTool {
       return null;
     }
 
-    const selectedUsers = Array.from(game.users).filter((user) => state.selected[user.id]);
+    const launchParticipants = overrides.participants
+      ? normalizePollParticipants(overrides.participants, template.participants)
+      : template.participants;
+    const selectedUsers = Array.from(game.users).filter((user) => launchParticipants[user.id]);
     if (!selectedUsers.length) {
       ui.notifications.warn(localize("Polls.Errors.NoPlayers"));
       return null;
@@ -395,18 +495,16 @@ export class PollTool {
 
     const runTemplate = normalizePollTemplate({
       ...template,
-      name: overrides.name || template.name,
-      question: overrides.question || template.question,
       options: launchOptions,
       timerEnabled: Boolean(overrides.timerEnabled),
-      timerMinutes: normalizePollTimerMinutes(overrides.timerMinutes),
-      timerSound: normalizePollTimerSound(overrides.timerSound)
+      timerTime: template.timerTime,
+      timerSound: template.timerSound
     });
 
     const requestedAt = Date.now();
     const timerEnabled = Boolean(runTemplate.timerEnabled);
-    const timerMinutes = normalizePollTimerMinutes(runTemplate.timerMinutes);
-    const timerDuration = timerEnabled ? timerMinutes * 60 * 1000 : 0;
+    const timerTime = normalizePollTimerTime(runTemplate.timerTime);
+    const timerDuration = timerEnabled ? getPollTimerDurationMs(timerTime) : 0;
     const run = {
       id: foundry.utils.randomID(),
       templateId: runTemplate.id,
@@ -420,7 +518,7 @@ export class PollTool {
       requestedBy: game.user.id,
       requestedByName: game.user.name,
       timerEnabled,
-      timerMinutes,
+      timerTime,
       timerSound: normalizePollTimerSound(runTemplate.timerSound),
       timerId: "",
       timerStartedAt: timerEnabled ? requestedAt : 0,
@@ -470,20 +568,11 @@ export class PollTool {
     return this.timerTool.startTimer({
       name: format("Polls.Timer.Name", { poll: run.name }),
       mode: TIMER_MODE.duration,
-      time: this.formatTimerDuration(run.timerMinutes),
+      time: run.timerTime,
       visibility: TIMER_VISIBILITY.public,
       style: TIMER_DISPLAY_STYLE.prominent,
       sound: run.timerSound
     });
-  }
-
-  formatTimerDuration(minutes) {
-    const totalSeconds = normalizePollTimerMinutes(minutes) * 60;
-    const hours = Math.floor(totalSeconds / 3600);
-    const remainingSeconds = totalSeconds % 3600;
-    const mins = Math.floor(remainingSeconds / 60);
-    const seconds = remainingSeconds % 60;
-    return [hours, mins, seconds].map((part) => String(part).padStart(2, "0")).join(":");
   }
 
   getLaunchOptions(template, overrideOptions) {

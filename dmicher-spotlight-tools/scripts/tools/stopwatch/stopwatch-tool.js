@@ -6,11 +6,11 @@ import {
 import {
   escapeHTML,
   getChatMessageClass,
-  getMacroClass,
   isModerator,
   localize,
   preloadImage
 } from "../../utils.js";
+import { createOrUpdateHotbarMacro, isHotbarDrop, setHotbarDragData } from "../hotbar-macro.js";
 import {
   formatStopwatchElapsed,
   getStopwatchEventConfig,
@@ -170,15 +170,11 @@ export class StopwatchTool {
     const eventType = event.currentTarget.dataset.stopwatchEvent;
     if (!getStopwatchEventConfig(eventType)) return;
 
-    event.dataTransfer.effectAllowed = "copy";
-    event.dataTransfer.setData("text/plain", JSON.stringify({
-      type: `${MODULE_ID}.stopwatch-event`,
-      eventType
-    }));
+    setHotbarDragData(event, "stopwatch-event", { eventType });
   }
 
   handleHotbarDrop(_hotbar, data, slot) {
-    if (data.type !== `${MODULE_ID}.stopwatch-event`) return;
+    if (!isHotbarDrop(data, "stopwatch-event")) return;
     void this.createMacro(data.eventType, slot);
     return false;
   }
@@ -203,40 +199,29 @@ export class StopwatchTool {
     const eventConfig = getStopwatchEventConfig(eventType);
     if (!eventConfig) return;
 
-    const MacroClass = getMacroClass();
     const name = localize(eventConfig.labelKey);
     const command = `${STOPWATCH_CHAT_MACRO_COMMAND} ${eventType}`;
 
-    try {
-      let macro = game.macros.find((item) => item.isOwner && this.isStopwatchMacro(item, eventType));
-      if (!macro) {
-        macro = await MacroClass.create({
-          name,
-          type: "chat",
-          img: eventConfig.image,
-          command,
-          flags: {
-            [MODULE_ID]: {
-              [FLAGS.stopwatchMacro]: eventType
-            }
-          }
-        });
-      } else if ((macro.type !== "chat") || (macro.command !== command) || (macro.name !== name) || (macro.img !== eventConfig.image)) {
-        await macro.update({
-          name,
-          type: "chat",
-          img: eventConfig.image,
-          command,
-          [`flags.${MODULE_ID}.${FLAGS.stopwatchMacro}`]: eventType
-        });
-      }
-
-      await game.user.assignHotbarMacro(macro, slot);
-      if (notify) ui.notifications.info(localize("Timers.Stopwatch.MacroAdded"));
-    } catch (error) {
-      console.error(`${MODULE_ID} | Unable to create stopwatch macro`, error);
-      ui.notifications.error(localize("Timers.Stopwatch.MacroError"));
-    }
+    await createOrUpdateHotbarMacro({
+      slot,
+      name,
+      type: "chat",
+      img: eventConfig.image,
+      command,
+      flags: {
+        [MODULE_ID]: {
+          [FLAGS.stopwatchMacro]: eventType
+        }
+      },
+      findExisting: (macro) => this.isStopwatchMacro(macro, eventType),
+      updateFlags: {
+        [`flags.${MODULE_ID}.${FLAGS.stopwatchMacro}`]: eventType
+      },
+      notify,
+      addedMessage: localize("Timers.Stopwatch.MacroAdded"),
+      errorMessage: localize("Timers.Stopwatch.MacroError"),
+      logMessage: "Unable to create stopwatch macro"
+    });
   }
 
   isStopwatchMacro(macro, eventType) {

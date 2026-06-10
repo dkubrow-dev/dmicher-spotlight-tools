@@ -248,10 +248,10 @@
     "Polls": {
       "DefaultOption": "Option {number}",
       "Types": {
-        "Buttons": "Buttons",
-        "Radio": "Radio table",
-        "Checkbox": "Checkbox table",
-        "Text": "Free text"
+        "Buttons": "one option by button",
+        "Radio": "one option in table",
+        "Checkbox": "multiple choices in table",
+        "Text": "free text answer"
       },
       "Status": {
         "Pending": "No answer",
@@ -288,15 +288,19 @@
         "TextNoOptions": "Free text polls do not use answer options.",
         "TimerEnabled": "Start a poll timer",
         "TimerBlock": "Poll timer",
-        "TimerMinutes": "Time",
+        "TimerTime": "Time",
         "TimerSound": "Sound",
         "Participants": "Participants",
-        "ParticipantsHint": "Players selected for the next poll",
+        "ParticipantsHint": "Players saved in this poll template",
         "Create": "Create template",
         "SaveChanges": "Save changes",
-        "Reset": "New template",
+        "NewTemplate": "New template",
+        "CancelEdit": "Cancel",
         "ClearActive": "End poll",
         "TableTitle": "Templates",
+        "RestoreDefaults": "↺",
+        "RestoreDefaultsHint": "Restore starter templates",
+        "RestoredDefaults": "Starter templates added.",
         "Empty": "No poll templates yet.",
         "NoResults": "No results",
         "ResultSummary": "{answered}/{total} answered",
@@ -305,6 +309,7 @@
         "Results": "Last results",
         "Delete": "Delete template",
         "Columns": {
+          "Macro": "#",
           "Name": "Name",
           "Type": "Type",
           "LastResult": "Last result",
@@ -326,11 +331,19 @@
         "NoOptions": "This poll collects free text answers.",
         "TimerEnabled": "Start a poll timer",
         "TimerBlock": "Poll timer",
-        "TimerMinutes": "Time",
+        "TimerTime": "Time",
         "TimerSound": "Sound",
+        "Participants": "Participants",
+        "ParticipantsHint": "Players selected for this launch",
         "ClearActive": "End poll",
         "Cancel": "Cancel",
         "Start": "Start"
+      },
+      "Hotbar": {
+        "MacroName": "Голосование: {name}",
+        "DragTitle": "Drag to the hotbar: {name}",
+        "Added": "The \"Голосование: {name}\" macro has been added to the hotbar.",
+        "AddError": "Could not add the poll macro to the hotbar."
       },
       "Timer": {
         "Name": "Poll: {poll}"

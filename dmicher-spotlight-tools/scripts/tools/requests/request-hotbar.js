@@ -1,5 +1,6 @@
 import { CHAT_MACRO_COMMAND, FLAGS, MODULE_ID, REQUEST_TYPES, normalizeRequestType } from "../../config.js";
-import { canUseRequest, format, getMacroClass, localize } from "../../utils.js";
+import { canUseRequest, format, localize } from "../../utils.js";
+import { createOrUpdateHotbarMacro, isHotbarDrop, setHotbarDragData } from "../hotbar-macro.js";
 
 export class RequestHotbar {
   constructor(submitRequest) {
@@ -11,16 +12,11 @@ export class RequestHotbar {
 
   onRequestDragStart(event) {
     const type = normalizeRequestType(event.currentTarget.dataset.urgency);
-    const data = JSON.stringify({
-      type: `${MODULE_ID}.request`,
-      urgency: type
-    });
-    event.dataTransfer.effectAllowed = "copy";
-    event.dataTransfer.setData("text/plain", data);
+    setHotbarDragData(event, "request", { urgency: type });
   }
 
   handleHotbarDrop(_hotbar, data, slot) {
-    if (data.type !== `${MODULE_ID}.request`) return;
+    if (!isHotbarDrop(data, "request")) return;
     void this.createMacro(normalizeRequestType(data.urgency), slot);
     return false;
   }
@@ -49,38 +45,27 @@ export class RequestHotbar {
       title: localize("Title")
     });
     const command = this.getChatMacroCommand(type);
-    const MacroClass = getMacroClass();
 
-    try {
-      let macro = game.macros.find((item) => item.isOwner && this.isRequestMacro(item, type));
-      if (!macro) {
-        macro = await MacroClass.create({
-          name,
-          type: "chat",
-          img: request.image,
-          command,
-          flags: {
-            [MODULE_ID]: {
-              [FLAGS.macro]: type
-            }
-          }
-        });
-      } else if ((macro.type !== "chat") || (macro.command !== command) || (macro.name !== name) || (macro.img !== request.image)) {
-        await macro.update({
-          name,
-          type: "chat",
-          img: request.image,
-          command,
-          [`flags.${MODULE_ID}.${FLAGS.macro}`]: type
-        });
-      }
-
-      await game.user.assignHotbarMacro(macro, slot);
-      if (notify) ui.notifications.info(format("Requests.Hotbar.Added", { label }));
-    } catch (error) {
-      console.error(`${MODULE_ID} | Unable to create hotbar macro`, error);
-      ui.notifications.error(localize("Requests.Hotbar.AddError"));
-    }
+    await createOrUpdateHotbarMacro({
+      slot,
+      name,
+      type: "chat",
+      img: request.image,
+      command,
+      flags: {
+        [MODULE_ID]: {
+          [FLAGS.macro]: type
+        }
+      },
+      findExisting: (macro) => this.isRequestMacro(macro, type),
+      updateFlags: {
+        [`flags.${MODULE_ID}.${FLAGS.macro}`]: type
+      },
+      notify,
+      addedMessage: format("Requests.Hotbar.Added", { label }),
+      errorMessage: localize("Requests.Hotbar.AddError"),
+      logMessage: "Unable to create request hotbar macro"
+    });
   }
 
   async migrateMacros() {
