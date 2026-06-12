@@ -497,8 +497,16 @@
         "Compact": "Compact",
         "Prominent": "Prominent",
         "Close": "Close",
+        "Cancel": "Cancel",
+        "CancelTooltip": "Disable the timer and remove it from the current timers list",
         "Delete": "Delete timer",
         "Missing": "Timer is no longer available."
+      },
+      "Cancel": {
+        "Title": "Cancel timer",
+        "Confirm": "Disable timer \"{name}\" and remove it from the current timers list?",
+        "Yes": "Cancel timer",
+        "No": "Cancel"
       },
       "Delete": {
         "Title": "Delete timer",

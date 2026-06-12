@@ -96,6 +96,7 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
     await super._onRender(context, options);
     this.activateListeners();
     this.refreshTimerBlock();
+    this.fitHeightToContent();
   }
 
   async _onClose(options) {
@@ -124,6 +125,13 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
   refreshTimerBlock() {
     const enabled = this.element.querySelector("[data-poll-launch-timer-enabled]")?.checked ?? false;
     this.element.querySelector("[data-poll-launch-timer-block]")?.classList.toggle("is-disabled", !enabled);
+  }
+
+  fitHeightToContent() {
+    requestAnimationFrame(() => {
+      if (!this.rendered) return;
+      this.setPosition({ height: "auto" });
+    });
   }
 
   refreshParticipantCount() {

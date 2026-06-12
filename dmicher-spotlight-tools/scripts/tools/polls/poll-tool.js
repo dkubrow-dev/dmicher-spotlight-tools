@@ -647,7 +647,7 @@ export class PollTool {
     if (type === POLL_TYPE.text) {
       return `
         <form class="dmicher-poll-form" data-poll-interaction data-poll-response-form>
-          <input type="text" name="pollText" maxlength="500" autocomplete="off" data-poll-text-input>
+          <input type="text" name="pollText" data-poll-text-input>
           ${this.buildRequestFormActions()}
         </form>`;
     }

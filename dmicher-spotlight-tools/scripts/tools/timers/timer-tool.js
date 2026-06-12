@@ -306,6 +306,20 @@ export class TimerTool {
   }
 
   async confirmDeleteTimer(timerId) {
+    await this.confirmRemoveTimer(timerId, {
+      scope: "Delete",
+      icon: "fa-solid fa-trash"
+    });
+  }
+
+  async confirmCancelTimer(timerId) {
+    await this.confirmRemoveTimer(timerId, {
+      scope: "Cancel",
+      icon: "fa-solid fa-ban"
+    });
+  }
+
+  async confirmRemoveTimer(timerId, { scope, icon }) {
     if (!isModerator()) {
       ui.notifications.warn(localize("Timers.Errors.Forbidden"));
       return;
@@ -317,14 +331,16 @@ export class TimerTool {
       return;
     }
 
-    const confirmed = await confirmDialog({
-      title: localize("Timers.Delete.Title"),
-      content: `<p>${escapeHTML(format("Timers.Delete.Confirm", { name: timer.name }))}</p>`,
-      yes: localize("Timers.Delete.Yes"),
-      no: localize("Timers.Delete.No"),
-      icon: "fa-solid fa-trash"
-    });
-    if (!confirmed) return;
+    if (!isTimerExpired(timer)) {
+      const confirmed = await confirmDialog({
+        title: localize(`Timers.${scope}.Title`),
+        content: `<p>${escapeHTML(format(`Timers.${scope}.Confirm`, { name: timer.name }))}</p>`,
+        yes: localize(`Timers.${scope}.Yes`),
+        no: localize(`Timers.${scope}.No`),
+        icon
+      });
+      if (!confirmed) return;
+    }
 
     await this.deleteTimer(timer.id);
   }
