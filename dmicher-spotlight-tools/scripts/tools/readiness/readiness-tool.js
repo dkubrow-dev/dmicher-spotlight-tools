@@ -18,69 +18,6 @@ import {
   normalizeReadinessStatus
 } from "./readiness-utils.js";
 
-const READINESS_CARD_STYLES = Object.freeze({
-  "align-items": "stretch",
-  display: "flex",
-  "flex-direction": "column",
-  gap: "0.45rem",
-  "justify-content": "center",
-  "text-align": "center",
-  width: "100%"
-});
-
-const READINESS_TEXT_STYLES = Object.freeze({
-  margin: "0",
-  "text-align": "center",
-  width: "100%"
-});
-
-const READINESS_ACTIONS_STYLES = Object.freeze({
-  "align-items": "center",
-  display: "flex",
-  "flex-wrap": "wrap",
-  gap: "0.45rem",
-  "justify-content": "center",
-  margin: "0.15rem auto 0",
-  "text-align": "center",
-  width: "100%"
-});
-
-const READINESS_BUTTON_BASE_STYLES = Object.freeze({
-  "align-items": "center",
-  display: "inline-flex",
-  flex: "0 0 auto",
-  "justify-content": "center",
-  margin: "0",
-  "min-width": "7rem",
-  width: "auto"
-});
-
-const READINESS_BUTTON_STYLES = Object.freeze({
-  ready: Object.freeze({
-    "--button-background-color": "rgba(105, 183, 128, 0.3)",
-    "--button-border-color": "rgba(74, 145, 94, 0.75)",
-    "--button-hover-background-color": "rgba(105, 183, 128, 0.44)",
-    "--button-hover-border-color": "rgba(74, 145, 94, 0.9)",
-    background: "rgba(105, 183, 128, 0.3)",
-    "border-color": "rgba(74, 145, 94, 0.75)"
-  }),
-  notReady: Object.freeze({
-    "--button-background-color": "rgba(204, 94, 94, 0.3)",
-    "--button-border-color": "rgba(166, 72, 72, 0.75)",
-    "--button-hover-background-color": "rgba(204, 94, 94, 0.44)",
-    "--button-hover-border-color": "rgba(166, 72, 72, 0.9)",
-    background: "rgba(204, 94, 94, 0.3)",
-    "border-color": "rgba(166, 72, 72, 0.75)"
-  })
-});
-
-function applyImportantStyles(element, styles) {
-  if (!element) return;
-  for (const [property, value] of Object.entries(styles)) {
-    element.style.setProperty(property, value, "important");
-  }
-}
-
 export class ReadinessTool {
   constructor() {
     this.state = createEmptyReadinessState();
@@ -227,11 +164,11 @@ export class ReadinessTool {
         <h3 data-readiness-heading>${escapeHTML(localize("Readiness.Message.Title"))}</h3>
         <p data-readiness-text>${escapeHTML(format("Readiness.Message.Text", { gm: requestData.requestedByName }))}</p>
         <div class="dmicher-readiness-actions">
-          <button type="button" class="dmicher-readiness-ready" data-readiness-response="ready">
+          <button type="button" data-readiness-response="ready">
             <i class="fa-solid fa-check" aria-hidden="true"></i>
             <span data-readiness-label="ready">${escapeHTML(localize("Readiness.Message.Ready"))}</span>
           </button>
-          <button type="button" class="dmicher-readiness-not-ready" data-readiness-response="notReady">
+          <button type="button" data-readiness-response="notReady">
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             <span data-readiness-label="notReady">${escapeHTML(localize("Readiness.Message.NotReady"))}</span>
           </button>
@@ -249,14 +186,10 @@ export class ReadinessTool {
     card.querySelector("[data-readiness-text]").textContent = format("Readiness.Message.Text", { gm: requestData.requestedByName });
     card.querySelector("[data-readiness-label='ready']").textContent = localize("Readiness.Message.Ready");
     card.querySelector("[data-readiness-label='notReady']").textContent = localize("Readiness.Message.NotReady");
-    this.styleRequestCard(card);
 
     const actions = card.querySelector(".dmicher-readiness-actions");
     if (requestData.userId !== game.user.id) {
-      if (actions) {
-        actions.hidden = true;
-        actions.style.setProperty("display", "none", "important");
-      }
+      if (actions) actions.hidden = true;
       return;
     }
 
@@ -266,18 +199,6 @@ export class ReadinessTool {
       event.preventDefault();
       void this.answerRequest(message, button.dataset.readinessResponse);
     });
-  }
-
-  styleRequestCard(card) {
-    applyImportantStyles(card, READINESS_CARD_STYLES);
-    applyImportantStyles(card.querySelector("[data-readiness-heading]"), READINESS_TEXT_STYLES);
-    applyImportantStyles(card.querySelector("[data-readiness-text]"), READINESS_TEXT_STYLES);
-    applyImportantStyles(card.querySelector(".dmicher-readiness-actions"), READINESS_ACTIONS_STYLES);
-
-    for (const button of card.querySelectorAll("[data-readiness-response]")) {
-      applyImportantStyles(button, READINESS_BUTTON_BASE_STYLES);
-      applyImportantStyles(button, READINESS_BUTTON_STYLES[button.dataset.readinessResponse] ?? {});
-    }
   }
 
   async answerRequest(message, status) {

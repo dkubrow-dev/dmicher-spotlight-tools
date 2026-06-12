@@ -208,14 +208,12 @@ function buildReadinessOptions(language) {
       id: "ready",
       label: isRu ? "Готов" : "Ready",
       icon: "fa-solid fa-check",
-      tone: "good",
       enabled: true
     },
     {
       id: "notReady",
       label: isRu ? "Не готов" : "Not ready",
       icon: "fa-solid fa-xmark",
-      tone: "bad",
       enabled: true
     }
   ];
@@ -329,7 +327,6 @@ export function normalizePollOptions(rawOptions, type) {
       id: trimText(option.id, 80) || randomId("option"),
       label,
       icon: trimText(option.icon, 80),
-      tone: trimText(option.tone, 20),
       enabled: option.enabled !== false
     });
     if (options.length >= maxOptions) break;
@@ -340,7 +337,6 @@ export function normalizePollOptions(rawOptions, type) {
       id: "option-1",
       label: safeFormat("Polls.DefaultOption", { number: 1 }, "Option 1"),
       icon: "",
-      tone: "",
       enabled: true
     });
   }
@@ -386,7 +382,6 @@ export function createBlankPollTemplateDraft() {
         id: "option-1",
         label: safeFormat("Polls.DefaultOption", { number: 1 }, "Option 1"),
         icon: "",
-        tone: "",
         enabled: true
       }
     ],

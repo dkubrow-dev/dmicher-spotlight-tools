@@ -25,6 +25,8 @@
   --dmicher-button-border: rgba(240, 179, 90, 0.34);
   --dmicher-button-hover-bg: rgba(240, 179, 90, 0.2);
   --dmicher-button-hover-border: rgba(240, 179, 90, 0.62);
+  --dmicher-danger-text: #d98484;
+  --dmicher-danger-text-hover: #e39a9a;
   --dmicher-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
   --dmicher-overlay-bg: rgba(31, 32, 35, 0.96);
   --dmicher-overlay-compact-bg: rgba(31, 32, 35, 0.72);
@@ -65,6 +67,8 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
   --dmicher-button-border: rgba(34, 74, 86, 0.26);
   --dmicher-button-hover-bg: rgba(15, 109, 112, 0.14);
   --dmicher-button-hover-border: rgba(15, 109, 112, 0.42);
+  --dmicher-danger-text: #a9494f;
+  --dmicher-danger-text-hover: #8f353b;
   --dmicher-shadow: 0 6px 18px rgba(30, 40, 48, 0.18);
   --dmicher-overlay-bg: rgba(248, 251, 247, 0.98);
   --dmicher-overlay-compact-bg: rgba(248, 251, 247, 0.84);
@@ -688,14 +692,8 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   padding: 0;
 }
 
-.dmicher-poll-manager .window-content {
-  overflow-y: auto;
-}
-
-.dmicher-poll-launch .window-content {
-  overflow-y: auto;
-}
-
+.dmicher-poll-manager .window-content,
+.dmicher-poll-launch .window-content,
 .dmicher-poll-results .window-content {
   overflow-y: auto;
 }
@@ -713,14 +711,8 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   padding: 0.75rem;
 }
 
-.dmicher-poll-manager-shell {
-  flex: 0 0 auto;
-}
-
-.dmicher-poll-launch-shell {
-  flex: 0 0 auto;
-}
-
+.dmicher-poll-manager-shell,
+.dmicher-poll-launch-shell,
 .dmicher-poll-results-shell {
   flex: 0 0 auto;
 }
@@ -775,10 +767,15 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   width: auto;
 }
 
-.dmicher-poll-template-form-block {
+.dmicher-poll-template-form-block,
+.dmicher-poll-timer-field,
+.dmicher-focus-threshold-block {
   background: var(--dmicher-surface-muted);
   border: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ccc));
   border-radius: 6px;
+}
+
+.dmicher-poll-template-form-block {
   padding: 0.65rem;
 }
 
@@ -821,9 +818,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-poll-timer-field {
-  background: var(--dmicher-surface-muted);
-  border: 1px solid var(--dmicher-border-muted);
-  border-radius: 6px;
   padding: 0.55rem;
   grid-column: span 2;
 }
@@ -1159,7 +1153,8 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   margin: 0;
 }
 
-.dmicher-poll-card {
+.dmicher-poll-card,
+.dmicher-readiness-card {
   align-items: stretch;
   display: flex;
   flex-direction: column;
@@ -1171,13 +1166,16 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-poll-card h3,
-.dmicher-poll-card p {
+.dmicher-poll-card p,
+.dmicher-readiness-card h3,
+.dmicher-readiness-card p {
   margin: 0;
   text-align: center;
   width: 100%;
 }
 
-.dmicher-poll-actions {
+.dmicher-poll-actions,
+.dmicher-readiness-actions {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
@@ -1188,7 +1186,8 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   width: 100%;
 }
 
-.dmicher-poll-actions button {
+.dmicher-poll-actions button,
+.dmicher-readiness-actions button {
   align-items: center;
   display: inline-flex;
   flex: 0 0 auto;
@@ -1196,22 +1195,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   margin: 0;
   min-width: 7rem;
   width: auto;
-}
-
-.dmicher-poll-button-good {
-  --button-background-color: rgba(105, 183, 128, 0.3);
-  --button-border-color: rgba(74, 145, 94, 0.75);
-  --button-hover-background-color: rgba(105, 183, 128, 0.44);
-  --button-hover-border-color: rgba(74, 145, 94, 0.9);
-  background-color: rgba(105, 183, 128, 0.3);
-}
-
-.dmicher-poll-button-bad {
-  --button-background-color: rgba(204, 94, 94, 0.3);
-  --button-border-color: rgba(166, 72, 72, 0.75);
-  --button-hover-background-color: rgba(204, 94, 94, 0.44);
-  --button-hover-border-color: rgba(166, 72, 72, 0.9);
-  background-color: rgba(204, 94, 94, 0.3);
 }
 
 .dmicher-poll-form {
@@ -1242,7 +1225,8 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   width: 1%;
 }
 
-.chat-message .message-content [data-poll-request] {
+.chat-message .message-content [data-poll-request],
+.chat-message .message-content [data-readiness-request] {
   align-items: stretch !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1253,13 +1237,16 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .chat-message .message-content [data-poll-heading],
-.chat-message .message-content [data-poll-question] {
+.chat-message .message-content [data-poll-question],
+.chat-message .message-content [data-readiness-heading],
+.chat-message .message-content [data-readiness-text] {
   margin: 0 !important;
   text-align: center !important;
   width: 100% !important;
 }
 
-.chat-message .message-content [data-poll-interaction][hidden] {
+.chat-message .message-content [data-poll-interaction][hidden],
+.chat-message .message-content [data-readiness-request] .dmicher-readiness-actions[hidden] {
   display: none !important;
 }
 
@@ -1279,7 +1266,9 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   width: 100% !important;
 }
 
-.chat-message .message-content .dmicher-poll-actions {
+.chat-message .message-content .dmicher-poll-actions,
+.chat-message .message-content .dmicher-readiness-actions,
+.chat-message .message-content [data-readiness-request] .dmicher-readiness-actions {
   align-items: center !important;
   display: flex !important;
   flex-wrap: wrap !important;
@@ -1288,7 +1277,9 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   width: 100% !important;
 }
 
-.chat-message .message-content [data-poll-response-option] {
+.chat-message .message-content [data-poll-response-option],
+.chat-message .message-content .dmicher-readiness-actions button,
+.chat-message .message-content [data-readiness-response] {
   align-items: center !important;
   display: inline-flex !important;
   flex: 0 0 auto !important;
@@ -1296,24 +1287,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   margin: 0 !important;
   min-width: 7rem !important;
   width: auto !important;
-}
-
-.chat-message .message-content .dmicher-poll-button-good {
-  --button-background-color: rgba(105, 183, 128, 0.3) !important;
-  --button-border-color: rgba(74, 145, 94, 0.75) !important;
-  --button-hover-background-color: rgba(105, 183, 128, 0.44) !important;
-  --button-hover-border-color: rgba(74, 145, 94, 0.9) !important;
-  background: rgba(105, 183, 128, 0.3) !important;
-  border-color: rgba(74, 145, 94, 0.75) !important;
-}
-
-.chat-message .message-content .dmicher-poll-button-bad {
-  --button-background-color: rgba(204, 94, 94, 0.3) !important;
-  --button-border-color: rgba(166, 72, 72, 0.75) !important;
-  --button-hover-background-color: rgba(204, 94, 94, 0.44) !important;
-  --button-hover-border-color: rgba(166, 72, 72, 0.9) !important;
-  background: rgba(204, 94, 94, 0.3) !important;
-  border-color: rgba(166, 72, 72, 0.75) !important;
 }
 
 .dmicher-poll-results-card {
@@ -1365,9 +1338,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-focus-threshold-block {
-  background: var(--dmicher-surface-muted);
-  border: 1px solid var(--dmicher-border-muted);
-  border-radius: 6px;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -1419,123 +1389,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   color: var(--dmicher-text-muted, var(--color-text-dark-secondary, #777));
   flex: 0 0 auto;
   white-space: nowrap;
-}
-
-.dmicher-readiness-card {
-  align-items: stretch;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  justify-content: center;
-  margin: 0;
-  text-align: center;
-  width: 100%;
-}
-
-.dmicher-readiness-card h3,
-.dmicher-readiness-card p {
-  margin: 0;
-  text-align: center;
-  width: 100%;
-}
-
-.dmicher-readiness-actions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  justify-content: center;
-  margin: 0.15rem auto 0;
-  text-align: center;
-  width: 100%;
-}
-
-.dmicher-readiness-actions button {
-  align-items: center;
-  display: inline-flex;
-  flex: 0 0 auto;
-  justify-content: center;
-  margin: 0;
-  min-width: 7rem;
-  width: auto;
-}
-
-.dmicher-readiness-ready {
-  --button-background-color: rgba(105, 183, 128, 0.3);
-  --button-border-color: rgba(74, 145, 94, 0.75);
-  --button-hover-background-color: rgba(105, 183, 128, 0.44);
-  --button-hover-border-color: rgba(74, 145, 94, 0.9);
-  background-color: rgba(105, 183, 128, 0.3);
-}
-
-.dmicher-readiness-not-ready {
-  --button-background-color: rgba(204, 94, 94, 0.3);
-  --button-border-color: rgba(166, 72, 72, 0.75);
-  --button-hover-background-color: rgba(204, 94, 94, 0.44);
-  --button-hover-border-color: rgba(166, 72, 72, 0.9);
-  background-color: rgba(204, 94, 94, 0.3);
-}
-
-.chat-message .message-content [data-readiness-request] {
-  align-items: stretch !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0.45rem !important;
-  justify-content: center !important;
-  text-align: center !important;
-  width: 100% !important;
-}
-
-.chat-message .message-content [data-readiness-heading],
-.chat-message .message-content [data-readiness-text] {
-  margin: 0 !important;
-  text-align: center !important;
-  width: 100% !important;
-}
-
-.chat-message .message-content .dmicher-readiness-actions,
-.chat-message .message-content [data-readiness-request] .dmicher-readiness-actions {
-  align-items: center !important;
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: center !important;
-  text-align: center !important;
-  width: 100% !important;
-}
-
-.chat-message .message-content [data-readiness-request] .dmicher-readiness-actions[hidden] {
-  display: none !important;
-}
-
-.chat-message .message-content .dmicher-readiness-actions button,
-.chat-message .message-content [data-readiness-response] {
-  align-items: center !important;
-  display: inline-flex !important;
-  flex: 0 0 auto !important;
-  justify-content: center !important;
-  margin: 0 !important;
-  min-width: 7rem !important;
-  width: auto !important;
-}
-
-.chat-message .message-content .dmicher-readiness-ready,
-.chat-message .message-content [data-readiness-response="ready"] {
-  --button-background-color: rgba(105, 183, 128, 0.3) !important;
-  --button-border-color: rgba(74, 145, 94, 0.75) !important;
-  --button-hover-background-color: rgba(105, 183, 128, 0.44) !important;
-  --button-hover-border-color: rgba(74, 145, 94, 0.9) !important;
-  background: rgba(105, 183, 128, 0.3) !important;
-  border-color: rgba(74, 145, 94, 0.75) !important;
-}
-
-.chat-message .message-content .dmicher-readiness-not-ready,
-.chat-message .message-content [data-readiness-response="notReady"] {
-  --button-background-color: rgba(204, 94, 94, 0.3) !important;
-  --button-border-color: rgba(166, 72, 72, 0.75) !important;
-  --button-hover-background-color: rgba(204, 94, 94, 0.44) !important;
-  --button-hover-border-color: rgba(166, 72, 72, 0.9) !important;
-  background: rgba(204, 94, 94, 0.3) !important;
-  border-color: rgba(166, 72, 72, 0.75) !important;
 }
 
 .dmicher-readiness-results-card {
@@ -2122,14 +1975,14 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-ti
 
 .dmicher-timer-window-actions .dmicher-timer-window-cancel,
 .dmicher-timer-compact-row .dmicher-timer-window-cancel {
-  color: #d98484;
+  color: var(--dmicher-danger-text);
 }
 
 .dmicher-timer-window-actions .dmicher-timer-window-cancel:hover,
 .dmicher-timer-window-actions .dmicher-timer-window-cancel:focus,
 .dmicher-timer-compact-row .dmicher-timer-window-cancel:hover,
 .dmicher-timer-compact-row .dmicher-timer-window-cancel:focus {
-  color: #e39a9a;
+  color: var(--dmicher-danger-text-hover);
 }
 
 .dmicher-timer-window-card-compact {

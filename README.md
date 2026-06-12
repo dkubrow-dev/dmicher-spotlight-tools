@@ -6,7 +6,7 @@
 ## Приспособы фокуса
 
 Модуль «Приспособы фокуса Дмичера» - набор инструментов для Foundry VTT, не зависящих от игровых систем и предназначенных для контроля фокуса внимания (спотлайта) за игровым столом.
-Модуль позволяет организовать последовательность заявок игроков, проконтролировать время, оставшееся до запланированных мастером событий, провести проверку готовности, организовать перерыв и проследить за тем, кто из игроков долгое время остаётся вне фокуса внимания.
+Модуль позволяет организовать последовательность заявок игроков, проконтролировать время, оставшееся до запланированных мастером событий, провести проверку готовности или другой опрос, организовать перерыв и проследить за тем, кто из игроков долгое время остаётся вне фокуса внимания.
 
 ## Как установить модуль?
 
@@ -48,6 +48,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 - быстро создать таймер перерыва;
 - отследить скорость выполнения каких-либо действий по секундомеру, одним кликом или клавишей хотбара засечь события и вывести их в чат;
 - провести проверку готовности игроков продолжить игру;
+- проводить опросы игроков по шаблонам или как временные разовые опросы;
 - контролировать фокус внимания (спотлайт) в окне аудита с настраиваемыми индикаторами активности игроков.
 
 Модуль имеет локализацию на русский и английский языки.
@@ -91,14 +92,23 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 Это позволяет игрокам тихо, но чётко сообщить мастеру о том, насколько они погружены в игру, не отвлекая мастера и игроков от самой игры, не влезая в нарратив сцены с фразами типа "Мне надо отойти", "У меня что-то происходит - играйте без меня".
 Игровой статус автоматически меняется на "Играю" каждый раз, когда игрок заходит в игру.
 
-### Проверка готовности
+### Опросы и проверка готовности
 
-Мастер может запустить проверку готовности игроков продолжить игру.
-Для этого перейдите в левом меню сцены в раздел "Приспособы фокуса", затем нажмите кнопку "Проверка готовности".
-В окне можно выбрать, каким игрокам отправить запрос на проверку готовности.
-Нажмите кнопку "Проверить готовность", чтобы отправить запрос.
+Мастер может открыть окно "Опросы" из левой панели инструментов и подготовить шаблоны опросов или сразу запустить временный опрос без сохранения шаблона.
+Опросы поддерживают ответы кнопками, единичный выбор в таблице, множественный выбор в таблице и свободный текстовый ответ.
 
-Результаты проверки можно вывести в чат отдельным сообщением.
+В шаблоне можно настроить название, вопрос, варианты ответов, активность вариантов, участников, таймер и звук таймера.
+Перед запуском шаблон можно проверить и временно изменить участников, вопрос и активные варианты ответов без изменения самого шаблона.
+
+Результаты отображаются в отдельном окне и могут быть выведены в чат.
+Для опросов с вариантами ответы сортируются по числу проголосовавших игроков, а ответы игроков учитываются в аудите как активность в чате.
+Шаблоны опросов можно перетащить на панель быстрого доступа, чтобы создать макрос запуска.
+
+Для демонстрации возможностей и удобства пользования модуль на старте представляет два шаблона опросов на русском и английском языках:
+- "Проверка готовкности" - позволяет провести проверку готовности;
+- "Лучший игрок" - позволяет голосованием выбрать лучшего игрока сессии.
+
+> *Ранее функционал был представлен только голосованием "Проверка готовности". С версии 1.1.0 модуль позволяет гибко настраивать шаблоны самостоятельно.*
 
 ### Таймеры и перерыв
 
@@ -174,7 +184,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 ## Spotlight Tools
 
 The "dmicher Spotlight Tools" module is a system-agnostic toolset for Foundry VTT, designed to help control the focus of attention (spotlight) at the game table.
-The module helps organize the sequence of player requests, track time remaining until events planned by the Game Master, run readiness checks, organize breaks, and notice which players have been outside the spotlight for a long time.
+The module helps organize the sequence of player requests, track time remaining until events planned by the Game Master, run readiness checks or other polls, organize breaks, and notice which players have been outside the spotlight for a long time.
 
 ## How to install the module?
 
@@ -216,6 +226,7 @@ The module lets the Game Master and assistants:
 - quickly create a break timer;
 - track the speed of any actions with a stopwatch, mark events with one click or a hotbar key, and post them to chat;
 - run a readiness check for players to continue the game;
+- run player polls from templates or as temporary one-off polls;
 - control the focus of attention (spotlight) in the audit window with configurable player activity indicators.
 
 The module is localized in Russian and English.
@@ -259,14 +270,23 @@ When the status changes, a message about the player's status change is posted to
 This lets players quietly but clearly tell the Game Master how immersed they are in the game, without distracting the Game Master and other players from play, and without breaking into the scene narrative with phrases like "I need to step away" or "Something is happening on my end - continue without me".
 The game status automatically changes to "Playing" every time the player joins the game.
 
-### Readiness Check
+### Polls
 
-The Game Master can start a readiness check for players to continue the game.
-To do this, go to the "Spotlight Tools" section in the left canvas controls, then click "Readiness Check".
-In the window, choose which players should receive the readiness check request.
-Click "Check readiness" to send the request.
+The Game Master can open the "Polls" window from the left canvas controls and prepare poll templates or immediately launch a temporary poll without saving a template.
+Polls support button answers, single table choice, multiple table choice, and free text answers.
 
-The check results can be posted to chat as a separate message.
+Templates can store the poll name, question, answer options, active option flags, participants, timer settings, and timer sound.
+Before launch, a template can be reviewed and temporarily adjusted: participants, question, and active answer options can be changed without changing the template itself.
+
+Results are shown in a separate window and can be posted to chat.
+For option-based polls, answers are sorted by the number of voters, and player responses count as chat activity for the focus audit.
+Poll templates can be dragged to the hotbar to create launch macros.
+
+To demonstrate the module's capabilities and ease of use, the module initially offers two survey templates in Russian and English:
+- "Readiness Check" - allows you to conduct a readiness check;
+- "Best Player" - allows you to vote for the best player in the session.
+
+> *Previously, this functionality was only available through the "Readiness Check" vote. Since version 1.1.0, the module allows you to flexibly customize templates yourself.*
 
 ### Timers and Break
 

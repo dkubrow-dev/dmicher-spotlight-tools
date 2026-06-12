@@ -37,6 +37,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     this.editTemplateId = "";
     this.formVisible = false;
     this.focusFormOnRender = false;
+    this.newPollDraft = null;
   }
 
   get title() {
@@ -45,10 +46,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const draft = this.editTemplateId
-      ? this.pollTool.getTemplate(this.editTemplateId) ?? this.pollTool.getBlankTemplateDraft()
-      : this.pollTool.getBlankTemplateDraft();
-    if (!this.editTemplateId && this.formVisible && !draft.name) draft.name = localize("Polls.Manager.NewPollName");
+    const draft = this.getCurrentDraft();
     const optionRows = this.prepareOptionRows(draft);
     const participants = this.pollTool.getParticipantRows(draft);
     const templates = this.pollTool.getTemplateRows();
@@ -144,9 +142,12 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     const form = this.element.querySelector("[data-poll-template-form]");
     if (form) {
       form.addEventListener("submit", (event) => void this.handleSubmit(event));
+      form.addEventListener("input", () => this.storeNewPollDraft(form));
+      form.addEventListener("change", () => this.storeNewPollDraft(form));
       form.querySelector("[data-poll-action='cancel-form']")?.addEventListener("click", () => {
         this.editTemplateId = "";
         this.formVisible = false;
+        this.newPollDraft = null;
         void this.render({ parts: ["main"] });
       });
       form.querySelector("[data-poll-action='start-temporary']")?.addEventListener("click", (event) => {
@@ -199,6 +200,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     this.editTemplateId = String(templateId ?? "");
     this.formVisible = true;
     this.focusFormOnRender = true;
+    this.newPollDraft = this.editTemplateId ? null : this.createNewPollDraft();
     void this.render({ parts: ["main"] });
   }
 
@@ -253,6 +255,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
       });
       this.editTemplateId = "";
       this.formVisible = false;
+      this.newPollDraft = null;
       await this.render({ parts: ["main"] });
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to save poll template`, error);
@@ -269,14 +272,13 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     if (button) button.disabled = true;
 
     try {
-      const run = await this.pollTool.launchTemporaryPoll(this.collectFormInput(form));
-      if (run) {
-        this.editTemplateId = "";
-        this.formVisible = false;
-        await this.render({ parts: ["main"] });
-      } else if (button) {
+      const input = this.collectFormInput(form);
+      this.newPollDraft = this.collectFormInput(form, { allOptions: true });
+      const run = await this.pollTool.launchTemporaryPoll(input);
+      if (button) {
         button.disabled = false;
       }
+      if (run) this.formVisible = true;
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to start temporary poll`, error);
       ui.notifications.error(error?.message || localize("Polls.Errors.StartFailed"));
@@ -284,9 +286,31 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     }
   }
 
-  collectFormInput(form) {
+  getCurrentDraft() {
+    if (this.editTemplateId) {
+      return this.pollTool.getTemplate(this.editTemplateId) ?? this.pollTool.getBlankTemplateDraft();
+    }
+    if (this.formVisible) {
+      this.newPollDraft ??= this.createNewPollDraft();
+      return this.newPollDraft;
+    }
+    return this.pollTool.getBlankTemplateDraft();
+  }
+
+  createNewPollDraft() {
+    const draft = this.pollTool.getBlankTemplateDraft();
+    if (!draft.name) draft.name = localize("Polls.Manager.NewPollName");
+    return draft;
+  }
+
+  storeNewPollDraft(form) {
+    if (this.editTemplateId || !form) return;
+    this.newPollDraft = this.collectFormInput(form, { allOptions: true });
+  }
+
+  collectFormInput(form, { allOptions = false } = {}) {
     const type = form.elements.namedItem("type")?.value ?? POLL_TYPE.buttons;
-    const maxOptions = getPollTypeMaxOptions(type);
+    const maxOptions = allOptions ? Number.POSITIVE_INFINITY : getPollTypeMaxOptions(type);
     const options = Array.from(form.querySelectorAll("[data-poll-option-row]"))
       .slice(0, maxOptions)
       .map((row) => ({
@@ -312,6 +336,9 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
   }
 
   onPollStateChanged() {
-    if (this.rendered) void this.render({ parts: ["main"] });
+    if (!this.rendered) return;
+    const form = this.element.querySelector("[data-poll-template-form]");
+    if (form) this.storeNewPollDraft(form);
+    void this.render({ parts: ["main"] });
   }
 }

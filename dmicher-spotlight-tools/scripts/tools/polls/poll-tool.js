@@ -49,54 +49,6 @@ import {
 
 const POLL_MACRO_IMAGE = `modules/${MODULE_ID}/assets/polls/macros-icon.webp`;
 
-const POLL_CARD_STYLES = Object.freeze({
-  "align-items": "stretch",
-  display: "flex",
-  "flex-direction": "column",
-  gap: "0.45rem",
-  "justify-content": "center",
-  margin: "0",
-  "text-align": "center",
-  width: "100%"
-});
-
-const POLL_ACTIONS_STYLES = Object.freeze({
-  "align-items": "center",
-  display: "flex",
-  "flex-wrap": "wrap",
-  gap: "0.45rem",
-  "justify-content": "center",
-  margin: "0.15rem auto 0",
-  "text-align": "center",
-  width: "100%"
-});
-
-const POLL_BUTTON_STYLES = Object.freeze({
-  good: Object.freeze({
-    "--button-background-color": "rgba(105, 183, 128, 0.3)",
-    "--button-border-color": "rgba(74, 145, 94, 0.75)",
-    "--button-hover-background-color": "rgba(105, 183, 128, 0.44)",
-    "--button-hover-border-color": "rgba(74, 145, 94, 0.9)",
-    background: "rgba(105, 183, 128, 0.3)",
-    "border-color": "rgba(74, 145, 94, 0.75)"
-  }),
-  bad: Object.freeze({
-    "--button-background-color": "rgba(204, 94, 94, 0.3)",
-    "--button-border-color": "rgba(166, 72, 72, 0.75)",
-    "--button-hover-background-color": "rgba(204, 94, 94, 0.44)",
-    "--button-hover-border-color": "rgba(166, 72, 72, 0.9)",
-    background: "rgba(204, 94, 94, 0.3)",
-    "border-color": "rgba(166, 72, 72, 0.75)"
-  })
-});
-
-function applyImportantStyles(element, styles) {
-  if (!element) return;
-  for (const [property, value] of Object.entries(styles)) {
-    element.style.setProperty(property, value, "important");
-  }
-}
-
 function isAnswerEmpty(type, value) {
   type = normalizePollType(type);
   if (type === POLL_TYPE.checkbox) return !Array.isArray(value) || value.length === 0;
@@ -335,7 +287,6 @@ export class PollTool {
         id: existing?.options?.[index]?.id || `option-${index + 1}`,
         label: option.label,
         icon: existing?.options?.[index]?.icon ?? "",
-        tone: existing?.options?.[index]?.tone ?? "",
         enabled: option.enabled !== false
       }))
       : [];
@@ -665,7 +616,7 @@ export class PollTool {
       return `
         <div class="dmicher-poll-actions dmicher-poll-button-actions" data-poll-interaction>
           ${options.map((option) => `
-            <button type="button" class="dmicher-poll-button dmicher-poll-button-${escapeHTML(option.tone || "neutral")}" data-poll-response-option="${escapeHTML(option.id)}">
+            <button type="button" class="dmicher-poll-button" data-poll-response-option="${escapeHTML(option.id)}">
               ${option.icon ? `<i class="${escapeHTML(option.icon)}" aria-hidden="true"></i>` : ""}
               <span>${escapeHTML(option.label)}</span>
             </button>`).join("")}
@@ -728,14 +679,10 @@ export class PollTool {
     if (question) question.textContent = requestData.question;
     if (submitLabel) submitLabel.textContent = localize("Polls.Message.Submit");
     if (cancelLabel) cancelLabel.textContent = localize("Polls.Message.Cancel");
-    this.styleRequestCard(card);
 
     const interaction = card.querySelector("[data-poll-interaction]");
     if (requestData.userId !== game.user.id) {
-      if (interaction) {
-        interaction.hidden = true;
-        interaction.style.setProperty("display", "none", "important");
-      }
+      if (interaction) interaction.hidden = true;
       return;
     }
 
@@ -766,38 +713,6 @@ export class PollTool {
         value
       });
     });
-  }
-
-  styleRequestCard(card) {
-    applyImportantStyles(card, POLL_CARD_STYLES);
-    applyImportantStyles(card.querySelector("[data-poll-heading]"), {
-      margin: "0",
-      "text-align": "center",
-      width: "100%"
-    });
-    applyImportantStyles(card.querySelector("[data-poll-question]"), {
-      margin: "0",
-      "text-align": "center",
-      width: "100%"
-    });
-    for (const actions of card.querySelectorAll(".dmicher-poll-actions")) {
-      applyImportantStyles(actions, POLL_ACTIONS_STYLES);
-    }
-    for (const button of card.querySelectorAll("[data-poll-response-option]")) {
-      applyImportantStyles(button, {
-        "align-items": "center",
-        display: "inline-flex",
-        flex: "0 0 auto",
-        "justify-content": "center",
-        margin: "0",
-        "min-width": "7rem",
-        width: "auto"
-      });
-      const tone = button.classList.contains("dmicher-poll-button-good") ? "good"
-        : button.classList.contains("dmicher-poll-button-bad") ? "bad"
-          : "";
-      applyImportantStyles(button, POLL_BUTTON_STYLES[tone] ?? {});
-    }
   }
 
   collectFormResponse(form, type) {
