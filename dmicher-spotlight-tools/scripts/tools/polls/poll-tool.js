@@ -991,7 +991,7 @@ export class PollTool {
       return left.number - right.number;
     }).map((row) => ({
       ...row,
-      votersText: row.voters.length ? row.voters.join(", ") : localize("Polls.Results.NoVoters")
+      votersText: row.voters.length ? row.voters.join(", ") : "-"
     }));
   }
 

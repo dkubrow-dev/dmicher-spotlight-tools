@@ -809,6 +809,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   border: 1px solid var(--dmicher-border-muted);
   border-radius: 6px;
   padding: 0.55rem;
+  grid-column: span 2;
 }
 
 .dmicher-poll-field input[type="text"],
@@ -951,7 +952,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   background: var(--dmicher-surface-muted);
   border: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ccc));
   border-radius: 6px;
-  max-height: 14rem;
   overflow: auto;
 }
 
@@ -1029,9 +1029,9 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 .dmicher-poll-restore-defaults {
   align-items: center;
   display: inline-flex;
-  height: 1.45rem;
+  height: var(--button-size);
   justify-content: center;
-  min-height: 0;
+  min-height: var(--button-size);
   padding: 0;
   width: 1.45rem;
 }
