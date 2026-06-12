@@ -111,7 +111,8 @@
       "Break": "Перерыв",
       "Stopwatch": "Секундомер",
       "FocusAudit": "Аудит фокуса",
-      "Readiness": "Проверка готовности"
+      "Readiness": "Проверка готовности",
+      "Polls": "Опросы"
     },
     "Focus": {
       "Indicators": {
@@ -244,6 +245,170 @@
         "Status": "Статус"
       }
     },
+    "Polls": {
+      "DefaultOption": "Вариант {number}",
+      "Types": {
+        "Buttons": "один вариант по кнопке",
+        "Radio": "один вариант в таблице",
+        "Checkbox": "множественный выбор в таблице",
+        "Text": "свободный ответ текстом"
+      },
+      "Status": {
+        "Pending": "Нет ответа",
+        "Answered": "Ответил",
+        "Cancelled": "Отменил",
+        "NoAnswer": "Нет ответа"
+      },
+      "Presets": {
+        "Readiness": {
+          "Name": "Проверка готовности",
+          "Question": "Вы готовы продолжить?",
+          "Options": {
+            "Ready": "Готов",
+            "NotReady": "Не готов"
+          }
+        },
+        "BestPlayer": {
+          "Name": "Лучший игрок",
+          "Question": "Кто сегодня был лучшим игроком?"
+        }
+      },
+      "Manager": {
+        "WindowTitle": "Опросы",
+        "CreateTitle": "Новый опрос",
+        "EditTitle": "Редактировать шаблон опроса",
+        "NewPollName": "Новый опрос",
+        "Untitled": "Опрос без названия",
+        "DefaultQuestion": "Выберите ответ.",
+        "Name": "Название",
+        "Question": "Вопрос",
+        "Type": "Тип",
+        "Options": "Варианты ответа",
+        "OptionEnabled": "Активный вариант",
+        "OptionPlaceholder": "Вариант ответа",
+        "TextNoOptions": "Опрос со свободным текстом не использует варианты ответа.",
+        "TimerEnabled": "Запустить таймер опроса",
+        "TimerBlock": "Таймер опроса",
+        "TimerTime": "Время",
+        "TimerSound": "Звук",
+        "Participants": "Участники",
+        "ParticipantsHint": "Игроки, сохранённые в этом шаблоне опроса",
+        "Create": "Сохранить как шаблон",
+        "SaveChanges": "Сохранить изменения",
+        "StartTemporary": "Запустить",
+        "NewTemplate": "Новый опрос",
+        "CancelEdit": "Отмена",
+        "ClearActive": "Завершить опрос",
+        "TableTitle": "Шаблоны",
+        "RestoreDefaults": "↺",
+        "RestoreDefaultsHint": "Добавить в набор стартовые шаблоны",
+        "RestoredDefaults": "Стартовые шаблоны добавлены.",
+        "Empty": "Шаблонов опросов пока нет.",
+        "NoResults": "Нет результатов",
+        "ResultSummary": "{answered}/{total} ответили",
+        "Edit": "Редактировать шаблон",
+        "Start": "Запустить опрос",
+        "Results": "Последние результаты",
+        "Delete": "Удалить шаблон",
+        "Columns": {
+          "Macro": "#",
+          "Name": "Название",
+          "Type": "Тип",
+          "LastResult": "Последний результат",
+          "Player": "Игрок",
+          "Controls": "Управление"
+        }
+      },
+      "Launch": {
+        "WindowTitle": "Запуск опроса",
+        "Heading": "Запуск опроса",
+        "Missing": "Шаблон опроса больше недоступен.",
+        "Type": "Тип",
+        "SelectedPlayers": "Игроки",
+        "Name": "Название",
+        "Question": "Вопрос",
+        "Options": "Варианты для этого запуска",
+        "OptionEnabled": "Использовать этот вариант в текущем опросе",
+        "OptionPlaceholder": "Вариант ответа",
+        "NoOptions": "Этот опрос собирает свободные текстовые ответы.",
+        "TimerEnabled": "Запустить таймер опроса",
+        "TimerBlock": "Таймер опроса",
+        "TimerTime": "Время",
+        "TimerSound": "Звук",
+        "Participants": "Участники",
+        "ParticipantsHint": "Игроки, выбранные для этого запуска",
+        "ClearActive": "Завершить опрос",
+        "Cancel": "Отмена",
+        "Start": "Запустить"
+      },
+      "Hotbar": {
+        "MacroName": "Опрос: {name}",
+        "DragTitle": "Перетащить в панель быстрого доступа: {name}",
+        "Added": "Макрос «Опрос: {name}» добавлен в панель.",
+        "AddError": "Не удалось добавить макрос опроса в панель быстрого доступа."
+      },
+      "Timer": {
+        "Name": "Опрос: {poll}"
+      },
+      "Message": {
+        "Submit": "Отправить",
+        "Cancel": "Отмена"
+      },
+      "Technical": {
+        "AnsweredTitle": "Ответ в голосовании: {player}",
+        "CancelledTitle": "Отмена голосования: {player}",
+        "NoAnswerTitle": "Нет ответа в голосовании: {player}",
+        "ResponseDetails": "Голосование «{poll}», {timestamp}. Игрок: {player}. Результат: {answer}."
+      },
+      "Results": {
+        "WindowTitle": "Результаты опроса",
+        "Missing": "Результаты опроса больше недоступны.",
+        "Question": "Вопрос",
+        "Type": "Тип",
+        "RequestedAt": "Запущено",
+        "RequestedBy": "Запустил",
+        "SummaryTitle": "Сводка ответов",
+        "ResponsesTitle": "Ответы",
+        "Option": "Вариант",
+        "Count": "Голоса",
+        "Voters": "Голосовавшие",
+        "Voter": "Голосующий",
+        "Status": "Статус",
+        "Answer": "Ответ",
+        "AnsweredAt": "Ответил",
+        "NoSummary": "Для свободного текста нет сводки вариантов.",
+        "UnknownUser": "Неизвестно",
+        "EmptyAnswer": "Нет ответа",
+        "Post": "Вывести в чат",
+        "Clear": "Завершить опрос",
+        "Close": "Закрыть",
+        "TemporaryCloseTitle": "Закрыть временный опрос",
+        "TemporaryCloseConfirm": "Временный опрос ещё не завершён. При закрытии окна он будет завершён, а его результаты будут потеряны.",
+        "TemporaryCloseYes": "Закрыть и потерять данные",
+        "TemporaryCloseNo": "Оставить открытым"
+      },
+      "Delete": {
+        "Title": "Удалить шаблон опроса",
+        "Confirm": "Удалить шаблон опроса «{name}»?",
+        "Yes": "Удалить",
+        "No": "Отмена"
+      },
+      "Errors": {
+        "Forbidden": "У вас нет прав на это действие.",
+        "NoPlayers": "Выберите хотя бы одного игрока.",
+        "ClearFirst": "Завершите текущий опрос перед запуском нового.",
+        "TemplateNotFound": "Шаблон опроса больше недоступен.",
+        "NoResults": "У этого опроса пока нет результатов.",
+        "DeleteActive": "Завершите активный опрос перед удалением его шаблона.",
+        "OptionsRequired": "Добавьте хотя бы один вариант ответа.",
+        "EnabledOptionsRequired": "Выберите хотя бы один активный вариант ответа для этого опроса.",
+        "TimerUnavailable": "Инструмент таймеров недоступен.",
+        "EnterText": "Введите ответ.",
+        "SelectOption": "Выберите вариант ответа.",
+        "SaveFailed": "Не удалось сохранить шаблон опроса.",
+        "StartFailed": "Не удалось запустить опрос."
+      }
+    },
     "Timers": {
       "DefaultName": "Таймер {number}",
       "Mode": {
@@ -338,8 +503,16 @@
         "Compact": "Компактный",
         "Prominent": "Заметный",
         "Close": "Закрыть",
+        "Cancel": "Отменить",
+        "CancelTooltip": "Отключить таймер и удалить его из списка текущих таймеров",
         "Delete": "Удалить таймер",
         "Missing": "Таймер больше недоступен."
+      },
+      "Cancel": {
+        "Title": "Отменить таймер",
+        "Confirm": "Отключить таймер «{name}» и удалить его из списка текущих таймеров?",
+        "Yes": "Отменить таймер",
+        "No": "Отмена"
       },
       "Delete": {
         "Title": "Удалить таймер",

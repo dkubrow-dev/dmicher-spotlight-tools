@@ -34,7 +34,8 @@ export const SETTINGS = Object.freeze({
   timerAlertedExpirations: "timerAlertedExpirations",
   focusAuditState: "focusAuditState",
   focusAuditThresholds: "focusAuditThresholds",
-  readinessState: "readinessState"
+  readinessState: "readinessState",
+  polls: "polls"
 });
 
 export const THEME = Object.freeze({
@@ -50,6 +51,9 @@ export const FLAGS = Object.freeze({
   playerStatus: "playerStatus",
   readinessRequest: "readinessRequest",
   readinessResult: "readinessResult",
+  pollRequest: "pollRequest",
+  pollResult: "pollResult",
+  pollMacro: "pollMacro",
   macro: "requestMacro"
 });
 

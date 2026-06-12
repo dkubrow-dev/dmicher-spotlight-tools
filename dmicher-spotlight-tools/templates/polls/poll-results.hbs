@@ -1,0 +1,111 @@
+{{#if hasRun}}
+<section class="dmicher-poll-results-shell">
+  <header class="dmicher-poll-results-header">
+    <h2 class="dmicher-tool-window-heading">{{run.name}}</h2>
+    <p>{{run.question}}</p>
+    <dl>
+      <div>
+        <dt>{{localize keys.type}}</dt>
+        <dd>{{typeLabel}}</dd>
+      </div>
+      <div>
+        <dt>{{localize keys.requestedAt}}</dt>
+        <dd>{{requestedAtText}}</dd>
+      </div>
+      <div>
+        <dt>{{localize keys.requestedBy}}</dt>
+        <dd>{{run.requestedByName}}</dd>
+      </div>
+    </dl>
+  </header>
+
+  {{#if hasSummary}}
+  <section class="dmicher-poll-results-section">
+    <h3>{{localize keys.summaryTitle}}</h3>
+    <div class="dmicher-tool-table-scroll">
+      <table class="dmicher-tool-table dmicher-poll-summary-table">
+        <thead>
+          <tr>
+            <th>{{localize keys.option}}</th>
+            <th>{{localize keys.count}}</th>
+            <th>{{localize keys.voters}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each summaryRows}}
+          <tr>
+            <td>{{number}}. {{label}}</td>
+            <td>{{count}}</td>
+            <td>{{votersText}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {{else}}
+  {{#if isTextPoll}}
+  <p class="notes dmicher-poll-no-summary">{{localize keys.noSummary}}</p>
+  {{/if}}
+  {{/if}}
+
+  <section class="dmicher-poll-results-section dmicher-poll-responses-section">
+    <h3>{{localize keys.responsesTitle}}</h3>
+    <div class="dmicher-tool-table-scroll dmicher-poll-results-scroll">
+      <table class="dmicher-tool-table dmicher-poll-results-table">
+        <thead>
+          <tr>
+            <th>{{localize keys.voter}}</th>
+            <th>{{localize keys.status}}</th>
+            <th>{{localize keys.answer}}</th>
+            <th>{{localize keys.answeredAt}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each resultRows}}
+          <tr>
+            <td>{{name}}</td>
+            <td>
+              <span class="dmicher-poll-status">
+                <span class="dmicher-indicator dmicher-indicator-{{statusLevel}}" aria-hidden="true"></span>
+                {{statusLabel}}
+              </span>
+            </td>
+            <td>{{answerText}}</td>
+            <td>{{answeredAtText}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="dmicher-poll-results-footer">
+    <button type="button" data-poll-results-action="post">
+      <i class="fa-solid fa-message" aria-hidden="true"></i>
+      {{localize keys.post}}
+    </button>
+    {{#if isActive}}
+    <button type="button" data-poll-results-action="clear">
+      <i class="fa-solid fa-square-check" aria-hidden="true"></i>
+      {{localize keys.clear}}
+    </button>
+    {{/if}}
+    <button type="button" data-poll-results-action="close">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      {{localize keys.close}}
+    </button>
+  </footer>
+</section>
+{{else}}
+<section class="dmicher-poll-results-shell">
+  <p class="notes dmicher-poll-empty">{{localize keys.missing}}</p>
+  <footer class="dmicher-poll-results-footer">
+    <button type="button" data-poll-results-action="close">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      {{localize keys.close}}
+    </button>
+  </footer>
+</section>
+{{/if}}
+

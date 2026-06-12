@@ -1,7 +1,7 @@
 import { MODULE_ID } from "./config.js";
 import { FocusAuditTool } from "./tools/focus/focus-audit-tool.js";
 import { openFocusAuditSettings } from "./tools/focus/focus-audit-settings.js";
-import { ReadinessTool } from "./tools/readiness/readiness-tool.js";
+import { PollTool } from "./tools/polls/poll-tool.js";
 import { RequestHotbar } from "./tools/requests/request-hotbar.js";
 import {
   openRequestSettings,
@@ -18,20 +18,20 @@ const requestTool = new RequestTool({ focusAuditTool });
 const requestHotbar = new RequestHotbar(requestTool.submitRequest);
 const stopwatchTool = new StopwatchTool();
 const timerTool = new TimerTool();
-const readinessTool = new ReadinessTool();
+const pollTool = new PollTool({ timerTool });
 const spotlightControls = new SpotlightControls({
   openRequests: () => requestTool.openActiveRequestsWindow(),
   openTimers: () => timerTool.openManager(),
   openBreakTimer: () => timerTool.openBreakTimer(),
   openStopwatch: () => stopwatchTool.openWindow(),
   openFocusAudit: () => focusAuditTool.openAuditWindow(),
-  openReadiness: () => readinessTool.openWindow()
+  openPolls: () => pollTool.openManager()
 });
 
 Hooks.once("init", () => {
   registerThemeSetting();
   focusAuditTool.registerSettings();
-  readinessTool.registerSettings();
+  pollTool.registerSettings();
   registerRequestSettings({
     submitRequest: requestTool.submitRequest,
     onRequestDragStart: requestHotbar.onRequestDragStart
@@ -39,7 +39,7 @@ Hooks.once("init", () => {
   timerTool.registerSettings();
   requestTool.registerHooks();
   focusAuditTool.registerHooks();
-  readinessTool.registerHooks();
+  pollTool.registerHooks();
   spotlightControls.registerControls();
   stopwatchTool.registerHooks();
 
@@ -50,7 +50,9 @@ Hooks.once("init", () => {
     openFocusAuditSettings,
     openTimers: () => timerTool.openManager(),
     openTimer: (timerId) => timerTool.openTimerWindow(timerId, { force: true }),
-    openReadiness: () => readinessTool.openWindow(),
+    openPolls: () => pollTool.openManager(),
+    openPollLaunch: (templateId) => pollTool.openLaunchWindow(templateId),
+    openReadiness: () => pollTool.openManager(),
     openStopwatch: () => stopwatchTool.openWindow(),
     recordStopwatchEvent: (eventType) => stopwatchTool.recordEvent(eventType),
     submitRequest: requestTool.submitRequest
@@ -65,7 +67,7 @@ Hooks.once("ready", () => {
   applySpotlightTheme();
   focusAuditTool.activate();
   requestTool.activate();
-  readinessTool.activate();
+  pollTool.activate();
   timerTool.activate();
   stopwatchTool.activate();
   void requestHotbar.migrateMacros();

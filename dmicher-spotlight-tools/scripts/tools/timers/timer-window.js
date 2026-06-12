@@ -97,7 +97,8 @@ export class TimerWindowApplication extends HandlebarsApplicationMixin(Applicati
       displayStyle,
       prominent,
       compact: !prominent,
-      canDelete: isModerator(),
+      canDelete: isModerator() && expired,
+      canCancel: isModerator() && !expired,
       remainingText: formatDigitalDuration(getRemainingMilliseconds(timer)),
       deadlineText: formatClockTime(timer.endsAt),
       keys: {
@@ -106,7 +107,9 @@ export class TimerWindowApplication extends HandlebarsApplicationMixin(Applicati
         compact: i18nKey("Timers.Window.Compact"),
         prominent: i18nKey("Timers.Window.Prominent"),
         close: i18nKey("Timers.Window.Close"),
-        delete: i18nKey("Timers.Window.Delete")
+        delete: i18nKey("Timers.Window.Delete"),
+        cancel: i18nKey("Timers.Window.Cancel"),
+        cancelTooltip: i18nKey("Timers.Window.CancelTooltip")
       }
     };
   }
@@ -202,6 +205,7 @@ export class TimerWindowApplication extends HandlebarsApplicationMixin(Applicati
         if (action === "compact") this.setDisplayStyle(TIMER_DISPLAY_STYLE.compact);
         else if (action === "prominent") this.setDisplayStyle(TIMER_DISPLAY_STYLE.prominent);
         else if (action === "close") void this.close();
+        else if (action === "cancel") void this.timerTool.confirmCancelTimer(this.timerId);
         else if (action === "delete") void this.timerTool.confirmDeleteTimer(this.timerId);
       });
     }

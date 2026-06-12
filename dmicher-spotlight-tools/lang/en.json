@@ -111,7 +111,8 @@
       "Break": "Break",
       "Stopwatch": "Stopwatch",
       "FocusAudit": "Focus Audit",
-      "Readiness": "Readiness Check"
+      "Readiness": "Readiness Check",
+      "Polls": "Polls"
     },
     "Focus": {
       "Indicators": {
@@ -244,6 +245,170 @@
         "Status": "Status"
       }
     },
+    "Polls": {
+      "DefaultOption": "Option {number}",
+      "Types": {
+        "Buttons": "one option by button",
+        "Radio": "one option in table",
+        "Checkbox": "multiple choices in table",
+        "Text": "free text answer"
+      },
+      "Status": {
+        "Pending": "No answer",
+        "Answered": "Answered",
+        "Cancelled": "Cancelled",
+        "NoAnswer": "No answer"
+      },
+      "Presets": {
+        "Readiness": {
+          "Name": "Readiness Check",
+          "Question": "Are you ready to continue?",
+          "Options": {
+            "Ready": "Ready",
+            "NotReady": "Not ready"
+          }
+        },
+        "BestPlayer": {
+          "Name": "Best Player",
+          "Question": "Who was the best player today?"
+        }
+      },
+      "Manager": {
+        "WindowTitle": "Polls",
+        "CreateTitle": "New poll",
+        "EditTitle": "Edit poll template",
+        "NewPollName": "New poll",
+        "Untitled": "Untitled poll",
+        "DefaultQuestion": "Choose an answer.",
+        "Name": "Name",
+        "Question": "Question",
+        "Type": "Type",
+        "Options": "Answer options",
+        "OptionEnabled": "Active option",
+        "OptionPlaceholder": "Answer option",
+        "TextNoOptions": "Free text polls do not use answer options.",
+        "TimerEnabled": "Start a poll timer",
+        "TimerBlock": "Poll timer",
+        "TimerTime": "Time",
+        "TimerSound": "Sound",
+        "Participants": "Participants",
+        "ParticipantsHint": "Players saved in this poll template",
+        "Create": "Save as template",
+        "SaveChanges": "Save changes",
+        "StartTemporary": "Start",
+        "NewTemplate": "New poll",
+        "CancelEdit": "Cancel",
+        "ClearActive": "End poll",
+        "TableTitle": "Templates",
+        "RestoreDefaults": "↺",
+        "RestoreDefaultsHint": "Add starter templates to the set",
+        "RestoredDefaults": "Starter templates added.",
+        "Empty": "No poll templates yet.",
+        "NoResults": "No results",
+        "ResultSummary": "{answered}/{total} answered",
+        "Edit": "Edit template",
+        "Start": "Start poll",
+        "Results": "Last results",
+        "Delete": "Delete template",
+        "Columns": {
+          "Macro": "#",
+          "Name": "Name",
+          "Type": "Type",
+          "LastResult": "Last result",
+          "Player": "Player",
+          "Controls": "Controls"
+        }
+      },
+      "Launch": {
+        "WindowTitle": "Start poll",
+        "Heading": "Start poll",
+        "Missing": "The poll template is no longer available.",
+        "Type": "Type",
+        "SelectedPlayers": "Players",
+        "Name": "Name",
+        "Question": "Question",
+        "Options": "Options for this launch",
+        "OptionEnabled": "Use this option in the current poll",
+        "OptionPlaceholder": "Answer option",
+        "NoOptions": "This poll collects free text answers.",
+        "TimerEnabled": "Start a poll timer",
+        "TimerBlock": "Poll timer",
+        "TimerTime": "Time",
+        "TimerSound": "Sound",
+        "Participants": "Participants",
+        "ParticipantsHint": "Players selected for this launch",
+        "ClearActive": "End poll",
+        "Cancel": "Cancel",
+        "Start": "Start"
+      },
+      "Hotbar": {
+        "MacroName": "Голосование: {name}",
+        "DragTitle": "Drag to the hotbar: {name}",
+        "Added": "The \"Голосование: {name}\" macro has been added to the hotbar.",
+        "AddError": "Could not add the poll macro to the hotbar."
+      },
+      "Timer": {
+        "Name": "Poll: {poll}"
+      },
+      "Message": {
+        "Submit": "Submit",
+        "Cancel": "Cancel"
+      },
+      "Technical": {
+        "AnsweredTitle": "Poll answer: {player}",
+        "CancelledTitle": "Poll cancelled: {player}",
+        "NoAnswerTitle": "No poll answer: {player}",
+        "ResponseDetails": "Poll \"{poll}\", {timestamp}. Player: {player}. Result: {answer}."
+      },
+      "Results": {
+        "WindowTitle": "Poll Results",
+        "Missing": "Poll results are no longer available.",
+        "Question": "Question",
+        "Type": "Type",
+        "RequestedAt": "Started",
+        "RequestedBy": "Started by",
+        "SummaryTitle": "Answer summary",
+        "ResponsesTitle": "Responses",
+        "Option": "Option",
+        "Count": "Votes",
+        "Voters": "Voters",
+        "Voter": "Voter",
+        "Status": "Status",
+        "Answer": "Answer",
+        "AnsweredAt": "Answered",
+        "NoSummary": "Free text polls have no option summary.",
+        "UnknownUser": "Unknown",
+        "EmptyAnswer": "No answer",
+        "Post": "Post to chat",
+        "Clear": "End poll",
+        "Close": "Close",
+        "TemporaryCloseTitle": "Close temporary poll",
+        "TemporaryCloseConfirm": "This temporary poll is still active. Closing the window will end it and discard its results.",
+        "TemporaryCloseYes": "Close and discard",
+        "TemporaryCloseNo": "Keep open"
+      },
+      "Delete": {
+        "Title": "Delete poll template",
+        "Confirm": "Delete poll template \"{name}\"?",
+        "Yes": "Delete",
+        "No": "Cancel"
+      },
+      "Errors": {
+        "Forbidden": "You do not have permission for this action.",
+        "NoPlayers": "Select at least one player.",
+        "ClearFirst": "Finish the current poll before starting another one.",
+        "TemplateNotFound": "Poll template is no longer available.",
+        "NoResults": "There are no results for this poll yet.",
+        "DeleteActive": "Finish the active poll before deleting its template.",
+        "OptionsRequired": "Add at least one answer option.",
+        "EnabledOptionsRequired": "Select at least one active answer option for this poll.",
+        "TimerUnavailable": "The timer tool is not available.",
+        "EnterText": "Enter an answer.",
+        "SelectOption": "Select an answer option.",
+        "SaveFailed": "Could not save the poll template.",
+        "StartFailed": "Could not start the poll."
+      }
+    },
     "Timers": {
       "DefaultName": "Timer {number}",
       "Mode": {
@@ -338,8 +503,16 @@
         "Compact": "Compact",
         "Prominent": "Prominent",
         "Close": "Close",
+        "Cancel": "Cancel",
+        "CancelTooltip": "Disable the timer and remove it from the current timers list",
         "Delete": "Delete timer",
         "Missing": "Timer is no longer available."
+      },
+      "Cancel": {
+        "Title": "Cancel timer",
+        "Confirm": "Disable timer \"{name}\" and remove it from the current timers list?",
+        "Yes": "Cancel timer",
+        "No": "Cancel"
       },
       "Delete": {
         "Title": "Delete timer",

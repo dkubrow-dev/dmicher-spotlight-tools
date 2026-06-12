@@ -293,8 +293,22 @@ export class FocusAuditTool {
   handleChatMessageCreated(message, _options, userId) {
     if (!isPrimaryModerator()) return;
     if (message.getFlag(MODULE_ID, FLAGS.playerStatus)) return;
+    const pollResult = message.getFlag(MODULE_ID, FLAGS.pollResult);
+    if (pollResult) {
+      if (pollResult.status !== "noAnswer" && pollResult.userId) {
+        void this.markTimestamp(String(pollResult.userId), "lastChatAt", Number(pollResult.answeredAt) || Number(message.timestamp) || Date.now());
+      }
+      return;
+    }
+    const readinessResult = message.getFlag(MODULE_ID, FLAGS.readinessResult);
+    if (readinessResult) {
+      if (readinessResult.status !== "waiting" && readinessResult.userId) {
+        void this.markTimestamp(String(readinessResult.userId), "lastChatAt", Number(message.timestamp) || Date.now());
+      }
+      return;
+    }
+    if (message.getFlag(MODULE_ID, FLAGS.pollRequest)) return;
     if (message.getFlag(MODULE_ID, FLAGS.readinessRequest)) return;
-    if (message.getFlag(MODULE_ID, FLAGS.readinessResult)) return;
     if (message.getFlag(MODULE_ID, FLAGS.request)) return;
 
     const authorId = getMessageAuthorId(message, userId);

@@ -28,6 +28,12 @@
       </button>
       {{/if}}
     {{else}}
+    {{#if canCancel}}
+    <button type="button" class="dmicher-timer-window-cancel" data-timer-action="cancel" title="{{localize keys.cancelTooltip}}">
+      <i class="fa-solid fa-ban" aria-hidden="true"></i>
+      {{localize keys.cancel}}
+    </button>
+    {{/if}}
     <button type="button" data-timer-action="compact">
       <i class="fa-solid fa-compress" aria-hidden="true"></i>
       {{localize keys.compact}}
@@ -39,9 +45,14 @@
     </button>
   </footer>
   {{else}}
-  <div class="dmicher-timer-compact-row">
+  <div class="dmicher-timer-compact-row{{#if canCancel}} has-cancel{{/if}}">
     <strong>{{timer.name}}</strong>
     <span data-timer-remaining>{{remainingText}}</span>
+    {{#if canCancel}}
+    <button type="button" class="dmicher-timer-window-cancel" data-timer-action="cancel" title="{{localize keys.cancelTooltip}}" aria-label="{{localize keys.cancel}}">
+      <i class="fa-solid fa-ban" aria-hidden="true"></i>
+    </button>
+    {{/if}}
     <button type="button" data-timer-action="prominent" title="{{localize keys.prominent}}">
       <i class="fa-solid fa-expand" aria-hidden="true"></i>
     </button>
