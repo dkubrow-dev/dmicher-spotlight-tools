@@ -48,6 +48,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     const draft = this.editTemplateId
       ? this.pollTool.getTemplate(this.editTemplateId) ?? this.pollTool.getBlankTemplateDraft()
       : this.pollTool.getBlankTemplateDraft();
+    if (!this.editTemplateId && this.formVisible && !draft.name) draft.name = localize("Polls.Manager.NewPollName");
     const optionRows = this.prepareOptionRows(draft);
     const participants = this.pollTool.getParticipantRows(draft);
     const templates = this.pollTool.getTemplateRows();
@@ -62,6 +63,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
       draft,
       editing: Boolean(this.editTemplateId),
       formVisible: this.formVisible,
+      showStartTemporary: !this.editTemplateId,
       typeOptions,
       timerSoundChoices: this.pollTool.getTimerSoundChoices(draft.timerSound),
       optionRows,
@@ -91,6 +93,7 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
         participants: i18nKey("Polls.Manager.Participants"),
         participantsHint: i18nKey("Polls.Manager.ParticipantsHint"),
         save: i18nKey(this.editTemplateId ? "Polls.Manager.SaveChanges" : "Polls.Manager.Create"),
+        startTemporary: i18nKey("Polls.Manager.StartTemporary"),
         newTemplate: i18nKey("Polls.Manager.NewTemplate"),
         cancelEdit: i18nKey("Polls.Manager.CancelEdit"),
         clearActive: i18nKey("Polls.Manager.ClearActive"),
@@ -145,6 +148,9 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
         this.editTemplateId = "";
         this.formVisible = false;
         void this.render({ parts: ["main"] });
+      });
+      form.querySelector("[data-poll-action='start-temporary']")?.addEventListener("click", (event) => {
+        void this.handleStartTemporary(event);
       });
       form.querySelector("[data-poll-type-select]")?.addEventListener("change", () => {
         this.refreshOptionVisibility();
@@ -241,30 +247,9 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     if (submitButton) submitButton.disabled = true;
 
     try {
-      const type = form.elements.namedItem("type")?.value ?? POLL_TYPE.buttons;
-      const maxOptions = getPollTypeMaxOptions(type);
-      const options = Array.from(form.querySelectorAll("[data-poll-option-row]"))
-        .slice(0, maxOptions)
-        .map((row) => ({
-          label: row.querySelector("[data-poll-option-input]")?.value,
-          enabled: row.querySelector("[data-poll-option-enabled]")?.checked ?? true
-        }))
-        .filter((option) => String(option.label ?? "").trim());
-      const participants = {};
-      for (const checkbox of form.querySelectorAll("[data-poll-template-participant]")) {
-        if (checkbox.checked) participants[checkbox.dataset.userId] = true;
-      }
-
       await this.pollTool.saveTemplate({
         id: this.editTemplateId,
-        name: form.elements.namedItem("name")?.value,
-        question: form.elements.namedItem("question")?.value,
-        type,
-        timerEnabled: form.elements.namedItem("timerEnabled")?.checked ?? false,
-        timerTime: form.elements.namedItem("timerTime")?.value,
-        timerSound: form.elements.namedItem("timerSound")?.value,
-        participants,
-        options
+        ...this.collectFormInput(form)
       });
       this.editTemplateId = "";
       this.formVisible = false;
@@ -274,6 +259,56 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
       ui.notifications.error(error?.message || localize("Polls.Errors.SaveFailed"));
       if (submitButton) submitButton.disabled = false;
     }
+  }
+
+  async handleStartTemporary(event) {
+    event.preventDefault();
+    const form = event.currentTarget.closest("[data-poll-template-form]");
+    const button = event.currentTarget;
+    if (!form) return;
+    if (button) button.disabled = true;
+
+    try {
+      const run = await this.pollTool.launchTemporaryPoll(this.collectFormInput(form));
+      if (run) {
+        this.editTemplateId = "";
+        this.formVisible = false;
+        await this.render({ parts: ["main"] });
+      } else if (button) {
+        button.disabled = false;
+      }
+    } catch (error) {
+      console.error(`${MODULE_ID} | Unable to start temporary poll`, error);
+      ui.notifications.error(error?.message || localize("Polls.Errors.StartFailed"));
+      if (button) button.disabled = false;
+    }
+  }
+
+  collectFormInput(form) {
+    const type = form.elements.namedItem("type")?.value ?? POLL_TYPE.buttons;
+    const maxOptions = getPollTypeMaxOptions(type);
+    const options = Array.from(form.querySelectorAll("[data-poll-option-row]"))
+      .slice(0, maxOptions)
+      .map((row) => ({
+        label: row.querySelector("[data-poll-option-input]")?.value,
+        enabled: row.querySelector("[data-poll-option-enabled]")?.checked ?? true
+      }))
+      .filter((option) => String(option.label ?? "").trim());
+    const participants = {};
+    for (const checkbox of form.querySelectorAll("[data-poll-template-participant]")) {
+      if (checkbox.checked) participants[checkbox.dataset.userId] = true;
+    }
+
+    return {
+      name: form.elements.namedItem("name")?.value,
+      question: form.elements.namedItem("question")?.value,
+      type,
+      timerEnabled: form.elements.namedItem("timerEnabled")?.checked ?? false,
+      timerTime: form.elements.namedItem("timerTime")?.value,
+      timerSound: form.elements.namedItem("timerSound")?.value,
+      participants,
+      options
+    };
   }
 
   onPollStateChanged() {

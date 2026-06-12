@@ -306,8 +306,18 @@ export class PollTool {
   async saveTemplate(input) {
     if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
 
-    const now = Date.now();
     const existing = input.id ? this.getTemplate(input.id) : null;
+    const template = this.createTemplateFromInput(input, { existing });
+
+    await this.updateState((state) => {
+      state.templates[template.id] = template;
+    });
+    return template;
+  }
+
+  createTemplateFromInput(input, { existing = null, temporary = false } = {}) {
+    input = input ?? {};
+    const now = Date.now();
     const type = normalizePollType(input.type);
     const timerEnabled = Boolean(input.timerEnabled);
     const maxOptions = getPollTypeMaxOptions(type);
@@ -332,7 +342,7 @@ export class PollTool {
 
     const template = normalizePollTemplate({
       ...(existing ?? {}),
-      id: existing?.id || foundry.utils.randomID(),
+      id: existing?.id || input.id || (temporary ? `temporary-${foundry.utils.randomID()}` : foundry.utils.randomID()),
       preset: existing?.preset ?? "custom",
       name: input.name,
       question: input.question,
@@ -346,9 +356,6 @@ export class PollTool {
       updatedAt: now
     });
 
-    await this.updateState((state) => {
-      state.templates[template.id] = template;
-    });
     return template;
   }
 
@@ -402,6 +409,17 @@ export class PollTool {
 
   async startPoll(templateId) {
     return this.openLaunchWindow(templateId);
+  }
+
+  async launchTemporaryPoll(input) {
+    if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
+    const template = this.createTemplateFromInput(input, { temporary: true });
+    const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
+    return this.launchPreparedPoll(state, template, {
+      timerEnabled: template.timerEnabled
+    }, {
+      temporary: true
+    });
   }
 
   onTemplateDragStart(event) {
@@ -478,6 +496,15 @@ export class PollTool {
       return null;
     }
 
+    return this.launchPreparedPoll(state, template, overrides);
+  }
+
+  async launchPreparedPoll(state, template, overrides = {}, { temporary = false } = {}) {
+    if (state.activePoll && !state.activePoll.closed) {
+      ui.notifications.warn(localize("Polls.Errors.ClearFirst"));
+      return null;
+    }
+
     const launchParticipants = overrides.participants
       ? normalizePollParticipants(overrides.participants, template.participants)
       : template.participants;
@@ -496,7 +523,7 @@ export class PollTool {
     const runTemplate = normalizePollTemplate({
       ...template,
       options: launchOptions,
-      timerEnabled: Boolean(overrides.timerEnabled),
+      timerEnabled: overrides.timerEnabled ?? template.timerEnabled,
       timerTime: template.timerTime,
       timerSound: template.timerSound
     });
@@ -523,7 +550,8 @@ export class PollTool {
       timerId: "",
       timerStartedAt: timerEnabled ? requestedAt : 0,
       timerEndsAt: timerEnabled ? requestedAt + timerDuration : 0,
-      closed: false
+      closed: false,
+      temporary: Boolean(temporary)
     };
 
     if (timerEnabled) {
@@ -881,6 +909,49 @@ export class PollTool {
     run.closed = true;
     state.activePoll = null;
     state.lastRuns[run.templateId] = foundry.utils.deepClone(run);
+    await game.settings.set(MODULE_ID, SETTINGS.polls, state);
+  }
+
+  async confirmCloseTemporaryResults(templateId) {
+    const run = this.getLastRun(templateId);
+    if (!run?.temporary) return true;
+
+    const active = this.state.activePoll?.templateId === run.templateId && !this.state.activePoll.closed;
+    if (active) {
+      const confirmed = await confirmDialog({
+        title: localize("Polls.Results.TemporaryCloseTitle"),
+        content: `<p>${escapeHTML(localize("Polls.Results.TemporaryCloseConfirm"))}</p>`,
+        yes: localize("Polls.Results.TemporaryCloseYes"),
+        no: localize("Polls.Results.TemporaryCloseNo"),
+        icon: "fa-solid fa-triangle-exclamation"
+      });
+      if (!confirmed) return false;
+    }
+
+    await this.discardTemporaryPoll(run.templateId);
+    return true;
+  }
+
+  async discardTemporaryPoll(templateId) {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Polls.Errors.Forbidden"));
+      return;
+    }
+
+    const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
+    const run = state.activePoll?.templateId === templateId ? state.activePoll : state.lastRuns[templateId];
+    if (!run?.temporary) return;
+
+    if (state.activePoll?.templateId === templateId) {
+      for (const [userId, response] of Object.entries(state.activePoll.responses)) {
+        if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
+        const message = this.findRequestMessage(state.activePoll.id, userId, response.messageId);
+        if (message) await message.delete();
+      }
+      state.activePoll = null;
+    }
+
+    delete state.lastRuns[templateId];
     await game.settings.set(MODULE_ID, SETTINGS.polls, state);
   }
 

@@ -275,8 +275,9 @@
       },
       "Manager": {
         "WindowTitle": "Polls",
-        "CreateTitle": "New poll template",
+        "CreateTitle": "New poll",
         "EditTitle": "Edit poll template",
+        "NewPollName": "New poll",
         "Untitled": "Untitled poll",
         "DefaultQuestion": "Choose an answer.",
         "Name": "Name",
@@ -292,9 +293,10 @@
         "TimerSound": "Sound",
         "Participants": "Participants",
         "ParticipantsHint": "Players saved in this poll template",
-        "Create": "Create template",
+        "Create": "Save as template",
         "SaveChanges": "Save changes",
-        "NewTemplate": "New template",
+        "StartTemporary": "Start",
+        "NewTemplate": "New poll",
         "CancelEdit": "Cancel",
         "ClearActive": "End poll",
         "TableTitle": "Templates",
@@ -379,7 +381,11 @@
         "EmptyAnswer": "No answer",
         "Post": "Post to chat",
         "Clear": "End poll",
-        "Close": "Close"
+        "Close": "Close",
+        "TemporaryCloseTitle": "Close temporary poll",
+        "TemporaryCloseConfirm": "This temporary poll is still active. Closing the window will end it and discard its results.",
+        "TemporaryCloseYes": "Close and discard",
+        "TemporaryCloseNo": "Keep open"
       },
       "Delete": {
         "Title": "Delete poll template",

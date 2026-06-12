@@ -166,6 +166,12 @@
           </button>
         </div>
         <div class="dmicher-poll-manager-action-group dmicher-poll-manager-action-group-right">
+          {{#if showStartTemporary}}
+          <button type="button" data-poll-action="start-temporary">
+            <i class="fa-solid fa-play" aria-hidden="true"></i>
+            {{localize keys.startTemporary}}
+          </button>
+          {{/if}}
           <button type="submit">
             <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
             {{localize keys.save}}

@@ -487,7 +487,8 @@ export function normalizePollRun(rawRun) {
     timerId: trimText(run.timerId, 80),
     timerStartedAt: Number(run.timerStartedAt) || 0,
     timerEndsAt: Number(run.timerEndsAt) || 0,
-    closed: Boolean(run.closed)
+    closed: Boolean(run.closed),
+    temporary: Boolean(run.temporary)
   };
 }
 

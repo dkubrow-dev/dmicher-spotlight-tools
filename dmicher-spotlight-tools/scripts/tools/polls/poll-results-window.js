@@ -85,6 +85,14 @@ export class PollResultsApplication extends HandlebarsApplicationMixin(Applicati
     this.activateListeners();
   }
 
+  async close(options = {}) {
+    if (!options.force) {
+      const canClose = await this.pollTool.confirmCloseTemporaryResults(this.templateId);
+      if (!canClose) return this;
+    }
+    return super.close(options);
+  }
+
   async _onClose(options) {
     this.pollTool.forgetResultsWindow(this);
     await super._onClose(options);
