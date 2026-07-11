@@ -1,0 +1,48 @@
+# assets images
+
+All images in the module are human-drawn.
+The stopwatch images were created by the module's author using basic shapes. The source materials are not preserved.
+The remaining images were commissioned by a human artist. Source materials are available at the following link: https://drive.google.com/drive/folders/1vXooH9aYLWvCXJuQKNeo6N1BGaaH7CUq?usp=drive_link
+All rights to images belong to the author of the module.
+License: Creative Commons Zero v1.0 Universal
+
+-------------------------------
+# assets request sounds
+
+Downloaded from:
+https://obsydianx.itch.io/interface-sfx-pack-1
+
+Status: Released
+Category: Assets
+Release date: Apr 21, 2016
+Author: ObsydianX
+Asset license: Creative Commons Zero v1.0 Universal
+Links: Soundcloud - https://soundcloud.com/obsydianx/
+Content: No generative AI was used
+
+License CC0:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Correspondence between the module's sound and the original sound set:
+1. request-common.ogg: back_style_1_001.ogg
+2. request-urgent.ogg: confirm_style_3_001.ogg, confirm_style_3_002.ogg, confirm_style_3_003.ogg
+3. next-request.ogg: cursor_style_2.ogg
+4. request-stop.ogg: error_style_4_001.ogg
+
+-------------------------------
+# assets timers sounds
+
+Downloaded from:
+	https://freesound.org
+License:
+	Creative Commons Zero v1.0 Universal
+	https://creativecommons.org/publicdomain/zero/1.0/
+
+Some sounds were pre-processed personally by the author of the module.
+
+Correspondence of module sounds to links to the authors of the original sound:
+ring1.ogg -> https://freesound.org/people/cryptidcat/sounds/743963/
+ring2.ogg -> https://freesound.org/people/israra/sounds/434055/
+ring3.ogg -> https://freesound.org/people/ZyryTSounds/sounds/219244/
+
+
