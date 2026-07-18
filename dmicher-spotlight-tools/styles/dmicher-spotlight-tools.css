@@ -634,6 +634,12 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   overflow: auto;
 }
 
+.dmicher-active-requests-summary {
+  flex: 0 0 auto;
+  font-weight: 600;
+  margin: 0;
+}
+
 .dmicher-active-requests-table {
   min-width: 560px;
 }
