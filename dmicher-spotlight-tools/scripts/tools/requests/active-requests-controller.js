@@ -2,8 +2,6 @@ import { FLAGS, MODULE_ID, REQUEST_TYPES, normalizeRequestType } from "../../con
 import {
   confirmDialog,
   escapeHTML,
-  format,
-  formatDuration,
   getMessageAuthorName,
   isModerator,
   localize
@@ -114,14 +112,13 @@ export class ActiveRequestsController {
     this.sort();
     return this.entries.map((entry) => {
       const request = REQUEST_TYPES[normalizeRequestType(entry.urgency)];
+      const submittedAt = Number(entry.submittedAt);
       return {
         ...entry,
         image: request.image,
         typeLabel: localize(request.labelKey),
         authorText: entry.authorName || localize("Requests.Active.UnknownAuthor"),
-        submittedText: format("Requests.Active.Ago", {
-          duration: formatDuration(Date.now() - Number(entry.submittedAt))
-        }),
+        submittedText: foundry.utils.timeSince(new Date(Number.isFinite(submittedAt) ? submittedAt : Date.now())),
         grantLabel: localize(getGrantActionKey(entry.urgency))
       };
     });

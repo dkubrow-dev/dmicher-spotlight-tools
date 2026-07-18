@@ -68,6 +68,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   async _onRender(context, options) {
     await super._onRender(context, options);
+    ui.chat?.updateTimestamps?.();
     this.updateWindowTitle();
     this.activateListeners();
     this.startTicking();
