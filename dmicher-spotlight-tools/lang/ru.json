@@ -81,6 +81,7 @@
       "Active": {
         "WindowTitle": "Активные заявки",
         "Heading": "Активные заявки",
+        "Summary": "Всего заявок - {total}, из них срочных - {urgent}",
         "Empty": "Активных заявок пока нет.",
         "Ago": "{duration} назад",
         "UnknownAuthor": "Неизвестно",

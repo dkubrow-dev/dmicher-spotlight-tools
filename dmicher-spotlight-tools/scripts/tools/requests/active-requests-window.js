@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { i18nKey, localize } from "../../utils.js";
+import { format, i18nKey, localize } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const ACTIVE_REQUESTS_TICK_MS = 15000;
@@ -43,9 +43,14 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const requests = this.activeRequests.getRows();
+    const totalCount = requests.length;
+    const urgentCount = this.activeRequests.getUrgentCount();
     return {
       ...context,
       requests,
+      totalCount,
+      urgentCount,
+      summaryText: format("Requests.Active.Summary", { total: totalCount, urgent: urgentCount }),
       hasRequests: requests.length > 0,
       keys: {
         heading: i18nKey("Requests.Active.Heading"),
@@ -63,6 +68,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   async _onRender(context, options) {
     await super._onRender(context, options);
+    ui.chat?.updateTimestamps?.();
     this.updateWindowTitle();
     this.activateListeners();
     this.startTicking();
@@ -100,7 +106,10 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   startTicking() {
     this.stopTicking();
-    this.tickHandle = window.setInterval(() => this.onActiveRequestsChanged(), ACTIVE_REQUESTS_TICK_MS);
+    this.tickHandle = window.setInterval(
+      () => this.onActiveRequestsChanged({ refresh: true }),
+      ACTIVE_REQUESTS_TICK_MS
+    );
   }
 
   stopTicking() {
@@ -119,8 +128,9 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
     this.element?.setAttribute("aria-label", title);
   }
 
-  onActiveRequestsChanged() {
+  onActiveRequestsChanged({ refresh = false } = {}) {
     if (!this.rendered) return;
+    if (refresh) this.activeRequests.refresh();
     this.updateWindowTitle();
     void this.render({ parts: ["main"] }).then(() => this.updateWindowTitle());
   }

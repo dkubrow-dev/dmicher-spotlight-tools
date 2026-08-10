@@ -2,8 +2,6 @@ import { FLAGS, MODULE_ID, REQUEST_TYPES, normalizeRequestType } from "../../con
 import {
   confirmDialog,
   escapeHTML,
-  format,
-  formatDuration,
   getMessageAuthorName,
   isModerator,
   localize
@@ -17,6 +15,7 @@ const CHAT_RENDER_BATCH_MAX_ATTEMPTS = 60;
 export class ActiveRequestsController {
   constructor({ resolveRequest, onRequestResolved }) {
     this.entries = [];
+    this.nextSequence = 0;
     this.window = null;
     this.resolveRequest = resolveRequest;
     this.onRequestResolved = onRequestResolved;
@@ -42,38 +41,50 @@ export class ActiveRequestsController {
     if (this.window === app) this.window = null;
   }
 
-  rebuild(messages = game.messages) {
+  rebuild(messages = game.messages, { notify = true } = {}) {
     this.entries = [];
+    this.nextSequence = 0;
     for (const message of messages ?? []) {
       const requestData = message.getFlag(MODULE_ID, FLAGS.request);
       if (requestData) this.register(message, requestData, { notify: false });
     }
     this.sort();
-    this.notifyChanged();
+    if (notify) this.notifyChanged();
+  }
+
+  refresh() {
+    this.rebuild(game.messages, { notify: false });
   }
 
   register(message, requestData, { notify = true } = {}) {
     const entry = this.createEntry(message, requestData);
     const existingIndex = this.entries.findIndex((request) => request.messageId === entry.messageId);
-    if (existingIndex >= 0) this.entries[existingIndex] = entry;
+    if (existingIndex >= 0) {
+      entry.sequence = this.entries[existingIndex].sequence;
+      this.entries[existingIndex] = entry;
+    }
     else this.entries.push(entry);
     this.sort();
     if (notify) this.notifyChanged();
   }
 
   createEntry(message, requestData) {
+    const submittedAt = Number(message.timestamp ?? requestData.submittedAt ?? requestData.createdAt ?? Date.now());
     return {
       messageId: message.id,
       urgency: normalizeRequestType(requestData.urgency),
       authorId: String(requestData.authorId ?? ""),
       authorName: String(requestData.authorName ?? getMessageAuthorName(message)).slice(0, 100),
-      submittedAt: Number(requestData.submittedAt ?? requestData.createdAt ?? message.timestamp ?? Date.now()),
-      createdAt: Number(requestData.createdAt ?? message.timestamp ?? Date.now())
+      submittedAt,
+      sequence: this.nextSequence++
     };
   }
 
   sort() {
-    this.entries.sort((left, right) => Number(left.submittedAt) - Number(right.submittedAt));
+    this.entries.sort((left, right) => (
+      (Number(left.sequence) - Number(right.sequence))
+      || String(left.messageId).localeCompare(String(right.messageId))
+    ));
   }
 
   remove(messageId, { broadcast = false } = {}) {
@@ -93,17 +104,21 @@ export class ActiveRequestsController {
     return this.entries.length;
   }
 
+  getUrgentCount() {
+    return this.entries.filter((entry) => normalizeRequestType(entry.urgency) === "urgent").length;
+  }
+
   getRows() {
+    this.sort();
     return this.entries.map((entry) => {
       const request = REQUEST_TYPES[normalizeRequestType(entry.urgency)];
+      const submittedAt = Number(entry.submittedAt);
       return {
         ...entry,
         image: request.image,
         typeLabel: localize(request.labelKey),
         authorText: entry.authorName || localize("Requests.Active.UnknownAuthor"),
-        submittedText: format("Requests.Active.Ago", {
-          duration: formatDuration(Date.now() - Number(entry.submittedAt))
-        }),
+        submittedText: foundry.utils.timeSince(new Date(Number.isFinite(submittedAt) ? submittedAt : Date.now())),
         grantLabel: localize(getGrantActionKey(entry.urgency))
       };
     });

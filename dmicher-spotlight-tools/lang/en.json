@@ -81,6 +81,7 @@
       "Active": {
         "WindowTitle": "Active Requests",
         "Heading": "Active Requests",
+        "Summary": "Total requests - {total}, urgent - {urgent}",
         "Empty": "There are no active requests yet.",
         "Ago": "{duration} ago",
         "UnknownAuthor": "Unknown",
