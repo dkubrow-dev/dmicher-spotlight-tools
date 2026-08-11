@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { i18nKey, localize } from "../../utils.js";
+import { i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import {
   formatStopwatchElapsed,
   getStopwatchEventButtons,
@@ -67,17 +67,18 @@ export class StopwatchWindowApplication extends HandlebarsApplicationMixin(Appli
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.activateListeners();
-    this.startTicking();
-    this.refreshTime();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.activateListeners();
+      this.startTicking();
+      this.refreshTime();
+    });
   }
 
-  async _onClose(options) {
+  _onClose(options) {
     this.stopTicking();
     this.stopwatchTool.forgetWindow(this);
-    await super._onClose(options);
+    return super._onClose(options);
   }
 
   activateListeners() {

@@ -3,11 +3,13 @@ import {
   canUseRequest,
   format,
   getChatMessageClass,
+  getChatMessageRenderHook,
   getWhisperRecipientsWithModerators,
   isModerator,
   localize,
   playAudio,
-  preloadImage
+  preloadImage,
+  setGamePaused
 } from "../../utils.js";
 import { ActiveRequestsController } from "./active-requests-controller.js";
 import {
@@ -34,7 +36,7 @@ export class RequestTool {
   }
 
   registerHooks() {
-    Hooks.on("renderChatMessageHTML", this.renderChatMessage);
+    Hooks.on(getChatMessageRenderHook(), this.renderChatMessage);
     Hooks.on("createChatMessage", this.handleChatMessageCreated);
   }
 
@@ -70,7 +72,7 @@ export class RequestTool {
     const speaker = ChatMessageClass.getSpeaker(token ? { token } : {});
 
     try {
-      await ChatMessageClass.create({
+      const message = await ChatMessageClass.create({
         user: game.user.id,
         speaker,
         content: buildRequestMessageContent(normalizedType, getRequestText(request), getRequestStyle(request)),
@@ -80,6 +82,7 @@ export class RequestTool {
           }
         }
       });
+      if (!message) throw new Error(localize("Requests.Chat.SubmitError"));
       await this.playSound(request.sound, true, "request");
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to submit request`, error);
@@ -123,7 +126,7 @@ export class RequestTool {
       const createdAt = Number(requestData.createdAt ?? message.timestamp ?? game.time.serverTime);
       const elapsed = game.time.serverTime - createdAt;
       if (completed && normalizeRequestType(requestData.urgency) === "stop") {
-        await game.togglePause(true, { broadcast: true });
+        await setGamePaused(true);
       }
       await message.delete();
       this.activeRequests.remove(message.id);

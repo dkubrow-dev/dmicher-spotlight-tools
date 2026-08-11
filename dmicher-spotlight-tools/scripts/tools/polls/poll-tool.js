@@ -1,14 +1,19 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
 import {
+  applyChatMessageMode,
   confirmDialog,
+  createSerialTaskQueue,
   escapeHTML,
   format,
   formatTimestamp,
   getChatMessageClass,
+  getChatMessageRenderHook,
   getModeratorUserIds,
+  getRenderedElement,
   isModerator,
   isPrimaryModerator,
-  localize
+  localize,
+  openSingletonApplication
 } from "../../utils.js";
 import { createOrUpdateHotbarMacro, isHotbarDrop, setHotbarDragData } from "../hotbar-macro.js";
 import {
@@ -31,7 +36,6 @@ import {
   createStarterPollTemplates,
   getPollOptionLabel,
   getPollOptionNumber,
-  getPollTimerDurationMs,
   getPollTypeMaxOptions,
   isPollTimerTimeValid,
   listPollTemplates,
@@ -48,6 +52,11 @@ import {
 } from "./poll-utils.js";
 
 const POLL_MACRO_IMAGE = `modules/${MODULE_ID}/assets/polls/macros-icon.webp`;
+const SKIP_STATE_WRITE = Symbol("skipStateWrite");
+
+function skipStateWrite(value) {
+  return { [SKIP_STATE_WRITE]: true, value };
+}
 
 function isAnswerEmpty(type, value) {
   type = normalizePollType(type);
@@ -64,6 +73,8 @@ export class PollTool {
     this.launchTemplateId = "";
     this.resultsWindow = null;
     this.resultsTemplateId = "";
+    this.runStateTask = createSerialTaskQueue();
+    this.responseFinalizations = new Map();
     this.renderChatMessage = this.renderChatMessage.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
     this.handleHotbarDrop = this.handleHotbarDrop.bind(this);
@@ -80,7 +91,7 @@ export class PollTool {
   }
 
   registerHooks() {
-    Hooks.on("renderChatMessageHTML", this.renderChatMessage);
+    Hooks.on(getChatMessageRenderHook(), this.renderChatMessage);
     Hooks.on("hotbarDrop", this.handleHotbarDrop);
   }
 
@@ -98,18 +109,11 @@ export class PollTool {
       return null;
     }
 
-    if (this.managerWindow?.rendered) {
-      this.managerWindow.bringToFront();
-      return this.managerWindow;
-    }
-
-    this.managerWindow = new PollManagerApplication(this);
-    void this.managerWindow.render({ force: true });
+    this.managerWindow = openSingletonApplication(
+      this.managerWindow,
+      () => new PollManagerApplication(this)
+    );
     return this.managerWindow;
-  }
-
-  openWindow() {
-    return this.openManager();
   }
 
   forgetManagerWindow(app) {
@@ -214,16 +218,14 @@ export class PollTool {
     });
   }
 
-  getParticipantRows(template = null, { selectedOnly = false } = {}) {
-    const selected = template?.participants ?? this.state.selected;
+  getParticipantRows(template = null) {
+    const selected = template?.participants ?? {};
     return Array.from(game.users).map((user) => ({
       userId: user.id,
       name: user.name,
       active: user.active,
       selected: Boolean(selected[user.id])
-    })).filter((row) => {
-      return !selectedOnly || row.selected;
-    }).sort((left, right) => {
+    })).sort((left, right) => {
       if (left.selected !== right.selected) return left.selected ? -1 : 1;
       if (left.active !== right.active) return left.active ? -1 : 1;
       return left.name.localeCompare(right.name, game.i18n.lang);
@@ -246,13 +248,6 @@ export class PollTool {
   getTimerSoundLabel(sound = TIMER_SOUND.none) {
     return this.getTimerSoundChoices(sound).find((choice) => choice.value === normalizePollTimerSound(sound))?.label
       ?? localize("Timers.Sound.None");
-  }
-
-  async setSelected(userId, selected) {
-    if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
-    await this.updateState((state) => {
-      state.selected[String(userId)] = Boolean(selected);
-    });
   }
 
   async saveTemplate(input) {
@@ -482,7 +477,6 @@ export class PollTool {
     const requestedAt = Date.now();
     const timerEnabled = Boolean(runTemplate.timerEnabled);
     const timerTime = normalizePollTimerTime(runTemplate.timerTime);
-    const timerDuration = timerEnabled ? getPollTimerDurationMs(timerTime) : 0;
     const run = {
       id: foundry.utils.randomID(),
       templateId: runTemplate.id,
@@ -499,16 +493,11 @@ export class PollTool {
       timerTime,
       timerSound: normalizePollTimerSound(runTemplate.timerSound),
       timerId: "",
-      timerStartedAt: timerEnabled ? requestedAt : 0,
-      timerEndsAt: timerEnabled ? requestedAt + timerDuration : 0,
+      timerStartedAt: 0,
+      timerEndsAt: 0,
       closed: false,
       temporary: Boolean(temporary)
     };
-
-    if (timerEnabled) {
-      const timer = await this.startPollTimer(run);
-      if (timer?.id) run.timerId = timer.id;
-    }
 
     for (const user of selectedUsers) {
       run.selected[user.id] = true;
@@ -521,22 +510,92 @@ export class PollTool {
       };
     }
 
-    state.activePoll = run;
-    state.lastRuns[template.id] = foundry.utils.deepClone(run);
-    await game.settings.set(MODULE_ID, SETTINGS.polls, state);
+    const stored = await this.updateState((latestState) => {
+      if (latestState.activePoll && !latestState.activePoll.closed) return false;
+      latestState.activePoll = run;
+      latestState.lastRuns[template.id] = foundry.utils.deepClone(run);
+      return true;
+    });
+    if (!stored) {
+      ui.notifications.warn(localize("Polls.Errors.ClearFirst"));
+      return null;
+    }
 
-    for (const user of selectedUsers) {
-      const message = await this.createRequestMessage(user, run);
-      if (!message?.id) continue;
-      await this.updateState((latestState) => {
-        if (latestState.activePoll?.id !== run.id) return;
-        latestState.activePoll.responses[user.id].messageId = message.id;
-        latestState.lastRuns[template.id] = foundry.utils.deepClone(latestState.activePoll);
-      });
+    const requestMessages = [];
+    try {
+      if (timerEnabled) {
+        const timer = await this.startPollTimer(run);
+        if (!timer?.id) throw new Error(localize("Polls.Errors.TimerUnavailable"));
+        run.timerId = timer.id;
+        run.timerStartedAt = timer.startAt;
+        run.timerEndsAt = timer.endsAt;
+
+        const timerStored = await this.updateState((latestState) => {
+          if (latestState.activePoll?.id !== run.id) return false;
+          latestState.activePoll = foundry.utils.deepClone(run);
+          latestState.lastRuns[template.id] = foundry.utils.deepClone(run);
+          return true;
+        });
+        if (!timerStored) {
+          await this.rollbackPollLaunch(run, requestMessages);
+          return null;
+        }
+      }
+
+      for (const user of selectedUsers) {
+        const message = await this.createRequestMessage(user, run);
+        if (!message?.id) throw new Error(localize("Polls.Errors.StartFailed"));
+        requestMessages.push(message);
+        const messageStored = await this.updateState((latestState) => {
+          if (latestState.activePoll?.id !== run.id) return false;
+          latestState.activePoll.responses[user.id].messageId = message.id;
+          latestState.lastRuns[template.id] = foundry.utils.deepClone(latestState.activePoll);
+          return true;
+        });
+        if (!messageStored) throw new Error(localize("Polls.Errors.StartFailed"));
+      }
+    } catch (error) {
+      await this.rollbackPollLaunch(run, requestMessages);
+      throw error;
     }
 
     this.openResultsWindow(template.id);
     return run;
+  }
+
+  async rollbackPollLaunch(run, requestMessages = []) {
+    for (const message of requestMessages) {
+      try {
+        await message.delete();
+      } catch (rollbackError) {
+        console.error(`${MODULE_ID} | Unable to remove rolled back poll request`, rollbackError);
+      }
+    }
+
+    if (run.timerId && this.timerTool) {
+      try {
+        await this.timerTool.rollbackTimerStart(run.timerId);
+      } catch (rollbackError) {
+        console.error(`${MODULE_ID} | Unable to roll back poll timer`, rollbackError);
+      }
+    }
+
+    try {
+      await this.updateState((state) => {
+        let changed = false;
+        if (state.activePoll?.id === run.id) {
+          state.activePoll = null;
+          changed = true;
+        }
+        if (state.lastRuns[run.templateId]?.id === run.id) {
+          delete state.lastRuns[run.templateId];
+          changed = true;
+        }
+        return changed;
+      });
+    } catch (rollbackError) {
+      console.error(`${MODULE_ID} | Unable to roll back poll state`, rollbackError);
+    }
   }
 
   async startPollTimer(run) {
@@ -668,7 +727,8 @@ export class PollTool {
     const requestData = message.getFlag(MODULE_ID, FLAGS.pollRequest);
     if (!requestData) return;
 
-    const card = html.querySelector("[data-poll-request]");
+    const root = getRenderedElement(html);
+    const card = root?.querySelector("[data-poll-request]");
     if (!card) return;
 
     const heading = card.querySelector("[data-poll-heading]");
@@ -766,36 +826,89 @@ export class PollTool {
   }
 
   async processResponse(payload) {
-    const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
-    const run = state.activePoll;
-    if (!run || run.id !== String(payload.runId ?? "")) return;
+    const processed = await this.updateState((state) => {
+      const run = state.activePoll;
+      if (!run || run.id !== String(payload.runId ?? "")) return false;
 
-    const userId = String(payload.userId ?? "");
-    if (!run.selected[userId]) return;
+      const userId = String(payload.userId ?? "");
+      if (!run.selected[userId]) return false;
+      const currentResponse = run.responses[userId];
+      const messageId = String(payload.messageId || currentResponse?.messageId || "");
+      if (currentResponse?.status !== POLL_RESPONSE_STATUS.pending) {
+        return skipStateWrite({
+          messageId,
+          response: normalizePollResponse(currentResponse, run.type, run.options),
+          run: foundry.utils.deepClone(run),
+          userId
+        });
+      }
 
-    const status = normalizePollResponseStatus(payload.status);
-    const value = status === POLL_RESPONSE_STATUS.answered
-      ? normalizePollResponseValue(run.type, payload.value, run.options)
-      : null;
-    if (status === POLL_RESPONSE_STATUS.answered && isAnswerEmpty(run.type, value)) return;
+      const status = normalizePollResponseStatus(payload.status);
+      const value = status === POLL_RESPONSE_STATUS.answered
+        ? normalizePollResponseValue(run.type, payload.value, run.options)
+        : null;
+      if (status === POLL_RESPONSE_STATUS.answered && isAnswerEmpty(run.type, value)) return false;
 
-    const response = normalizePollResponse({
-      status,
-      value,
-      answeredAt: Date.now(),
-      messageId: "",
-      userName: game.users.get(userId)?.name ?? ""
-    }, run.type, run.options);
+      const response = normalizePollResponse({
+        status,
+        value,
+        answeredAt: Date.now(),
+        messageId: "",
+        userName: game.users.get(userId)?.name ?? ""
+      }, run.type, run.options);
+      run.responses[userId] = response;
+      state.activePoll = run;
+      state.lastRuns[run.templateId] = foundry.utils.deepClone(run);
+      return {
+        messageId,
+        response,
+        run: foundry.utils.deepClone(run),
+        userId
+      };
+    });
+    if (!processed) return;
 
-    const messageId = String(payload.messageId || run.responses[userId]?.messageId || "");
-    run.responses[userId] = response;
-    state.activePoll = run;
-    state.lastRuns[run.templateId] = foundry.utils.deepClone(run);
-    await game.settings.set(MODULE_ID, SETTINGS.polls, state);
+    await this.finalizePollResponse(processed);
+  }
 
+  async finalizePollResponse(processed, retries = 2) {
+    const key = JSON.stringify([processed.run.id, processed.userId]);
+    const pending = this.responseFinalizations.get(key);
+    if (pending) return pending;
+
+    const finalization = this.runPollResponseFinalization(processed, retries).finally(() => {
+      if (this.responseFinalizations.get(key) === finalization) {
+        this.responseFinalizations.delete(key);
+      }
+    });
+    this.responseFinalizations.set(key, finalization);
+    return finalization;
+  }
+
+  async runPollResponseFinalization(processed, retries) {
+    const { messageId, response, run, userId } = processed;
+    let failed = false;
     const message = this.findRequestMessage(run.id, userId, messageId);
-    if (message) await message.delete();
-    await this.createResultMessage(userId, run, response);
+
+    try {
+      if (message) await message.delete();
+    } catch (error) {
+      failed = true;
+      console.warn(`${MODULE_ID} | Unable to remove poll request message`, error);
+    }
+
+    try {
+      await this.createResultMessage(userId, run, response);
+    } catch (error) {
+      failed = true;
+      console.warn(`${MODULE_ID} | Unable to create poll result message`, error);
+    }
+
+    if (failed && retries > 0) {
+      window.setTimeout(() => {
+        void this.finalizePollResponse(processed, retries - 1);
+      }, 500);
+    }
   }
 
   async clearActivePoll() {
@@ -804,27 +917,27 @@ export class PollTool {
       return;
     }
 
-    const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
-    const run = state.activePoll;
-    if (!run) return;
+    await this.updateState(async (state) => {
+      const run = state.activePoll;
+      if (!run) return false;
 
-    for (const [userId, response] of Object.entries(run.responses)) {
-      if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
-      const message = this.findRequestMessage(run.id, userId, response.messageId);
-      if (message) await message.delete();
-      run.responses[userId] = normalizePollResponse({
-        status: POLL_RESPONSE_STATUS.noAnswer,
-        value: null,
-        answeredAt: Date.now(),
-        messageId: "",
-        userName: game.users.get(userId)?.name ?? response.userName
-      }, run.type, run.options);
-    }
+      for (const [userId, response] of Object.entries(run.responses)) {
+        if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
+        const message = this.findRequestMessage(run.id, userId, response.messageId);
+        if (message) await message.delete();
+        run.responses[userId] = normalizePollResponse({
+          status: POLL_RESPONSE_STATUS.noAnswer,
+          value: null,
+          answeredAt: Date.now(),
+          messageId: "",
+          userName: game.users.get(userId)?.name ?? response.userName
+        }, run.type, run.options);
+      }
 
-    run.closed = true;
-    state.activePoll = null;
-    state.lastRuns[run.templateId] = foundry.utils.deepClone(run);
-    await game.settings.set(MODULE_ID, SETTINGS.polls, state);
+      run.closed = true;
+      state.activePoll = null;
+      state.lastRuns[run.templateId] = foundry.utils.deepClone(run);
+    });
   }
 
   async confirmCloseTemporaryResults(templateId) {
@@ -853,21 +966,21 @@ export class PollTool {
       return;
     }
 
-    const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
-    const run = state.activePoll?.templateId === templateId ? state.activePoll : state.lastRuns[templateId];
-    if (!run?.temporary) return;
+    await this.updateState(async (state) => {
+      const run = state.activePoll?.templateId === templateId ? state.activePoll : state.lastRuns[templateId];
+      if (!run?.temporary) return false;
 
-    if (state.activePoll?.templateId === templateId) {
-      for (const [userId, response] of Object.entries(state.activePoll.responses)) {
-        if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
-        const message = this.findRequestMessage(state.activePoll.id, userId, response.messageId);
-        if (message) await message.delete();
+      if (state.activePoll?.templateId === templateId) {
+        for (const [userId, response] of Object.entries(state.activePoll.responses)) {
+          if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
+          const message = this.findRequestMessage(state.activePoll.id, userId, response.messageId);
+          if (message) await message.delete();
+        }
+        state.activePoll = null;
       }
-      state.activePoll = null;
-    }
 
-    delete state.lastRuns[templateId];
-    await game.settings.set(MODULE_ID, SETTINGS.polls, state);
+      delete state.lastRuns[templateId];
+    });
   }
 
   findRequestMessage(runId, userId, messageId = "") {
@@ -883,8 +996,10 @@ export class PollTool {
 
   async createResultMessage(userId, run, response) {
     const user = game.users.get(userId);
-    if (!user) return;
+    const existing = this.findResultMessage(run.id, userId);
+    if (existing) return existing;
 
+    const userName = user?.name ?? response.userName ?? localize("Polls.Results.UnknownUser");
     const answeredAt = Number(response.answeredAt) || Date.now();
     const answerText = this.formatResponseValue(run, response);
     const titleKey = response.status === POLL_RESPONSE_STATUS.answered
@@ -894,15 +1009,15 @@ export class PollTool {
         : "Polls.Technical.NoAnswerTitle";
 
     const ChatMessageClass = getChatMessageClass();
-    await ChatMessageClass.create({
+    const message = await ChatMessageClass.create({
       user: game.user.id,
       speaker: ChatMessageClass.getSpeaker(),
       whisper: getModeratorUserIds(),
       content: `
         <section class="dmicher-technical-card dmicher-poll-technical">
-          <strong class="dmicher-technical-title">${escapeHTML(format(titleKey, { player: user.name }))}</strong>
+          <strong class="dmicher-technical-title">${escapeHTML(format(titleKey, { player: userName }))}</strong>
           <small class="dmicher-technical-meta">${escapeHTML(format("Polls.Technical.ResponseDetails", {
-            player: user.name,
+            player: userName,
             poll: run.name,
             timestamp: formatTimestamp(answeredAt),
             answer: answerText
@@ -914,7 +1029,7 @@ export class PollTool {
             runId: run.id,
             templateId: run.templateId,
             userId,
-            userName: user.name,
+            userName,
             status: response.status,
             value: foundry.utils.deepClone(response.value),
             answerText,
@@ -926,6 +1041,15 @@ export class PollTool {
         }
       }
     });
+    if (!message) throw new Error(localize("Polls.Errors.StartFailed"));
+    return message;
+  }
+
+  findResultMessage(runId, userId) {
+    return Array.from(game.messages ?? []).find((message) => {
+      const resultData = message.getFlag(MODULE_ID, FLAGS.pollResult);
+      return resultData?.runId === runId && resultData?.userId === userId;
+    }) ?? null;
   }
 
   getResultRows(run) {
@@ -1042,7 +1166,7 @@ export class PollTool {
       speaker: ChatMessageClass.getSpeaker(),
       content
     };
-    ChatMessageClass.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
+    applyChatMessageMode(messageData, ChatMessageClass);
     await ChatMessageClass.create(messageData);
   }
 
@@ -1074,8 +1198,13 @@ export class PollTool {
   }
 
   async updateState(mutator) {
-    const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
-    mutator(state);
-    await game.settings.set(MODULE_ID, SETTINGS.polls, state);
+    return this.runStateTask(async () => {
+      const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
+      const result = await mutator(state);
+      if (result === false) return false;
+      if (result?.[SKIP_STATE_WRITE]) return result.value;
+      await game.settings.set(MODULE_ID, SETTINGS.polls, state);
+      return result;
+    });
   }
 }

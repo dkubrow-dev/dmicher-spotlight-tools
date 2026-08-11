@@ -34,7 +34,6 @@ export const SETTINGS = Object.freeze({
   timerAlertedExpirations: "timerAlertedExpirations",
   focusAuditState: "focusAuditState",
   focusAuditThresholds: "focusAuditThresholds",
-  readinessState: "readinessState",
   polls: "polls"
 });
 

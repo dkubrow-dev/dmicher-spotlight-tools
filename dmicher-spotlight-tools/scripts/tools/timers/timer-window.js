@@ -10,7 +10,8 @@ import {
   formatDigitalDuration,
   i18nKey,
   isModerator,
-  localize
+  localize,
+  runAfterApplicationLifecycle
 } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -114,18 +115,20 @@ export class TimerWindowApplication extends HandlebarsApplicationMixin(Applicati
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.applyStyleClass();
-    this.activateActions();
-    this.activateDrag();
-    this.activateDoubleClickToggle();
-    this.refreshTime();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.applyStyleClass();
+      this.activateActions();
+      this.activateDrag();
+      this.activateDoubleClickToggle();
+      this.refreshTime();
+    });
   }
 
-  async _onClose(options) {
-    await super._onClose(options);
-    this.timerTool.forgetTimerWindow(this.timerId, this);
+  _onClose(options) {
+    return runAfterApplicationLifecycle(super._onClose(options), () => {
+      this.timerTool.forgetTimerWindow(this.timerId, this);
+    });
   }
 
   setDisplayStyle(style, forceRender = false) {

@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { format, i18nKey, localize } from "../../utils.js";
+import { format, i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const ACTIVE_REQUESTS_TICK_MS = 15000;
@@ -66,18 +66,19 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    ui.chat?.updateTimestamps?.();
-    this.updateWindowTitle();
-    this.activateListeners();
-    this.startTicking();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      ui.chat?.updateTimestamps?.();
+      this.updateWindowTitle();
+      this.activateListeners();
+      this.startTicking();
+    });
   }
 
-  async _onClose(options) {
+  _onClose(options) {
     this.stopTicking();
     this.activeRequests.forgetWindow(this);
-    await super._onClose(options);
+    return super._onClose(options);
   }
 
   activateListeners() {

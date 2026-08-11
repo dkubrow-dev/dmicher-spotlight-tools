@@ -4,10 +4,12 @@ import {
   STOPWATCH_CHAT_MACRO_COMMAND
 } from "../../config.js";
 import {
+  applyChatMessageMode,
   escapeHTML,
   getChatMessageClass,
   isModerator,
   localize,
+  openSingletonApplication,
   preloadImage
 } from "../../utils.js";
 import { createOrUpdateHotbarMacro, isHotbarDrop, setHotbarDragData } from "../hotbar-macro.js";
@@ -47,13 +49,10 @@ export class StopwatchTool {
       return null;
     }
 
-    if (this.window?.rendered) {
-      this.window.bringToFront();
-      return this.window;
-    }
-
-    this.window = new StopwatchWindowApplication(this);
-    void this.window.render({ force: true });
+    this.window = openSingletonApplication(
+      this.window,
+      () => new StopwatchWindowApplication(this)
+    );
     return this.window;
   }
 
@@ -133,7 +132,7 @@ export class StopwatchTool {
       speaker: ChatMessageClass.getSpeaker(),
       content: this.buildChatContent()
     };
-    ChatMessageClass.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
+    applyChatMessageMode(messageData, ChatMessageClass);
     await ChatMessageClass.create(messageData);
   }
 

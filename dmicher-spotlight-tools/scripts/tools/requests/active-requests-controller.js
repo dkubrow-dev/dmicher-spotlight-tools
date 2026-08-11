@@ -4,7 +4,8 @@ import {
   escapeHTML,
   getMessageAuthorName,
   isModerator,
-  localize
+  localize,
+  openSingletonApplication
 } from "../../utils.js";
 import { ActiveRequestsApplication } from "./active-requests-window.js";
 import { getGrantActionKey, getRequestAnchorId } from "./request-message.js";
@@ -27,13 +28,10 @@ export class ActiveRequestsController {
       return null;
     }
 
-    if (this.window?.rendered) {
-      this.window.bringToFront();
-      return this.window;
-    }
-
-    this.window = new ActiveRequestsApplication(this);
-    void this.window.render({ force: true });
+    this.window = openSingletonApplication(
+      this.window,
+      () => new ActiveRequestsApplication(this)
+    );
     return this.window;
   }
 
@@ -198,7 +196,7 @@ export class ActiveRequestsController {
     ui.sidebar?.changeTab?.("chat", "primary");
     ui.sidebar?.activateTab?.("chat");
     if ((typeof ui.chat?.render === "function") && !ui.chat.rendered) {
-      await ui.chat.render({ force: true });
+      await ui.chat.render(true);
     }
     await this.wait(50);
   }

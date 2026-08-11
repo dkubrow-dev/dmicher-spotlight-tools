@@ -21,7 +21,13 @@ export const TIMER_SOUND = Object.freeze({
 });
 
 export const TIMER_TICK_MS = 1000;
+export const MINUTE_MS = 60 * 1000;
 export const DEFAULT_TIMER_DURATION_MS = 10 * 60 * 1000;
+
+export function calculateRoundedDeadline(minutes, now = Date.now()) {
+  const target = Number(now) + (Number(minutes) * MINUTE_MS);
+  return Math.ceil(target / MINUTE_MS) * MINUTE_MS;
+}
 
 export function createEmptyTimerState() {
   return {
@@ -66,7 +72,6 @@ export function normalizeTimer(timer) {
     visibility,
     style,
     sound,
-    messageId: String(timer.messageId ?? "").trim(),
     createdBy: String(timer.createdBy ?? "").trim(),
     createdByName: String(timer.createdByName ?? "").trim(),
     createdAt: Number(timer.createdAt) || startAt
@@ -78,7 +83,7 @@ export function cloneTimerState(state) {
 }
 
 export function listTimers(state) {
-  return Object.values(normalizeTimerState(state).timers).sort((left, right) => {
+  return Object.values(state?.timers ?? {}).sort((left, right) => {
     return (left.createdAt - right.createdAt) || left.name.localeCompare(right.name);
   });
 }

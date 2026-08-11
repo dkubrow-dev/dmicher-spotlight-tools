@@ -37,7 +37,9 @@ Hooks.once("init", () => {
     onRequestDragStart: requestHotbar.onRequestDragStart
   });
   timerTool.registerSettings();
+  timerTool.registerHooks();
   requestTool.registerHooks();
+  requestHotbar.registerHooks();
   focusAuditTool.registerHooks();
   pollTool.registerHooks();
   spotlightControls.registerControls();
@@ -57,10 +59,6 @@ Hooks.once("init", () => {
     recordStopwatchEvent: (eventType) => stopwatchTool.recordEvent(eventType),
     submitRequest: requestTool.submitRequest
   };
-
-  Hooks.on("renderChatMessageHTML", timerTool.renderChatMessage);
-  Hooks.on("chatMessage", requestHotbar.handleChatMessage);
-  Hooks.on("hotbarDrop", requestHotbar.handleHotbarDrop);
 });
 
 Hooks.once("ready", () => {
