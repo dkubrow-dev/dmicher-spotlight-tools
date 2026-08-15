@@ -46,6 +46,28 @@ test("manifest and localization files are internally consistent", () => {
   assert.deepEqual(flattenKeys(en), flattenKeys(ru));
 });
 
+test("installed Foundry smoke fixtures target the supported version range", () => {
+  const system = JSON.parse(fs.readFileSync(
+    path.join(ROOT, "tests", "fixtures", "foundry-smoke-system", "system.json"),
+    "utf8"
+  ));
+  const world = JSON.parse(fs.readFileSync(
+    path.join(ROOT, "tests", "fixtures", "foundry-smoke-world", "world.json"),
+    "utf8"
+  ));
+
+  assert.equal(system.id, "dmicher-smoke-system");
+  assert.deepEqual(system.compatibility, { minimum: "12", verified: "14" });
+  assert.equal(world.system, system.id);
+  assert.equal(world.coreVersion, "12.343");
+  assert.deepEqual(world.compatibility, { minimum: "12", verified: "14" });
+  assert.deepEqual(world.relationships.requires, [{
+    id: "dmicher-spotlight-tools",
+    type: "module",
+    compatibility: { minimum: "1.1.3" }
+  }]);
+});
+
 test("all relative module imports, templates, and assets resolve", () => {
   const scriptsRoot = path.join(MODULE_ROOT, "scripts");
   const scripts = walk(scriptsRoot).filter((file) => file.endsWith(".js"));

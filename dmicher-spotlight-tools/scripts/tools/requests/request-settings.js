@@ -2,6 +2,7 @@ import { I18N_PREFIX, MODULE_ID, REQUEST_TYPES } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import {
   canUseRequest,
+  getFoundryGeneration,
   getUserSettingScope,
   i18nKey,
   localize,
@@ -154,6 +155,31 @@ export function registerRequestSettings(requestActions) {
     type: ThankAuthorApplication,
     restricted: false
   });
+}
+
+export async function migrateLegacyClientRequestSettings() {
+  if (getFoundryGeneration() < 13) return;
+
+  const clientStorage = game.settings.storage?.get?.("client") ?? globalThis.localStorage;
+  if (typeof clientStorage?.getItem !== "function") return;
+
+  for (const request of Object.values(REQUEST_TYPES)) {
+    for (const key of [request.textSetting, request.styleSetting]) {
+      const current = game.settings.get(MODULE_ID, key, { document: true });
+      if (current?.id) continue;
+
+      const rawValue = clientStorage.getItem(`${MODULE_ID}.${key}`);
+      if (rawValue == null) continue;
+
+      let value = rawValue;
+      try {
+        value = JSON.parse(rawValue);
+      } catch (_error) {
+        // Older client storage can contain an unquoted string.
+      }
+      await game.settings.set(MODULE_ID, key, value);
+    }
+  }
 }
 
 export function openRequestSettings() {

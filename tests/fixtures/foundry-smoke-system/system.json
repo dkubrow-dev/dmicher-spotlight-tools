@@ -1,0 +1,30 @@
+{
+  "id": "dmicher-smoke-system",
+  "title": "Dmicher Smoke Test System",
+  "description": "Minimal system fixture for installed Foundry compatibility tests.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "dmicher"
+    }
+  ],
+  "esmodules": [],
+  "styles": [],
+  "languages": [],
+  "packs": [],
+  "documentTypes": {
+    "Actor": {},
+    "Item": {}
+  },
+  "initiative": "1d20",
+  "grid": {
+    "type": 1,
+    "distance": 5,
+    "units": "ft",
+    "diagonals": 0
+  }
+}

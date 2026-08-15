@@ -4,6 +4,7 @@ import { openFocusAuditSettings } from "./tools/focus/focus-audit-settings.js";
 import { PollTool } from "./tools/polls/poll-tool.js";
 import { RequestHotbar } from "./tools/requests/request-hotbar.js";
 import {
+  migrateLegacyClientRequestSettings,
   openRequestSettings,
   registerRequestSettings
 } from "./tools/requests/request-settings.js";
@@ -63,6 +64,9 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   applySpotlightTheme();
+  void migrateLegacyClientRequestSettings().catch((error) => {
+    console.error(`${MODULE_ID} | Unable to migrate legacy request settings`, error);
+  });
   focusAuditTool.activate();
   requestTool.activate();
   pollTool.activate();
