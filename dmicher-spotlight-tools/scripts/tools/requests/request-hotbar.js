@@ -10,6 +10,11 @@ export class RequestHotbar {
     this.handleChatMessage = this.handleChatMessage.bind(this);
   }
 
+  registerHooks() {
+    Hooks.on("chatMessage", this.handleChatMessage);
+    Hooks.on("hotbarDrop", this.handleHotbarDrop);
+  }
+
   onRequestDragStart(event) {
     const type = normalizeRequestType(event.currentTarget.dataset.urgency);
     setHotbarDragData(event, "request", { urgency: type });

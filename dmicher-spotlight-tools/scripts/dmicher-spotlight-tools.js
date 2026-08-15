@@ -4,6 +4,7 @@ import { openFocusAuditSettings } from "./tools/focus/focus-audit-settings.js";
 import { PollTool } from "./tools/polls/poll-tool.js";
 import { RequestHotbar } from "./tools/requests/request-hotbar.js";
 import {
+  migrateLegacyClientRequestSettings,
   openRequestSettings,
   registerRequestSettings
 } from "./tools/requests/request-settings.js";
@@ -37,7 +38,9 @@ Hooks.once("init", () => {
     onRequestDragStart: requestHotbar.onRequestDragStart
   });
   timerTool.registerSettings();
+  timerTool.registerHooks();
   requestTool.registerHooks();
+  requestHotbar.registerHooks();
   focusAuditTool.registerHooks();
   pollTool.registerHooks();
   spotlightControls.registerControls();
@@ -57,14 +60,13 @@ Hooks.once("init", () => {
     recordStopwatchEvent: (eventType) => stopwatchTool.recordEvent(eventType),
     submitRequest: requestTool.submitRequest
   };
-
-  Hooks.on("renderChatMessageHTML", timerTool.renderChatMessage);
-  Hooks.on("chatMessage", requestHotbar.handleChatMessage);
-  Hooks.on("hotbarDrop", requestHotbar.handleHotbarDrop);
 });
 
 Hooks.once("ready", () => {
   applySpotlightTheme();
+  void migrateLegacyClientRequestSettings().catch((error) => {
+    console.error(`${MODULE_ID} | Unable to migrate legacy request settings`, error);
+  });
   focusAuditTool.activate();
   requestTool.activate();
   pollTool.activate();

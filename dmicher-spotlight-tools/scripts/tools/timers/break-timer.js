@@ -1,15 +1,13 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { format, i18nKey, localize } from "../../utils.js";
+import { format, i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
+import { calculateRoundedDeadline } from "./timer-utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 const BREAK_OPTIONS = Object.freeze([5, 10, 15, 20, 30]);
 const DEFAULT_BREAK_MINUTES = 15;
 const BREAK_REFRESH_MS = 5000;
-const SHORT_BREAK_MAX_MINUTES = 10;
-const SHORT_BREAK_ROUNDING_MINUTES = 1;
-const LONG_BREAK_ROUNDING_MINUTES = 3;
 
 export class BreakTimerApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -58,24 +56,24 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
       keys: {
         heading: i18nKey("Timers.Break.Heading"),
         description: i18nKey("Timers.Break.Description"),
-        until: i18nKey("Timers.Break.Until"),
         cancel: i18nKey("Timers.Break.Cancel"),
         announce: i18nKey("Timers.Break.Announce")
       }
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.activateListeners();
-    this.startRefreshing();
-    this.refreshDeadline();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.activateListeners();
+      this.startRefreshing();
+      this.refreshDeadline();
+    });
   }
 
-  async _onClose(options) {
+  _onClose(options) {
     this.stopRefreshing();
     this.timerTool.forgetBreakWindow(this);
-    await super._onClose(options);
+    return super._onClose(options);
   }
 
   activateListeners() {
@@ -104,30 +102,16 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
 
   refreshDeadline() {
     this.deadlineTimestamp = this.calculateDeadline();
+    this.renderDeadline();
+  }
+
+  renderDeadline() {
     const output = this.element.querySelector("[data-break-deadline]");
     if (output) output.textContent = this.getDeadlineText();
   }
 
   calculateDeadline(now = Date.now()) {
-    const target = new Date(Number(now) + (this.selectedMinutes * 60 * 1000));
-    if (target.getSeconds() || target.getMilliseconds()) target.setMinutes(target.getMinutes() + 1, 0, 0);
-    else target.setSeconds(0, 0);
-
-    const roundingMinutes = this.getRoundingMinutes();
-    const minute = target.getMinutes();
-    const roundedMinute = Math.ceil(minute / roundingMinutes) * roundingMinutes;
-    if (roundedMinute >= 60) {
-      target.setHours(target.getHours() + 1, 0, 0, 0);
-    } else {
-      target.setMinutes(roundedMinute, 0, 0);
-    }
-    return target.getTime();
-  }
-
-  getRoundingMinutes() {
-    return this.selectedMinutes <= SHORT_BREAK_MAX_MINUTES
-      ? SHORT_BREAK_ROUNDING_MINUTES
-      : LONG_BREAK_ROUNDING_MINUTES;
+    return calculateRoundedDeadline(this.selectedMinutes, now);
   }
 
   getDeadlineText() {
@@ -148,8 +132,12 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
     if (announceButton) announceButton.disabled = true;
 
     try {
-      this.refreshDeadline();
-      await this.timerTool.startBreakTimer(this.deadlineTimestamp);
+      await this.timerTool.startBreakTimer(this.selectedMinutes, {
+        onDeadlineCalculated: (deadlineTimestamp) => {
+          this.deadlineTimestamp = deadlineTimestamp;
+          this.renderDeadline();
+        }
+      });
       await this.close();
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to announce break`, error);

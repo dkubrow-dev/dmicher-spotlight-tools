@@ -1,6 +1,11 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { formatTimestamp, i18nKey, localize } from "../../utils.js";
+import {
+  formatTimestamp,
+  i18nKey,
+  localize,
+  runAfterApplicationLifecycle
+} from "../../utils.js";
 import { POLL_TYPE, POLL_TYPE_CONFIG } from "./poll-utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -80,9 +85,10 @@ export class PollResultsApplication extends HandlebarsApplicationMixin(Applicati
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.activateListeners();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.activateListeners();
+    });
   }
 
   async close(options = {}) {
@@ -93,9 +99,9 @@ export class PollResultsApplication extends HandlebarsApplicationMixin(Applicati
     return super.close(options);
   }
 
-  async _onClose(options) {
+  _onClose(options) {
     this.pollTool.forgetResultsWindow(this);
-    await super._onClose(options);
+    return super._onClose(options);
   }
 
   activateListeners() {

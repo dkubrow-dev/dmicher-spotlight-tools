@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { i18nKey, localize } from "../../utils.js";
+import { i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import {
   POLL_TYPE,
   POLL_TYPE_CONFIG,
@@ -124,18 +124,19 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     }));
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.activateForm();
-    this.activateTable();
-    this.refreshOptionVisibility();
-    this.refreshTimerBlock();
-    if (this.focusFormOnRender) this.focusTemplateForm();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.activateForm();
+      this.activateTable();
+      this.refreshOptionVisibility();
+      this.refreshTimerBlock();
+      if (this.focusFormOnRender) this.focusTemplateForm();
+    });
   }
 
-  async _onClose(options) {
+  _onClose(options) {
     this.pollTool.forgetManagerWindow(this);
-    await super._onClose(options);
+    return super._onClose(options);
   }
 
   activateForm() {

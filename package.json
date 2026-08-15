@@ -1,0 +1,8 @@
+{
+  "name": "dmicher-spotlight-tools-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

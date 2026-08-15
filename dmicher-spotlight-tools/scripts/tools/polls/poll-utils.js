@@ -291,22 +291,9 @@ export function createStarterPollTemplates(now = Date.now(), options = {}) {
   return configs.map((config, index) => createStarterTemplate(config, index, now, options));
 }
 
-export function createDefaultReadinessTemplate(now = Date.now()) {
-  return createStarterPollTemplates(now)[0];
-}
-
-export function createDefaultBestPlayerTemplate(now = Date.now()) {
-  return createStarterPollTemplates(now)[1];
-}
-
-export function createDefaultPollTemplates(now = Date.now()) {
-  return createStarterPollTemplates(now);
-}
-
 export function createEmptyPollState() {
   return {
     defaultsVersion: 0,
-    selected: {},
     templates: {},
     activePoll: null,
     lastRuns: {}
@@ -489,22 +476,22 @@ export function normalizePollRun(rawRun) {
 
 export function normalizePollState(rawState) {
   const source = rawState && (typeof rawState === "object") ? rawState : {};
+  const legacySelected = {};
   const state = {
     defaultsVersion: Number(source.defaultsVersion) || 0,
-    selected: {},
     templates: {},
     activePoll: normalizePollRun(source.activePoll),
     lastRuns: {}
   };
 
   for (const [userId, value] of Object.entries(source.selected ?? {})) {
-    state.selected[userId] = Boolean(value);
+    legacySelected[userId] = Boolean(value);
   }
 
   for (const [templateId, rawTemplate] of Object.entries(source.templates ?? {})) {
     const hasTemplateParticipants = rawTemplate?.participants && (typeof rawTemplate.participants === "object");
-    const hasSelectedFallback = Object.values(state.selected).some(Boolean);
-    const fallbackParticipants = hasTemplateParticipants || !hasSelectedFallback ? null : state.selected;
+    const hasSelectedFallback = Object.values(legacySelected).some(Boolean);
+    const fallbackParticipants = hasTemplateParticipants || !hasSelectedFallback ? null : legacySelected;
     const template = normalizePollTemplate(rawTemplate, templateId, fallbackParticipants);
     state.templates[template.id] = template;
   }
@@ -530,7 +517,7 @@ export function clonePollState(state) {
 }
 
 export function listPollTemplates(state) {
-  return Object.values(normalizePollState(state).templates).sort((left, right) => {
+  return Object.values(state?.templates ?? {}).sort((left, right) => {
     const leftCreated = Number(left.createdAt) || 0;
     const rightCreated = Number(right.createdAt) || 0;
     if (leftCreated !== rightCreated) return leftCreated - rightCreated;

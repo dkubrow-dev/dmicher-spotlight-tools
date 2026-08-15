@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { i18nKey, localize } from "../../utils.js";
+import { i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import { openFocusAuditSettings } from "./focus-audit-settings.js";
 import { AUDIT_METRICS } from "./focus-utils.js";
 
@@ -67,16 +67,17 @@ export class FocusAuditApplication extends HandlebarsApplicationMixin(Applicatio
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.activateListeners();
-    this.startTicking();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.activateListeners();
+      this.startTicking();
+    });
   }
 
-  async _onClose(options) {
+  _onClose(options) {
     this.stopTicking();
     this.focusAuditTool.forgetAuditWindow(this);
-    await super._onClose(options);
+    return super._onClose(options);
   }
 
   activateListeners() {

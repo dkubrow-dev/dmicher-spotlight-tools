@@ -11,7 +11,8 @@ import {
   i18nKey,
   isModerator,
   localize,
-  playAudio
+  playAudio,
+  runAfterApplicationLifecycle
 } from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -98,11 +99,12 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.activateForm();
-    this.activateTable();
-    this.refreshTimes();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.activateForm();
+      this.activateTable();
+      this.refreshTimes();
+    });
   }
 
   prepareTimerRow(timer) {

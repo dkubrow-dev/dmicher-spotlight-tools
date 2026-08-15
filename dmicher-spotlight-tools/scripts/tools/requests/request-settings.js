@@ -1,6 +1,15 @@
 import { I18N_PREFIX, MODULE_ID, REQUEST_TYPES } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { canUseRequest, i18nKey, localize, sanitizeTextStyle } from "../../utils.js";
+import {
+  canUseRequest,
+  getFoundryGeneration,
+  getUserSettingScope,
+  i18nKey,
+  localize,
+  openSingletonApplication,
+  runAfterApplicationLifecycle,
+  sanitizeTextStyle
+} from "../../utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const THANK_AUTHOR_URL = "https://boosty.to/dmicher";
@@ -48,22 +57,23 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     return { ...context, requests };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    const form = this.element.querySelector(".dmicher-request-settings-form");
-    if (!form) return;
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      const form = this.element.querySelector(".dmicher-request-settings-form");
+      if (!form) return;
 
-    form.addEventListener("submit", (event) => void this._saveSettings(event));
-    for (const image of form.querySelectorAll("[data-request-image]")) {
-      image.addEventListener("click", () => void actions.submitRequest(image.dataset.urgency));
-      image.addEventListener("keydown", (event) => {
-        if ((event.key === "Enter") || (event.key === " ")) {
-          event.preventDefault();
-          void actions.submitRequest(image.dataset.urgency);
-        }
-      });
-      image.addEventListener("dragstart", actions.onRequestDragStart);
-    }
+      form.addEventListener("submit", (event) => void this._saveSettings(event));
+      for (const image of form.querySelectorAll("[data-request-image]")) {
+        image.addEventListener("click", () => void actions.submitRequest(image.dataset.urgency));
+        image.addEventListener("keydown", (event) => {
+          if ((event.key === "Enter") || (event.key === " ")) {
+            event.preventDefault();
+            void actions.submitRequest(image.dataset.urgency);
+          }
+        });
+        image.addEventListener("dragstart", actions.onRequestDragStart);
+      }
+    });
   }
 
   async _saveSettings(event) {
@@ -109,18 +119,19 @@ class ThankAuthorApplication extends ApplicationV2 {
 
 export function registerRequestSettings(requestActions) {
   actions = requestActions;
+  const userScope = getUserSettingScope();
 
   for (const request of Object.values(REQUEST_TYPES)) {
     game.settings.register(MODULE_ID, request.textSetting, {
       name: i18nKey(request.labelKey),
-      scope: "user",
+      scope: userScope,
       config: false,
       type: String,
       default: ""
     });
     game.settings.register(MODULE_ID, request.styleSetting, {
       name: i18nKey("Requests.Settings.CssStyle"),
-      scope: "user",
+      scope: userScope,
       config: false,
       type: String,
       default: request.defaultStyle
@@ -146,14 +157,36 @@ export function registerRequestSettings(requestActions) {
   });
 }
 
-export function openRequestSettings() {
-  if (settingsWindow?.rendered) {
-    settingsWindow.bringToFront();
-    return settingsWindow;
-  }
+export async function migrateLegacyClientRequestSettings() {
+  if (getFoundryGeneration() < 13) return;
 
-  settingsWindow = new RequestSettingsApplication();
-  void settingsWindow.render({ force: true });
+  const clientStorage = game.settings.storage?.get?.("client") ?? globalThis.localStorage;
+  if (typeof clientStorage?.getItem !== "function") return;
+
+  for (const request of Object.values(REQUEST_TYPES)) {
+    for (const key of [request.textSetting, request.styleSetting]) {
+      const current = game.settings.get(MODULE_ID, key, { document: true });
+      if (current?.id) continue;
+
+      const rawValue = clientStorage.getItem(`${MODULE_ID}.${key}`);
+      if (rawValue == null) continue;
+
+      let value = rawValue;
+      try {
+        value = JSON.parse(rawValue);
+      } catch (_error) {
+        // Older client storage can contain an unquoted string.
+      }
+      await game.settings.set(MODULE_ID, key, value);
+    }
+  }
+}
+
+export function openRequestSettings() {
+  settingsWindow = openSingletonApplication(
+    settingsWindow,
+    () => new RequestSettingsApplication()
+  );
   return settingsWindow;
 }
 

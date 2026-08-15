@@ -1,6 +1,7 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
 import {
   confirmDialog,
+  createSerialTaskQueue,
   escapeHTML,
   format,
   formatDuration,
@@ -10,7 +11,8 @@ import {
   getWhisperRecipientsWithModerators,
   isModerator,
   isPrimaryModerator,
-  localize
+  localize,
+  openSingletonApplication
 } from "../../utils.js";
 import { FocusAuditApplication } from "./focus-audit-window.js";
 import {
@@ -36,6 +38,7 @@ export class FocusAuditTool {
     this.state = createEmptyFocusAuditState();
     this.thresholds = DEFAULT_AUDIT_THRESHOLDS;
     this.auditWindow = null;
+    this.runStateTask = createSerialTaskQueue();
     this.renderPlayers = this.renderPlayers.bind(this);
     this.handleUserConnected = this.handleUserConnected.bind(this);
     this.handleChatMessageCreated = this.handleChatMessageCreated.bind(this);
@@ -84,13 +87,10 @@ export class FocusAuditTool {
       return null;
     }
 
-    if (this.auditWindow?.rendered) {
-      this.auditWindow.bringToFront();
-      return this.auditWindow;
-    }
-
-    this.auditWindow = new FocusAuditApplication(this);
-    void this.auditWindow.render({ force: true });
+    this.auditWindow = openSingletonApplication(
+      this.auditWindow,
+      () => new FocusAuditApplication(this)
+    );
     return this.auditWindow;
   }
 
@@ -433,26 +433,27 @@ export class FocusAuditTool {
   }
 
   async ensureActiveRowsDefaults() {
-    let changed = false;
-    const now = Date.now();
-    const state = normalizeFocusAuditState(this.state);
-    for (const user of game.users) {
-      const entry = state.players[user.id];
-      if (!entry) {
-        state.players[user.id] = createCleanAuditEntry({}, now);
-        changed = true;
-        continue;
-      }
-      if (!entry.enabled) continue;
-      const clean = createCleanAuditEntry(entry, now);
-      for (const key of ["lastRequestAt", "activeRequestAt", "lastChatAt", "lastGrantedAt"]) {
-        if (!entry[key]) {
-          entry[key] = clean[key];
+    await this.updateState((state) => {
+      let changed = false;
+      const now = Date.now();
+      for (const user of game.users) {
+        const entry = state.players[user.id];
+        if (!entry) {
+          state.players[user.id] = createCleanAuditEntry({}, now);
           changed = true;
+          continue;
+        }
+        if (!entry.enabled) continue;
+        const clean = createCleanAuditEntry(entry, now);
+        for (const key of ["lastRequestAt", "activeRequestAt", "lastChatAt", "lastGrantedAt"]) {
+          if (!entry[key]) {
+            entry[key] = clean[key];
+            changed = true;
+          }
         }
       }
-    }
-    if (changed) await game.settings.set(MODULE_ID, SETTINGS.focusAuditState, state);
+      return changed || false;
+    });
   }
 
   getAuditRows() {
@@ -531,18 +532,18 @@ export class FocusAuditTool {
   }
 
   async updateState(mutator) {
-    const state = normalizeFocusAuditState(game.settings.get(MODULE_ID, SETTINGS.focusAuditState));
-    mutator(state);
-    await game.settings.set(MODULE_ID, SETTINGS.focusAuditState, state);
+    return this.runStateTask(async () => {
+      const state = normalizeFocusAuditState(game.settings.get(MODULE_ID, SETTINGS.focusAuditState));
+      const result = await mutator(state);
+      if (result === false) return false;
+      await game.settings.set(MODULE_ID, SETTINGS.focusAuditState, state);
+      return result;
+    });
   }
 
   renderPlayersList() {
     const players = ui.players;
     if (!players?.render) return;
-    try {
-      players.render({ force: true });
-    } catch (_error) {
-      players.render(true);
-    }
+    players.render(true);
   }
 }

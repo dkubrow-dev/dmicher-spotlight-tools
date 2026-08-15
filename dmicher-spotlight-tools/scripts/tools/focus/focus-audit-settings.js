@@ -1,6 +1,11 @@
 import { MODULE_ID, SETTINGS } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { i18nKey, localize } from "../../utils.js";
+import {
+  i18nKey,
+  localize,
+  openSingletonApplication,
+  runAfterApplicationLifecycle
+} from "../../utils.js";
 import {
   AUDIT_METRICS,
   normalizeAuditThresholds
@@ -58,10 +63,11 @@ class FocusAuditSettingsApplication extends HandlebarsApplicationMixin(Applicati
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    const form = this.element.querySelector(".dmicher-focus-audit-settings-form");
-    form?.addEventListener("submit", (event) => void this.saveSettings(event));
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      const form = this.element.querySelector(".dmicher-focus-audit-settings-form");
+      form?.addEventListener("submit", (event) => void this.saveSettings(event));
+    });
   }
 
   async saveSettings(event) {
@@ -92,13 +98,10 @@ class FocusAuditSettingsApplication extends HandlebarsApplicationMixin(Applicati
 }
 
 export function openFocusAuditSettings() {
-  if (settingsWindow?.rendered) {
-    settingsWindow.bringToFront();
-    return settingsWindow;
-  }
-
-  settingsWindow = new FocusAuditSettingsApplication();
-  void settingsWindow.render({ force: true });
+  settingsWindow = openSingletonApplication(
+    settingsWindow,
+    () => new FocusAuditSettingsApplication()
+  );
   return settingsWindow;
 }
 

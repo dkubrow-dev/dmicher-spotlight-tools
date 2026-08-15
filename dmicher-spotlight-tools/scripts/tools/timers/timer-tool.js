@@ -7,15 +7,20 @@ import {
 } from "../../config.js";
 import {
   confirmDialog,
+  createSerialTaskQueue,
   escapeHTML,
   format,
   formatClockTime,
   formatDigitalDuration,
   getChatMessageClass,
+  getChatMessageRenderHook,
   getModeratorUserIds,
+  getRenderedElement,
   isModerator,
   localize,
-  playAudio
+  openSingletonApplication,
+  playAudio,
+  setGamePaused
 } from "../../utils.js";
 import { BreakTimerApplication } from "./break-timer.js";
 import { TimerManagerApplication } from "./timer-manager.js";
@@ -26,6 +31,7 @@ import {
   TIMER_SOUND,
   TIMER_TICK_MS,
   TIMER_VISIBILITY,
+  calculateRoundedDeadline,
   cloneTimerState,
   createEmptyTimerState,
   isTimerExpired,
@@ -42,6 +48,10 @@ export class TimerTool {
     this.breakWindow = null;
     this.timerWindows = new Map();
     this.pendingForcedOpens = new Map();
+    this.pendingForcedOpenRetry = null;
+    this.runStateTask = createSerialTaskQueue();
+    this.runAlertPersistenceTask = createSerialTaskQueue();
+    this.alertedExpirations = {};
     this.tickHandle = null;
     this.renderChatMessage = this.renderChatMessage.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
@@ -65,8 +75,13 @@ export class TimerTool {
     });
   }
 
+  registerHooks() {
+    Hooks.on(getChatMessageRenderHook(), this.renderChatMessage);
+  }
+
   activate() {
     this.state = normalizeTimerState(game.settings.get(MODULE_ID, SETTINGS.timers));
+    this.alertedExpirations = this.readAlertedExpirations();
     game.socket.on(SOCKET_CHANNEL, this.receiveSocketMessage);
     this.tickHandle = window.setInterval(this.tick, TIMER_TICK_MS);
     for (const src of Object.values(TIMER_SOUND_SOURCES)) {
@@ -82,13 +97,10 @@ export class TimerTool {
       return null;
     }
 
-    if (this.managerWindow?.rendered) {
-      this.managerWindow.bringToFront();
-      return this.managerWindow;
-    }
-
-    this.managerWindow = new TimerManagerApplication(this);
-    void this.managerWindow.render({ force: true });
+    this.managerWindow = openSingletonApplication(
+      this.managerWindow,
+      () => new TimerManagerApplication(this)
+    );
     return this.managerWindow;
   }
 
@@ -98,13 +110,10 @@ export class TimerTool {
       return null;
     }
 
-    if (this.breakWindow?.rendered) {
-      this.breakWindow.bringToFront();
-      return this.breakWindow;
-    }
-
-    this.breakWindow = new BreakTimerApplication(this);
-    void this.breakWindow.render({ force: true });
+    this.breakWindow = openSingletonApplication(
+      this.breakWindow,
+      () => new BreakTimerApplication(this)
+    );
     return this.breakWindow;
   }
 
@@ -144,16 +153,23 @@ export class TimerTool {
     const visibility = input.visibility === TIMER_VISIBILITY.private ? TIMER_VISIBILITY.private : TIMER_VISIBILITY.public;
     const style = input.style === TIMER_DISPLAY_STYLE.compact ? TIMER_DISPLAY_STYLE.compact : TIMER_DISPLAY_STYLE.prominent;
     const sound = Object.hasOwn(TIMER_SOUND_SOURCES, input.sound) ? input.sound : TIMER_SOUND.none;
+    const roundedDurationMinutes = Number(input.roundedDurationMinutes);
     const duration = mode === TIMER_MODE.duration
       ? parseDurationInput(input.time)
       : null;
-    const endsAt = mode === TIMER_MODE.duration
-      ? now + Number(duration)
-      : Number(input.deadlineTimestamp) || parseDeadlineInput(input.time, now);
+    let endsAt;
+    if (Number.isFinite(roundedDurationMinutes) && roundedDurationMinutes > 0) {
+      endsAt = calculateRoundedDeadline(roundedDurationMinutes, now);
+    } else if (mode === TIMER_MODE.duration) {
+      endsAt = now + Number(duration);
+    } else {
+      endsAt = Number(input.deadlineTimestamp) || parseDeadlineInput(input.time, now);
+    }
 
     if (!endsAt || !Number.isFinite(endsAt)) throw new Error(localize("Timers.Errors.BadTime"));
     const totalDuration = endsAt - now;
     if (!Number.isFinite(totalDuration) || totalDuration <= 0) throw new Error(localize("Timers.Errors.BadTime"));
+    if (typeof input.onDeadlineCalculated === "function") input.onDeadlineCalculated(endsAt);
 
     const timer = {
       id: foundry.utils.randomID(),
@@ -165,47 +181,86 @@ export class TimerTool {
       visibility,
       style,
       sound,
-      messageId: "",
       createdBy: game.user.id,
       createdByName: game.user.name,
       createdAt: now
     };
 
-    const state = cloneTimerState(this.state);
-    state.timers[timer.id] = timer;
-    await game.settings.set(MODULE_ID, SETTINGS.timers, state);
-
-    const message = await this.createTimerChatMessage(timer);
-    if (message?.id) {
-      const latestState = cloneTimerState(game.settings.get(MODULE_ID, SETTINGS.timers));
-      if (latestState.timers[timer.id]) {
-        latestState.timers[timer.id].messageId = message.id;
-        await game.settings.set(MODULE_ID, SETTINGS.timers, latestState);
-      }
+    await this.updateState((state) => {
+      state.timers[timer.id] = timer;
+    });
+    try {
+      const message = await this.createTimerChatMessage(timer);
+      if (!message) throw new Error(localize("Timers.Errors.StartFailed"));
+    } catch (error) {
+      await this.rollbackTimerStart(timer.id);
+      throw error;
     }
 
-    this.openTimerWindow(timer.id, { force: true, displayStyle: style });
+    try {
+      this.openTimerWindow(timer.id, { force: true, displayStyle: style });
+    } catch (error) {
+      console.warn(`${MODULE_ID} | Unable to open timer window`, error);
+    }
     if (visibility === TIMER_VISIBILITY.public) {
-      game.socket.emit(SOCKET_CHANNEL, {
-        action: "timerStarted",
-        timerId: timer.id
-      });
+      try {
+        game.socket.emit(SOCKET_CHANNEL, {
+          action: "timerStarted",
+          timerId: timer.id
+        });
+      } catch (error) {
+        console.warn(`${MODULE_ID} | Unable to broadcast timer start`, error);
+      }
     }
 
     return timer;
   }
 
-  async startBreakTimer(deadlineTimestamp) {
+  async startBreakTimer(minutes, { onDeadlineCalculated } = {}) {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
-    await game.togglePause(true, { broadcast: true });
-    return this.startTimer({
-      name: localize("Timers.Break.TimerName"),
-      mode: TIMER_MODE.deadline,
-      deadlineTimestamp,
-      visibility: TIMER_VISIBILITY.public,
-      style: TIMER_DISPLAY_STYLE.prominent,
-      sound: TIMER_SOUND.signal1
+    const wasPaused = Boolean(game.paused);
+    try {
+      await setGamePaused(true);
+      return await this.startTimer({
+        name: localize("Timers.Break.TimerName"),
+        mode: TIMER_MODE.deadline,
+        roundedDurationMinutes: minutes,
+        visibility: TIMER_VISIBILITY.public,
+        style: TIMER_DISPLAY_STYLE.prominent,
+        sound: TIMER_SOUND.signal1,
+        onDeadlineCalculated
+      });
+    } catch (error) {
+      if (!wasPaused) {
+        try {
+          await setGamePaused(false);
+        } catch (rollbackError) {
+          console.error(`${MODULE_ID} | Unable to restore pause state`, rollbackError);
+        }
+      }
+      throw error;
+    }
+  }
+
+  async rollbackTimerStart(timerId) {
+    try {
+      await this.updateState((state) => {
+        delete state.timers[timerId];
+      });
+    } catch (rollbackError) {
+      console.error(`${MODULE_ID} | Unable to roll back timer start`, rollbackError);
+    }
+
+    const message = Array.from(game.messages ?? []).find((candidate) => {
+      return candidate.getFlag(MODULE_ID, FLAGS.timer)?.id === timerId;
     });
+    if (!message) return;
+
+    try {
+      await message.delete();
+    } catch (rollbackError) {
+      console.error(`${MODULE_ID} | Unable to remove rolled back timer message`, rollbackError);
+    }
   }
 
   async createTimerChatMessage(timer) {
@@ -254,7 +309,8 @@ export class TimerTool {
     if (!timerData || timerData.kind !== "started") return;
 
     const timer = this.getTimer(timerData.id);
-    const card = html.querySelector("[data-timer-chat-card]");
+    const root = getRenderedElement(html);
+    const card = root?.querySelector("[data-timer-chat-card]");
     if (!card) return;
 
     const heading = card.querySelector("[data-timer-chat-heading]");
@@ -380,9 +436,9 @@ export class TimerTool {
     if (!ids.size) return;
 
     this.closeTimerWindows(ids);
-    const state = cloneTimerState(game.settings.get(MODULE_ID, SETTINGS.timers));
-    for (const timerId of ids) delete state.timers[timerId];
-    await game.settings.set(MODULE_ID, SETTINGS.timers, state);
+    await this.updateState((state) => {
+      for (const timerId of ids) delete state.timers[timerId];
+    });
   }
 
   closeTimerWindows(timerIds) {
@@ -422,7 +478,8 @@ export class TimerTool {
     this.flushPendingForcedOpens();
   }
 
-  flushPendingForcedOpens() {
+  flushPendingForcedOpens({ consumeAttempt = false } = {}) {
+    let retryNeeded = false;
     for (const [timerId, attempts] of Array.from(this.pendingForcedOpens.entries())) {
       const timer = this.getTimer(timerId);
       if (timer?.visibility === TIMER_VISIBILITY.public) {
@@ -431,13 +488,20 @@ export class TimerTool {
         continue;
       }
 
-      if (attempts <= 0) {
+      if (attempts <= 0 || (consumeAttempt && attempts <= 1)) {
         this.pendingForcedOpens.delete(timerId);
         continue;
       }
 
-      this.pendingForcedOpens.set(timerId, attempts - 1);
-      window.setTimeout(() => this.flushPendingForcedOpens(), 250);
+      if (consumeAttempt) this.pendingForcedOpens.set(timerId, attempts - 1);
+      retryNeeded = true;
+    }
+
+    if (retryNeeded && !this.pendingForcedOpenRetry) {
+      this.pendingForcedOpenRetry = window.setTimeout(() => {
+        this.pendingForcedOpenRetry = null;
+        this.flushPendingForcedOpens({ consumeAttempt: true });
+      }, 250);
     }
   }
 
@@ -449,21 +513,46 @@ export class TimerTool {
 
   checkExpiredTimers() {
     const alerted = this.getAlertedExpirations();
+    const timerIds = new Set(Object.keys(this.state.timers));
+    let changed = false;
+
+    for (const timerId of Object.keys(alerted)) {
+      if (timerIds.has(timerId)) continue;
+      delete alerted[timerId];
+      changed = true;
+    }
+
     for (const timer of this.getVisibleTimers()) {
       if (!isTimerExpired(timer) || alerted[timer.id]) continue;
       alerted[timer.id] = true;
-      void game.settings.set(MODULE_ID, SETTINGS.timerAlertedExpirations, alerted);
+      changed = true;
       this.openTimerWindow(timer.id, {
         force: true,
         displayStyle: TIMER_DISPLAY_STYLE.prominent
       });
       void this.playExpiredSound(timer);
     }
+
+    if (changed) this.persistAlertedExpirations(alerted);
   }
 
   getAlertedExpirations() {
+    return { ...this.alertedExpirations };
+  }
+
+  readAlertedExpirations() {
     const alerted = game.settings.get(MODULE_ID, SETTINGS.timerAlertedExpirations);
     return alerted && (typeof alerted === "object") ? { ...alerted } : {};
+  }
+
+  persistAlertedExpirations(alerted) {
+    this.alertedExpirations = { ...alerted };
+    const snapshot = { ...alerted };
+    void this.runAlertPersistenceTask(async () => {
+      await game.settings.set(MODULE_ID, SETTINGS.timerAlertedExpirations, snapshot);
+    }).catch((error) => {
+      console.warn(`${MODULE_ID} | Unable to persist timer alerts`, error);
+    });
   }
 
   async playExpiredSound(timer) {
@@ -475,6 +564,14 @@ export class TimerTool {
     } catch (error) {
       console.warn(`${MODULE_ID} | Unable to play timer expiration sound`, error);
     }
+  }
+
+  updateState(mutator) {
+    return this.runStateTask(async () => {
+      const state = cloneTimerState(game.settings.get(MODULE_ID, SETTINGS.timers));
+      mutator(state);
+      await game.settings.set(MODULE_ID, SETTINGS.timers, state);
+    });
   }
 
 }

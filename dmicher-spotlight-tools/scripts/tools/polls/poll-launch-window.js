@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { i18nKey, localize } from "../../utils.js";
+import { i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import {
   POLL_TYPE_CONFIG,
   getPollTypeMaxOptions,
@@ -92,16 +92,17 @@ export class PollLaunchApplication extends HandlebarsApplicationMixin(Applicatio
     };
   }
 
-  async _onRender(context, options) {
-    await super._onRender(context, options);
-    this.activateListeners();
-    this.refreshTimerBlock();
-    this.fitHeightToContent();
+  _onRender(context, options) {
+    return runAfterApplicationLifecycle(super._onRender(context, options), () => {
+      this.activateListeners();
+      this.refreshTimerBlock();
+      this.fitHeightToContent();
+    });
   }
 
-  async _onClose(options) {
+  _onClose(options) {
     this.pollTool.forgetLaunchWindow(this);
-    await super._onClose(options);
+    return super._onClose(options);
   }
 
   activateListeners() {

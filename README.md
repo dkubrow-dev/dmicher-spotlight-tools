@@ -8,6 +8,8 @@
 Модуль «Приспособы фокуса Дмичера» - набор инструментов для Foundry VTT, не зависящих от игровых систем и предназначенных для контроля фокуса внимания (спотлайта) за игровым столом.
 Модуль позволяет организовать последовательность заявок игроков, проконтролировать время, оставшееся до запланированных мастером событий, провести проверку готовности или другой опрос, организовать перерыв и проследить за тем, кто из игроков долгое время остаётся вне фокуса внимания.
 
+Поддерживаются Foundry VTT версий 12, 13 и 14.
+
 ## Как установить модуль?
 
 ### Вариант 1: установка через манифест
@@ -140,7 +142,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 В открывшемся окне выберите примерную длительность перерыва и нажмите "Объявить перерыв".
 
-> **Обратите внимание**: время в таймере будет задано не точно на 5, 10, 15 и так далее минут. Перерывы на 5 и 10 минут округляются вверх до ближайшей полной минуты, а более длинные перерывы - до ближайшей отметки с шагом 3 минуты. Это означает, что при запуске таймера в 16:00:03 на 15 минут таймер перерыва предложит перерыв "до 16:18". Это сделано намеренно, чтобы выбранное время перерыва было гарантировано, а игрокам было удобнее ориентироваться по обычным часам, когда им следует вернуться к экрану.
+> **Обратите внимание**: к текущему времени прибавляется выбранная длительность, после чего результат всегда округляется вверх до ближайшей полной минуты. Например, при запуске таймера в 16:00:03 на 15 минут таймер перерыва предложит перерыв "до 16:16". Так выбранная длительность гарантированно сохраняется, а игрокам удобно ориентироваться по обычным часам.
 
 При объявлении перерыва:
 - будет создан таймер "Перерыв", который попадёт в таблицу "Текущие таймеры" в окне "Таймеры" (вы сможете управлять им оттуда);
@@ -185,6 +187,8 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 The "dmicher Spotlight Tools" module is a system-agnostic toolset for Foundry VTT, designed to help control the focus of attention (spotlight) at the game table.
 The module helps organize the sequence of player requests, track time remaining until events planned by the Game Master, run readiness checks or other polls, organize breaks, and notice which players have been outside the spotlight for a long time.
+
+Foundry VTT versions 12, 13, and 14 are supported.
 
 ## How to install the module?
 
@@ -318,7 +322,7 @@ Go to the "Spotlight Tools" section in the left canvas controls, then click "Bre
 
 In the window that opens, choose the approximate break duration and click "Announce break".
 
-> **Please note**: the timer time is not set to exactly 5, 10, 15, and so on minutes. Breaks of 5 and 10 minutes round up to the next full minute, while longer breaks round up to the next 3-minute mark. This means that if the timer is started at 16:00:03 for 15 minutes, the break timer will suggest a break "until 16:18". This is intentional: the selected break time is guaranteed, and it is easier for players to use the regular clock to know when they should return to the screen.
+> **Please note**: the selected duration is added to the current time, then the result always rounds up to the next full minute. For example, starting a 15-minute break at 16:00:03 produces "until 16:16". This guarantees the selected duration while keeping the return time easy to read on a regular clock.
 
 When a break is announced:
 - a "Break" timer is created and added to the "Current timers" table in the "Timers" window (you can manage it from there);

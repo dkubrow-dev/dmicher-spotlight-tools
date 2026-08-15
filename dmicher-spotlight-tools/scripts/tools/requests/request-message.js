@@ -4,6 +4,7 @@ import {
   format,
   formatDuration,
   formatTimestamp,
+  getRenderedElement,
   isModerator,
   localize
 } from "../../utils.js";
@@ -38,15 +39,18 @@ export function buildRequestMessageContent(type, text, style) {
 }
 
 export function renderRequestChatMessage(message, html, { resolveRequest }) {
+  const root = getRenderedElement(html);
+  if (!root) return;
+
   const requestData = message.getFlag(MODULE_ID, FLAGS.request);
   if (requestData) {
-    attachRequestAnchor(message, html);
-    activateRequestMessageActions(message, html, requestData, resolveRequest);
+    attachRequestAnchor(message, root);
+    activateRequestMessageActions(message, root, requestData, resolveRequest);
   }
 
   const resolutionData = message.getFlag(MODULE_ID, FLAGS.resolution);
   if (!resolutionData || (typeof resolutionData !== "object")) return;
-  const technicalMessage = html.querySelector(".dmicher-request-technical");
+  const technicalMessage = root.querySelector(".dmicher-request-technical");
   if (technicalMessage) renderTechnicalMessageContent(technicalMessage, resolutionData);
 }
 

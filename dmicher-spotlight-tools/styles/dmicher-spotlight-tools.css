@@ -398,7 +398,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
 .dmicher-poll-manager .window-content,
 .dmicher-poll-launch .window-content,
 .dmicher-poll-results .window-content,
-.dmicher-readiness .window-content,
 .dmicher-break-timer .window-content,
 .dmicher-stopwatch .window-content,
 .dmicher-timer-window .window-content {
@@ -418,7 +417,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
 .dmicher-poll-launch .window-content button,
 .dmicher-poll-launch .window-content input,
 .dmicher-poll-results .window-content button,
-.dmicher-readiness .window-content button,
 .dmicher-break-timer .window-content button,
 .dmicher-break-timer .window-content input,
 .dmicher-stopwatch .window-content button,
@@ -676,8 +674,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 .dmicher-focus-audit,
 .dmicher-poll-manager,
 .dmicher-poll-launch,
-.dmicher-poll-results,
-.dmicher-readiness {
+.dmicher-poll-results {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 2rem);
@@ -688,8 +685,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 .dmicher-focus-audit .window-content,
 .dmicher-poll-manager .window-content,
 .dmicher-poll-launch .window-content,
-.dmicher-poll-results .window-content,
-.dmicher-readiness .window-content {
+.dmicher-poll-results .window-content {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -707,8 +703,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 .dmicher-focus-audit-shell,
 .dmicher-poll-manager-shell,
 .dmicher-poll-launch-shell,
-.dmicher-poll-results-shell,
-.dmicher-readiness-shell {
+.dmicher-poll-results-shell {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -723,8 +718,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   flex: 0 0 auto;
 }
 
-.dmicher-focus-audit-table-wrap,
-.dmicher-readiness-table-wrap {
+.dmicher-focus-audit-table-wrap {
   background: var(--dmicher-surface-muted);
   border: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ccc));
   border-radius: 6px;
@@ -737,40 +731,14 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   min-width: 760px;
 }
 
-.dmicher-readiness-table {
-  min-width: 520px;
-}
-
 .dmicher-focus-audit-table th,
-.dmicher-focus-audit-table td,
-.dmicher-readiness-table th,
-.dmicher-readiness-table td {
+.dmicher-focus-audit-table td {
   white-space: nowrap;
 }
 
-.dmicher-focus-audit-table tr.is-inactive,
-.dmicher-readiness-table tr.is-inactive {
+.dmicher-focus-audit-table tr.is-inactive {
   color: var(--dmicher-text-muted, var(--color-text-dark-secondary, #777));
   opacity: 0.58;
-}
-
-.dmicher-readiness-status {
-  align-items: center;
-  display: inline-flex;
-  gap: 0.35rem;
-}
-
-.dmicher-readiness-footer {
-  display: flex;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.dmicher-readiness-footer button {
-  flex: 0 0 auto;
-  width: auto;
 }
 
 .dmicher-poll-template-form-block,
@@ -1611,7 +1579,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-ti
 .dmicher-poll-manager .dmicher-tool-window-heading,
 .dmicher-poll-launch .dmicher-tool-window-heading,
 .dmicher-poll-results .dmicher-tool-window-heading,
-.dmicher-readiness .dmicher-tool-window-heading,
 .dmicher-break-timer .dmicher-tool-window-heading,
 .dmicher-stopwatch .dmicher-tool-window-heading,
 .dmicher-timer-window .dmicher-timer-window-header h2 {
