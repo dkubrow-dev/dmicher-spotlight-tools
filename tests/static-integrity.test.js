@@ -28,7 +28,7 @@ function flattenKeys(value, prefix = "", output = []) {
 
 test("manifest and localization files are internally consistent", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "module.json"), "utf8"));
-  assert.equal(manifest.version, "1.1.3");
+  assert.equal(manifest.version, "1.2.0");
   assert.equal(manifest.compatibility.minimum, "12");
   assert.equal(manifest.compatibility.verified, "14");
 
