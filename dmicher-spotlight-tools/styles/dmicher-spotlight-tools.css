@@ -1109,8 +1109,9 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 
 .dmicher-poll-template-macro-heading,
 .dmicher-poll-template-macro-cell {
+  min-width: 3.4rem;
   text-align: center;
-  width: 2.6rem;
+  width: 3.4rem;
 }
 
 .dmicher-poll-template-macro-cell img {
@@ -1118,11 +1119,16 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   border: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ccc));
   border-radius: 5px;
   cursor: grab;
-  height: 28px;
+  display: block;
+  height: 36px;
+  margin: 0 auto;
+  max-height: 36px;
+  max-width: 36px;
+  min-height: 36px;
+  min-width: 36px;
   object-fit: contain;
   padding: 0.15rem;
-  vertical-align: middle;
-  width: 28px;
+  width: 36px;
 }
 
 .dmicher-poll-template-macro-cell img:active {

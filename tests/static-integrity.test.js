@@ -185,3 +185,16 @@ test("help content uses module theme colors", function (){
   assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-item\s+dd\s*\{[\s\S]*?color:\s*var\(--dmicher-text/s);
   assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-page\s+h2[\s\S]*color:\s*var\(--dmicher-heading/);
 });
+
+test("poll template macro thumbnails keep a usable size across Foundry versions", function () {
+  const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
+  const template = fs.readFileSync(path.join(MODULE_ROOT, "templates", "polls", "poll-manager.hbs"), "utf8");
+  const en = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "en.json"), "utf8"));
+  const ru = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "ru.json"), "utf8"));
+
+  assert.match(stylesheet, /\.dmicher-poll-template-macro-heading,[\s\S]*?min-width:\s*3\.4rem;[\s\S]*?width:\s*3\.4rem;/);
+  assert.match(stylesheet, /\.dmicher-poll-template-macro-cell img\s*\{[\s\S]*?max-width:\s*36px;[\s\S]*?min-width:\s*36px;[\s\S]*?width:\s*36px;/);
+  assert.match(template, /<img[^>]+alt="\{\{macroTitle\}\}"[^>]+data-poll-template-drag/);
+  assert.equal(en.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "Macro");
+  assert.equal(ru.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "\u041c\u0430\u043a\u0440\u043e\u0441");
+});
