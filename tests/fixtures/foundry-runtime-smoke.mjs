@@ -117,6 +117,7 @@ class MockLegacySidebarTab extends MockApplicationV2 {
     };
   }
 }
+class MockConfiguredChat extends MockLegacySidebarTab {}
 class MockAbstractSidebarTab extends MockApplicationV2 {
   _onActivate() {}
 }
@@ -188,6 +189,7 @@ const invalidScopes = [];
 const socketListeners = new Map();
 const audioPreloads = [];
 const playerRenderCalls = [];
+const sceneControlInitializations = [];
 const asyncErrors = [];
 let randomId = 0;
 
@@ -196,7 +198,7 @@ process.on("unhandledRejection", (error) => asyncErrors.push(error));
 globalThis.HTMLElement = MockHTMLElement;
 globalThis.Node = { TEXT_NODE: 3 };
 globalThis.Image = MockImage;
-globalThis.SidebarTab = generation === 12 ? MockLegacySidebarTab : undefined;
+globalThis.SidebarTab = undefined;
 globalThis.Hooks = hooks;
 globalThis.CONST = {
   USER_ROLES: {
@@ -309,7 +311,7 @@ class MockSidebar {
 globalThis.CONFIG = {
   ChatMessage: { documentClass: MockChatMessage },
   Macro: { documentClass: MockMacro },
-  ui: { sidebar: MockSidebar }
+  ui: { sidebar: MockSidebar, chat: MockConfiguredChat }
 };
 globalThis.foundry = {
   applications: {
@@ -363,6 +365,11 @@ globalThis.ui = {
   sidebar: {
     changeTab() {},
     activateTab() {}
+  },
+  controls: {
+    initialize(options) {
+      sceneControlInitializations.push(options);
+    }
   }
 };
 globalThis.canvas = { tokens: { controlled: [] } };
@@ -386,16 +393,22 @@ assert.deepEqual(
   Array.from(registeredMenus.keys()).filter((key) => key.includes("request") || key.includes("thankAuthor")),
   [
     "dmicher-spotlight-tools.requestsSettings",
+    "dmicher-spotlight-tools.requestMasterSettings",
     "dmicher-spotlight-tools.requestsHelp",
     "dmicher-spotlight-tools.thankAuthor"
   ]
 );
+assert.equal(registeredMenus.get("dmicher-spotlight-tools.requestsSettings")?.restricted, false);
+assert.equal(registeredMenus.get("dmicher-spotlight-tools.requestMasterSettings")?.restricted, true);
+assert.equal(hooks.count("renderSettingsConfig"), 1);
+assert.equal(hooks.count("renderSettingsConfigHTML"), 1);
 const requestConfiguration = registeredSettings.get("dmicher-spotlight-tools.requestConfiguration");
 assert.equal(requestConfiguration.default.feed.enabled, true);
 assert.equal(requestConfiguration.default.showWelcome, true);
 assert.equal(requestConfiguration.default.soundsEnabled, true);
 
 const feedApplication = new CONFIG.ui.requests();
+if (generation === 12) assert.ok(feedApplication instanceof MockLegacySidebarTab);
 const feedContext = generation >= 13
   ? await feedApplication._prepareContext({})
   : await feedApplication.getData({});
@@ -429,6 +442,10 @@ hooks.call("getSceneControlButtons", sceneControls);
 if (generation === 12) {
   assert.equal(sceneControls[0]?.name, "dmicher-spotlight-tools");
   assert.ok(Array.isArray(sceneControls[0]?.tools));
+  assert.notEqual(sceneControls[0]?.layer, "tokens");
+  assert.equal(typeof canvas[sceneControls[0]?.layer]?.activate, "function");
+  canvas[sceneControls[0].layer].activate();
+  assert.deepEqual(sceneControlInitializations, [{ control: "dmicher-spotlight-tools" }]);
 } else {
   assert.ok(sceneControls["dmicher-spotlight-tools"]);
   assert.equal(Array.isArray(sceneControls["dmicher-spotlight-tools"].tools), false);

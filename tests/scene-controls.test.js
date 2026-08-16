@@ -20,6 +20,8 @@ function installFoundryGlobals() {
     user: { role: 4 },
     i18n: { localize: (key) => key }
   };
+  globalThis.canvas = {};
+  globalThis.ui = { controls: { initialize() {} } };
 }
 
 function createControls() {
@@ -41,6 +43,8 @@ const EXPECTED_TOOLS = [
 
 test("v12 SceneControls adapter appends an array control with help first", () => {
   installFoundryGlobals();
+  const layerActivations = [];
+  ui.controls.initialize = (options) => layerActivations.push(options);
   const { controls: adapter, calls } = createControls();
   const sceneControls = [];
   adapter.renderSceneControls(sceneControls);
@@ -48,7 +52,10 @@ test("v12 SceneControls adapter appends an array control with help first", () =>
   assert.equal(sceneControls.length, 1);
   const control = sceneControls[0];
   assert.equal(control.name, MODULE_ID);
-  assert.equal(control.layer, "controls");
+  assert.notEqual(control.layer, "tokens");
+  assert.equal(typeof canvas[control.layer]?.activate, "function");
+  canvas[control.layer].activate();
+  assert.deepEqual(layerActivations, [{ control: MODULE_ID }]);
   assert.equal(control.visible, true);
   assert.ok(Array.isArray(control.tools));
   assert.deepEqual(control.tools.map((tool) => tool.name), EXPECTED_TOOLS);

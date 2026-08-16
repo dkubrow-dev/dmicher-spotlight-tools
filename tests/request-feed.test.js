@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 
-globalThis.SidebarTab = class {};
+class MockHTMLElement {}
+class MockLegacySidebarTab {}
+class MockConfiguredChat extends MockLegacySidebarTab {}
+
+globalThis.HTMLElement = MockHTMLElement;
+globalThis.game = { release: { generation: 12 }, version: "12.999" };
+globalThis.SidebarTab = undefined;
+globalThis.CONFIG = { ui: { chat: MockConfiguredChat } };
 globalThis.foundry = {
   applications: {
     sidebar: {},
@@ -13,8 +21,86 @@ globalThis.foundry = {
 const {
   RequestFeedSidebar,
   dispatchRequestFeedClick,
+  ensureLegacyRequestFeedRendered,
+  getLegacySidebarBase,
+  handleLegacyRequestFeedTabClick,
   dispatchRequestFeedDragStart
 } = await import("../dmicher-spotlight-tools/scripts/tools/requests/request-feed.js");
+
+test("v12 request feed uses SidebarTab and remounts missing content", () => {
+  assert.equal(getLegacySidebarBase(), MockLegacySidebarTab);
+  assert.ok(RequestFeedSidebar.prototype instanceof MockLegacySidebarTab);
+  const staleRoot = new MockHTMLElement();
+  staleRoot.isConnected = false;
+  const renders = [];
+  globalThis.ui = {
+    requests: {
+      rendered: true,
+      element: [staleRoot],
+      _element: [staleRoot],
+      render: (...args) => renders.push(args)
+    }
+  };
+  const root = { querySelector: () => null };
+
+  ensureLegacyRequestFeedRendered(root);
+
+  assert.equal(ui.requests._element, null);
+  assert.deepEqual(renders, [[true]]);
+});
+
+test("v12 collapsed request feed opens as a popout and stays hidden in the sidebar", () => {
+  const calls = [];
+  let prevented = 0;
+  const application = {
+    rendered: true,
+    renderPopout: (value) => calls.push(["popout", value]),
+    activate: () => calls.push(["activate"])
+  };
+  const root = { querySelector: () => ({}) };
+  globalThis.ui = {
+    requests: application,
+    sidebar: {
+      _collapsed: true,
+      activateTab: (tab) => calls.push(["tab", tab])
+    }
+  };
+
+  const mode = handleLegacyRequestFeedTabClick({ preventDefault: () => { prevented += 1; } }, root);
+
+  assert.equal(mode, "popout");
+  assert.equal(prevented, 1);
+  assert.deepEqual(calls, [["popout", application]]);
+
+  const css = fs.readFileSync(
+    new URL("../dmicher-spotlight-tools/styles/dmicher-spotlight-tools.css", import.meta.url),
+    "utf8"
+  );
+  assert.match(css, /#sidebar\.collapsed > #requests\.dmicher-request-feed-shell\s*\{\s*display: none;/);
+});
+
+test("v12 expanded request feed keeps the embedded sidebar behavior", () => {
+  const calls = [];
+  const application = {
+    rendered: true,
+    activate: () => calls.push(["activate"])
+  };
+  const root = {
+    querySelector: (selector) => selector === "#requests.dmicher-request-feed-shell" ? {} : null
+  };
+  globalThis.ui = {
+    requests: application,
+    sidebar: {
+      _collapsed: false,
+      activateTab: (tab) => calls.push(["tab", tab])
+    }
+  };
+
+  const mode = handleLegacyRequestFeedTabClick({ preventDefault() {} }, root);
+
+  assert.equal(mode, "embedded");
+  assert.deepEqual(calls, [["tab", "requests"], ["activate"]]);
+});
 
 function eventFor(selectors, extras = {}) {
   let prevented = 0;
@@ -57,7 +143,7 @@ test("request feed delegates every click action from its persistent root", async
   });
   assert.deepEqual(submissions, ["urgent"]);
 
-  for (const action of ["settings", "help", "management"]) {
+  for (const action of ["settings", "management"]) {
     const calls = [];
     const actionEvent = eventFor({
       "[data-feed-action]": { dataset: { feedAction: action } }
@@ -66,12 +152,21 @@ test("request feed delegates every click action from its persistent root", async
       controller: null,
       actions: {
         openSettings: () => calls.push("settings"),
-        openHelp: () => calls.push("help"),
         openManagement: () => calls.push("management")
       }
     });
     assert.deepEqual(calls, [action]);
   }
+
+  const resetCalls = [];
+  const resetEvent = eventFor({
+    "[data-feed-action]": { dataset: { feedAction: "reset-timeouts" } }
+  });
+  dispatchRequestFeedClick(resetEvent.event, {
+    controller: { confirmResetTimeouts: () => resetCalls.push("reset") },
+    actions: {}
+  });
+  assert.deepEqual(resetCalls, ["reset"]);
 });
 
 test("request feed preserves the macro drag target under event delegation", () => {
@@ -102,4 +197,23 @@ test("request feed registers one stable pair of delegated listeners", () => {
   assert.deepEqual(listeners.map(([type]) => type), ["click", "dragstart"]);
   assert.equal(listeners[0][1], application.handleFeedClick);
   assert.equal(listeners[1][1], application.handleFeedDragStart);
+});
+
+
+test("request feed uses its canonical heading, removes help, and conditions the moderator timeout reset control", () => {
+  const template = fs.readFileSync(
+    new URL("../dmicher-spotlight-tools/templates/requests/feed.hbs", import.meta.url),
+    "utf8"
+  );
+  assert.doesNotMatch(template, /data-feed-action="help"/);
+  assert.match(template, /{{#if showResetTimeouts}}[\s\S]*data-feed-action="reset-timeouts"/);
+  for (const locale of ["ru", "en"]) {
+    const messages = JSON.parse(fs.readFileSync(
+      new URL("../dmicher-spotlight-tools/lang/" + locale + ".json", import.meta.url),
+      "utf8"
+    ));
+    const feed = messages.DMICHERSPOTLIGHTTOOLS.Requests.Feed;
+    assert.equal(feed.Heading, feed.Tab);
+    assert.equal(messages.DMICHERSPOTLIGHTTOOLS.Requests.Feed.Help, undefined);
+  }
 });

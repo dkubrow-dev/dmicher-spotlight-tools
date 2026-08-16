@@ -294,3 +294,100 @@ test("v14 and v12-v13 authoritative moderator rejects requests while environment
     assert.equal(localFeedback?.endsWith("Requests.Limits.EnvironmentNotice"), true);
   }
 });
+
+
+test("timeout feedback includes the remaining digital duration", () => {
+  const now = 1000000;
+  const warnings = [];
+  globalThis.game = {
+    user: { id: "player", role: 1 },
+    i18n: {
+      localize: (key) => key,
+      format: (key, data) => key + ":" + data.time
+    }
+  };
+  globalThis.ui = { notifications: { warn: (message) => warnings.push(message) } };
+  const tool = new RequestTool();
+  const configuration = {
+    limits: {
+      common: { timeoutMode: "submission", timeoutDuration: 300000 },
+      urgent: { timeoutMode: "none", timeoutDuration: 300000 }
+    }
+  };
+  const state = {
+    entries: [],
+    cooldowns: { player: { common: { submittedAt: now } } }
+  };
+  tool.showLimitViolation("timeout", {
+    type: "common",
+    authorId: "player",
+    state,
+    configuration,
+    now: now + 1000
+  });
+  assert.deepEqual(warnings, ["DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutNotice:00:04:59"]);
+});
+
+
+test("primary moderator reset clears cooldowns without removing active requests", async () => {
+  const gm = { id: "gm", name: "GM", role: 4, active: true };
+  const allUsers = [gm];
+  const users = {
+    get: (id) => allUsers.find((user) => user.id === id),
+    filter: (predicate) => allUsers.filter(predicate),
+    find: (predicate) => allUsers.find(predicate),
+    some: (predicate) => allUsers.some(predicate)
+  };
+  let activeState = {
+    initialized: true,
+    revision: 2,
+    entries: [{
+      id: "active",
+      authorId: "gm",
+      authorName: "GM",
+      urgency: "common",
+      submittedAt: 1000,
+      createdAt: 1000,
+      sequence: 0
+    }],
+    cooldowns: { gm: { common: { submittedAt: 1000 } } },
+    cooldownsResetAt: 0
+  };
+  const notices = [];
+  globalThis.game = {
+    user: gm,
+    users,
+    messages: [],
+    socket: { emit() {} },
+    settings: {
+      get(_namespace, key) {
+        if (key === "requestConfiguration") {
+          return { limits: { common: { timeoutMode: "submission", timeoutDuration: 300000 } } };
+        }
+        if (key === "activeRequests") return activeState;
+        return "";
+      },
+      async set(_namespace, key, value) {
+        if (key === "activeRequests") activeState = structuredClone(value);
+        return value;
+      }
+    },
+    i18n: { localize: (key) => key, format: (key) => key }
+  };
+  globalThis.ui = {
+    notifications: {
+      warn: (message) => notices.push(["warn", message]),
+      error: (message) => notices.push(["error", message]),
+      info: (message) => notices.push(["info", message])
+    }
+  };
+
+  const tool = new RequestTool();
+  tool.applyState(activeState);
+  assert.equal(await tool.resetRequestTimeouts(), true);
+  assert.equal(activeState.entries.length, 1);
+  assert.deepEqual(activeState.cooldowns, {});
+  assert.equal(activeState.cooldownsResetAt > 1000, true);
+  assert.equal(activeState.revision, 3);
+  assert.deepEqual(notices, [["info", "DMICHERSPOTLIGHTTOOLS.Requests.Limits.ResetSuccess"]]);
+});

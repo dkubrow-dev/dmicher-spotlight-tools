@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { FLAGS, MODULE_ID } from "../dmicher-spotlight-tools/scripts/config.js";
 import {
+  buildRequestMessageContent,
   buildWelcomeMessageContent,
   getRequestAnchorId,
   renderRequestChatMessage
@@ -104,6 +105,21 @@ function installFoundryGlobals() {
     time: { serverTime: Date.now() }
   };
 }
+
+test("request text renders HTML and CSS-like input strictly as text", () => {
+  installFoundryGlobals();
+  const content = buildRequestMessageContent(
+    "common",
+    '<img src=x onerror="alert(1)">\n<style>body { display: none; }</style>',
+    "color: #000000; text-align: center;",
+    "modules/example/request.webp"
+  );
+
+  assert.doesNotMatch(content, /<img src=x|<style>/i);
+  assert.match(content, /&lt;img src=x onerror=&quot;alert\(1\)&quot;&gt;/);
+  assert.match(content, /&lt;style&gt;body \{ display: none; \}&lt;\/style&gt;/);
+  assert.match(content, /<br>/);
+});
 
 test("request renderer accepts the jQuery-like wrapper supplied by v12", () => {
   installFoundryGlobals();

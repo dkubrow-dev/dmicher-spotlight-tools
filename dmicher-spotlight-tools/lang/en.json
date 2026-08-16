@@ -40,20 +40,39 @@
         "DefaultText": "Environment action. Pay attention to the scene."
       },
       "Settings": {
-        "WindowTitle": "dmicher Spotlight Tools - Settings - Requests",
-        "MenuName": "dmicher Spotlight Tools - Requests",
-        "MenuLabel": "Open request settings",
-        "MenuHint": "Configure the text and style of your requests.",
-        "Intro": "Configure the text of your requests. Click an image to submit a request, or drag it to the hotbar.",
+        "WindowTitle": "dmicher Spotlight Tools — Request Settings",
+        "MenuName": "dmicher Spotlight Tools — Request Settings",
+        "MenuLabel": "Open Request Settings",
+        "MenuHint": "Configure the text and appearance of your requests.",
+        "Intro": "Configure the text and appearance of your requests. Click an image to submit a request, or drag it to the hotbar.",
         "ImageTitle": "Submit a request or drag it to the hotbar",
         "Text": "Text",
-        "CssStyle": "CSS style",
-        "StyleNote": "Only safe text styling properties are saved in CSS style: color, background, font, alignment, spacing, padding, and border.",
+        "Appearance": "Appearance",
+        "Color": "Color",
+        "ColorPicker": "Choose color",
+        "ColorValue": "Color in #rrggbb format",
+        "ColorInvalid": "Enter a color in #rrggbb format.",
+        "Font": "Font",
+        "FontSize": "Size",
+        "FontSizeInvalid": "Enter a valid CSS font size, for example 1.2em, 18px, or clamp(1rem, 2vw, 1.5rem).",
+        "FontDecorations": "Font style and decoration",
+        "Underline": "Underline",
+        "Italic": "Italic",
+        "Bold": "Bold",
+        "Alignment": "Alignment",
+        "AlignCenter": "Center",
+        "AlignLeft": "Left",
+        "AlignRight": "Right",
         "Save": "Save",
         "Saved": "Request settings saved.",
-        "SaveError": "Could not save request settings.",
-        "GeneralTab": "General",
-        "AdvancedTab": "Advanced"
+        "SaveError": "Could not save request settings."
+      },
+      "MasterSettings": {
+        "WindowTitle": "dmicher Spotlight Tools — Game Master Settings",
+        "MenuName": "dmicher Spotlight Tools — Game Master Settings",
+        "MenuLabel": "Game Master Settings",
+        "MenuHint": "Configure the world-wide Request Feed, Request Anti-Spam Limits, Images, Sounds, and Welcome Message blocks.",
+        "Forbidden": "Game Master settings are available only to a Game Master or Assistant."
       },
       "Chat": {
         "Actions": "Request actions",
@@ -113,7 +132,8 @@
           "None": "Do not hide",
           "ByType": "By type",
           "ByPlayer": "By player"
-        }
+        },
+        "EnvironmentRequest": "Environment Request"
       },
       "Volume": {
         "Label": "Reports",
@@ -144,7 +164,7 @@
         "CustomTimerSoundPlaceholder": "Enter a direct URL to an audio file"
       },
       "Limits": {
-        "Heading": "Request anti-spam limits",
+        "Heading": "Request Anti-Spam Limits",
         "ChatEnabled": "Post requests to chat",
         "Mode": "Limit",
         "None": "Unlimited",
@@ -161,21 +181,26 @@
         "TimeoutSubmission": "From submission",
         "TimeoutGrant": "From granted floor",
         "TimeoutTime": "Time",
-        "TimeoutNotice": "The timeout set by the Game Master has not expired yet.",
-        "TimeoutInvalid": "Enter a positive timeout duration in HH:MM:SS format."
+        "TimeoutNotice": "The timeout set by the Game Master has not expired yet. Remaining: {time}.",
+        "TimeoutInvalid": "Enter a positive timeout duration in HH:MM:SS format.",
+        "ResetTimers": "Reset Timers",
+        "ResetTitle": "Reset Request Timers",
+        "ResetConfirm": "Reset every active regular and urgent request timeout for all players?",
+        "ResetYes": "Reset",
+        "ResetSuccess": "Request timers have been reset.",
+        "ResetUnavailable": "Request timeouts are not configured."
       },
       "Feed": {
-        "SettingsHeading": "Player request feed",
+        "SettingsHeading": "Request Feed",
         "Enabled": "Enable",
         "ShowTime": "Show time",
-        "Tab": "Requests",
-        "Heading": "Active Requests",
+        "Tab": "Request Feed",
+        "Heading": "Request Feed",
         "CancelOwn": "Cancel request",
-        "Settings": "Settings",
-        "Help": "Help",
-        "Management": "Management",
+        "Settings": "Request Settings",
+        "Management": "Active Requests",
         "ReloadTitle": "Rebuild sidebar",
-        "ReloadHint": "Reload the world so the Requests tab appears or disappears for every user. Reload now?",
+        "ReloadHint": "Reload the world so the Request Feed tab appears or disappears for every user. Reload now?",
         "ReloadNow": "Reload",
         "ReloadLater": "Later"
       },
@@ -198,8 +223,8 @@
         "MenuLabel": "Open help",
         "MenuHint": "Instructions for every module tool.",
         "Contents": "Contents",
-        "OpenSettings": "Open settings",
-        "OpenManagement": "Open active requests",
+        "OpenSettings": "Open Request Settings",
+        "OpenManagement": "Open Active Requests",
         "Pages": {
           "Overview": {
             "Title": "Overview",
@@ -231,7 +256,7 @@
                   },
                   "Chat": {
                     "Label": "Connection to chat",
-                    "Description": "Chat cards can be disabled without disabling the queue, feed, or management window."
+                    "Description": "Chat cards can be disabled while the active queue, Request Feed, and Active Requests window continue to work."
                   },
                   "Identity": {
                     "Label": "Request author",
@@ -254,21 +279,29 @@
                     "Label": "Contents",
                     "Description": "The buttons on the left switch pages inside Help and never open a browser."
                   },
+                  "Theme": {
+                    "Label": "Module window theme",
+                    "Description": "The first entry in the module section of Game Settings switches module windows between light and dark appearance for the current user."
+                  },
                   "OpenSettings": {
-                    "Label": "Open settings",
-                    "Description": "The bottom button opens personal and Game Master request settings."
+                    "Label": "Open Request Settings",
+                    "Description": "The bottom button opens the separate personal Request Settings window."
+                  },
+                  "OpenMasterSettings": {
+                    "Label": "Game Master Settings",
+                    "Description": "The button in the module section of Game Settings opens a separate window for shared world controls; it is available to a Game Master or Assistant."
                   },
                   "OpenManagement": {
-                    "Label": "Open active requests",
-                    "Description": "The bottom button opens the Game Master queue management window."
+                    "Label": "Open Active Requests",
+                    "Description": "The bottom button opens Active Requests for Game Master queue review and control."
                   },
                   "ModuleMenu": {
                     "Label": "Module settings",
-                    "Description": "The game menu contains entries for opening Request Settings and this Help window."
+                    "Description": "The module section of Game Settings contains Open Request Settings, then Game Master Settings for a moderator, Open Help, and Thank the Author."
                   },
                   "SceneControls": {
                     "Label": "Spotlight Tools",
-                    "Description": "The upper-left controls show Help and Requests buttons to a Game Master among the module tools."
+                    "Description": "The upper-left controls show Help and Active Requests buttons to a Game Master among the module tools."
                   }
                 }
               }
@@ -279,15 +312,11 @@
             "Intro": "This page describes personal settings, ways to submit a request, chat-card buttons, and volume control.",
             "Sections": {
               "Window": {
-                "Title": "Settings — Requests window",
+                "Title": "Request Settings window",
                 "Items": {
-                  "GeneralTab": {
-                    "Label": "General tab",
-                    "Description": "Contains the request types available to the user and their personal text and styling."
-                  },
-                  "AdvancedTab": {
-                    "Label": "Advanced tab",
-                    "Description": "Visible only to a Game Master or Assistant and contains world-wide settings."
+                  "SettingsWindow": {
+                    "Label": "Request Settings window",
+                    "Description": "Contains the request types available to the user and their personal text and styling; shared world controls have moved to the separate Game Master Settings window."
                   },
                   "RequestBlock": {
                     "Label": "Request-type section",
@@ -299,15 +328,35 @@
                   },
                   "Text": {
                     "Label": "Text field",
-                    "Description": "Sets personal card text; an empty value uses the default text for that type."
+                    "Description": "Sets the personal plain-text card content; HTML and CSS-like input is displayed literally, and an empty value uses the type default."
                   },
-                  "Style": {
-                    "Label": "CSS style field",
-                    "Description": "Styles text with allowed safe color, background, font, spacing, padding, and border properties."
+                  "Color": {
+                    "Label": "Color",
+                    "Description": "The palette chooses a color, while the adjacent editable field shows and accepts the same value in #rrggbb format."
+                  },
+                  "FontSize": {
+                    "Label": "Font size",
+                    "Description": "Accepts an arbitrary valid CSS font-size value such as 1.2em, 18px, or clamp(1rem, 2vw, 1.5rem)."
+                  },
+                  "Underline": {
+                    "Label": "u button",
+                    "Description": "Toggles underlining; its pressed state is shown directly on the button."
+                  },
+                  "Italic": {
+                    "Label": "i button",
+                    "Description": "Toggles italic type and displays the sample character in italics."
+                  },
+                  "Bold": {
+                    "Label": "b button",
+                    "Description": "Toggles bold type and displays the sample character in bold."
+                  },
+                  "Alignment": {
+                    "Label": "Alignment list",
+                    "Description": "Selects center alignment by default, or left and right alignment."
                   },
                   "Save": {
                     "Label": "Save button",
-                    "Description": "Saves personal user fields and, for a moderator, the shared world settings."
+                    "Description": "Saves only the current user's personal fields; shared world controls are saved separately in Game Master Settings."
                   },
                   "TimeoutOverlay": {
                     "Label": "Image countdown",
@@ -396,6 +445,58 @@
               }
             }
           },
+          "MasterSettings": {
+            "Title": "Game Master Settings",
+            "Intro": "This separate window contains shared request controls for the world and is available only to a Game Master or Assistant.",
+            "Sections": {
+              "Access": {
+                "Title": "Window and access",
+                "Items": {
+                  "Window": {
+                    "Label": "Game Master Settings window",
+                    "Description": "Shared world controls have moved out of personal Request Settings and are saved independently."
+                  },
+                  "GameSettingsButton": {
+                    "Label": "Game Master Settings button",
+                    "Description": "Located in the module section of Game Settings between Open Request Settings and Open Help."
+                  },
+                  "ModeratorOnly": {
+                    "Label": "Access",
+                    "Description": "A Game Master or Assistant sees the button and window; regular players configure only their own requests."
+                  }
+                }
+              },
+              "Blocks": {
+                "Title": "Block order",
+                "Items": {
+                  "Feed": {
+                    "Label": "Request Feed",
+                    "Description": "The first block enables Request Feed for the world and controls whether submission times are shown."
+                  },
+                  "Limits": {
+                    "Label": "Request Anti-Spam Limits",
+                    "Description": "The second block controls chat output, count limits, forbidden types, timeouts, and blocking while an environment request is active."
+                  },
+                  "Images": {
+                    "Label": "Images",
+                    "Description": "The third block configures regular, urgent, and environment request images."
+                  },
+                  "Sounds": {
+                    "Label": "Sounds",
+                    "Description": "The fourth block controls request, timer, and break sounds, including URLs, volume, and preview."
+                  },
+                  "Welcome": {
+                    "Label": "Welcome Message",
+                    "Description": "Appears after Sounds and enables or disables the private startup message."
+                  },
+                  "Save": {
+                    "Label": "Save button",
+                    "Description": "Saves shared world controls; changing whether Request Feed is enabled prompts the user to reload the client."
+                  }
+                }
+              }
+            }
+          },
           "Management": {
             "Title": "Active Requests",
             "Intro": "The Game Master window displays the full queue, can temporarily hide rows, and provides resolution controls.",
@@ -458,15 +559,15 @@
                     "Description": "Shows the player name followed by the selected character name when present."
                   },
                   "OpenMessage": {
-                    "Label": "Eye button",
+                    "Label": "Go to request message button (eye)",
                     "Description": "Jumps to the linked chat card and is absent for requests without a card."
                   },
                   "Grant": {
-                    "Label": "Speech-bubble button",
+                    "Label": "Give the floor or Take the floor button",
                     "Description": "Grants the floor, removes the request, and starts the corresponding notification."
                   },
                   "Cancel": {
-                    "Label": "X button",
+                    "Label": "Cancel request button",
                     "Description": "Cancels only the selected request and deletes its linked chat card."
                   }
                 }
@@ -474,8 +575,12 @@
               "Queue": {
                 "Title": "Queue actions",
                 "Items": {
+                  "ResetTimeouts": {
+                    "Label": "Reset Timers button",
+                    "Description": "Appears to the left of Environment Request when either type has a configured timeout; after confirmation it clears every current timeout."
+                  },
                   "EnvironmentRequest": {
-                    "Label": "Environment button",
+                    "Label": "Environment Request button",
                     "Description": "Submits an environment request from the current moderator through the shared queue; image, sound, chat, and active-environment limit settings apply."
                   },
                   "Clear": {
@@ -496,7 +601,7 @@
           },
           "Customization": {
             "Title": "Images, sounds, and welcome",
-            "Intro": "These controls are on the Advanced tab and are configured by a moderator for the entire world.",
+            "Intro": "The Images, Sounds, and Welcome Message blocks are in the separate Game Master Settings window after Request Feed and Request Anti-Spam Limits and are configured by a moderator for the whole world.",
             "Sections": {
               "Images": {
                 "Title": "Images block",
@@ -519,7 +624,7 @@
                   },
                   "Preview": {
                     "Label": "Preview on the right",
-                    "Description": "Shows the current image used by cards, the feed, and newly created macros."
+                    "Description": "Shows the current image used by cards, Request Feed, and newly created macros."
                   },
                   "ExistingMacros": {
                     "Label": "Existing macros",
@@ -604,8 +709,8 @@
             }
           },
           "Limits": {
-            "Title": "Limits and messages",
-            "Intro": "Anti-spam settings apply to every new submission attempt and are checked again by a moderator before queue storage.",
+            "Title": "Request Anti-Spam Limits",
+            "Intro": "Request Anti-Spam Limits is the second block in Game Master Settings, immediately after Request Feed. Its rules apply to every new submission attempt and are checked again by a moderator before queue storage.",
             "Sections": {
               "Chat": {
                 "Title": "Chat output",
@@ -616,7 +721,7 @@
                   },
                   "QueueWithoutChat": {
                     "Label": "Toggle off",
-                    "Description": "Requests remain in the queue, feed, and management window, but no chat card is created."
+                    "Description": "Requests remain in the active queue, Request Feed, and Active Requests window, but no chat card is created."
                   }
                 }
               },
@@ -707,15 +812,19 @@
                   },
                   "TimeoutDisplay": {
                     "Label": "Live countdown",
-                    "Description": "Remaining time is overlaid on this request image in General settings and on the submission buttons at the bottom of the feed."
+                    "Description": "Remaining time is overlaid on this request image in Request Settings and on the submission buttons at the bottom of Request Feed."
                   },
                   "TimeoutWarning": {
                     "Label": "Submission attempt",
-                    "Description": "Clicking or running an existing macro before expiry does not create a request and shows a warning."
+                    "Description": "Clicking or running an existing macro before expiry does not create a request; the warning includes the remaining time."
                   },
                   "TimeoutDrag": {
                     "Label": "Macro drag",
                     "Description": "An active timeout does not prevent dragging a request to the hotbar; the hotbar macro itself has no countdown overlay."
+                  },
+                  "TimeoutReset": {
+                    "Label": "Manual reset",
+                    "Description": "A moderator can clear every current timeout from Request Feed or Active Requests; active requests remain in the queue."
                   },
                   "TimeoutExpiry": {
                     "Label": "Expiry",
@@ -726,15 +835,15 @@
             }
           },
           "Feed": {
-            "Title": "Request feed",
-            "Intro": "The sidebar tab gives every user a compact queue view, quick request controls, and actions permitted to their role.",
+            "Title": "Request Feed",
+            "Intro": "Request Feed is the Foundry sidebar tab that gives every user a compact queue view, quick request controls, and actions permitted to their role.",
             "Sections": {
               "Settings": {
-                "Title": "Feed settings",
+                "Title": "Request Feed block in Game Master Settings",
                 "Items": {
                   "Enable": {
                     "Label": "Enable toggle",
-                    "Description": "Adds or removes the Requests sidebar tab for the world."
+                    "Description": "Adds or removes the Request Feed sidebar tab for the world."
                   },
                   "ReloadPrompt": {
                     "Label": "Reload prompt",
@@ -750,16 +859,16 @@
                   },
                   "ShowTime": {
                     "Label": "Show time toggle",
-                    "Description": "Adds relative submission time to each feed row."
+                    "Description": "Adds relative submission time to each Request Feed row."
                   }
                 }
               },
               "Rows": {
-                "Title": "Tab contents",
+                "Title": "Request Feed contents",
                 "Items": {
                   "Tab": {
-                    "Label": "Raised-hand tab",
-                    "Description": "Appears after Combat and before Scenes and opens the vertical feed."
+                    "Label": "Request Feed tab button",
+                    "Description": "Appears after Combat and before Scenes and opens Request Feed."
                   },
                   "Images": {
                     "Label": "Two images",
@@ -774,7 +883,7 @@
                     "Description": "Appears only when enabled and updates periodically."
                   },
                   "Empty": {
-                    "Label": "Empty feed",
+                    "Label": "Empty Request Feed",
                     "Description": "Reports that no requests are active while keeping footer actions available."
                   }
                 }
@@ -783,21 +892,21 @@
                 "Title": "Row buttons",
                 "Items": {
                   "PlayerCancel": {
-                    "Label": "Player trash button",
+                    "Label": "Cancel request button (trash)",
                     "Description": "Allows an author to cancel only their own request."
                   },
                   "ModeratorGrant": {
-                    "Label": "Grant button",
+                    "Label": "Give the floor or Take the floor button",
                     "Description": "Allows a moderator to resolve a request; environment resolution also pauses the world."
                   },
                   "ModeratorCancel": {
-                    "Label": "Moderator trash button",
+                    "Label": "Cancel request button (trash)",
                     "Description": "Allows a moderator to cancel any request without granting the floor."
                   }
                 }
               },
               "Footer": {
-                "Title": "Feed footer",
+                "Title": "Bottom of Request Feed",
                 "Items": {
                   "MacroClick": {
                     "Label": "Request images",
@@ -808,20 +917,20 @@
                     "Description": "Creates a hotbar macro; current limits are still enforced when it is used."
                   },
                   "Settings": {
-                    "Label": "Settings button",
-                    "Description": "Opens Settings — Requests for any user."
+                    "Label": "Request Settings button",
+                    "Description": "Opens the personal Request Settings window for any user."
                   },
-                  "Help": {
-                    "Label": "Help button",
-                    "Description": "Visible to a moderator and opens this Help window."
+                  "ResetTimeouts": {
+                    "Label": "Reset Timers button",
+                    "Description": "Visible only to a moderator and only when either type has a configured timeout; after confirmation it clears all player timeouts."
                   },
                   "Management": {
-                    "Label": "Management button",
+                    "Label": "Active Requests button",
                     "Description": "Visible to a moderator and opens Active Requests."
                   },
                   "TimeoutOverlay": {
                     "Label": "Timeout countdown",
-                    "Description": "The regular or urgent submission button shows the current user's personal remaining timeout."
+                    "Description": "The regular or urgent submission button in Request Feed shows the current user's personal remaining timeout."
                   }
                 }
               }
@@ -1697,7 +1806,7 @@
                 "Items": {
                   "ModeratorOnly": {
                     "Label": "Permissions",
-                    "Description": "The window is available to GMs and assistants."
+                    "Description": "The Stopwatch window is available to a Game Master or Assistant."
                   },
                   "LocalState": {
                     "Label": "Local state",
@@ -1908,7 +2017,7 @@
                 "Items": {
                   "ModeratorOnly": {
                     "Label": "Permissions",
-                    "Description": "The audit window and settings are available to GMs and assistants."
+                    "Description": "Focus Audit and Focus Audit Settings are available to a Game Master or Assistant."
                   },
                   "WorldState": {
                     "Label": "World state",
@@ -2034,7 +2143,7 @@
             }
           },
           "AuditWindow": {
-            "Title": "Control window",
+            "Title": "Focus Audit",
             "Intro": "The table combines Foundry presence, self-reported status, and four elapsed-time metrics.",
             "Sections": {
               "Columns": {
@@ -2090,8 +2199,8 @@
                     "Description": "After confirmation resets metric timestamps for every player."
                   },
                   "Settings": {
-                    "Label": "Settings",
-                    "Description": "Opens color-zone thresholds for each metric."
+                    "Label": "Focus Audit Settings",
+                    "Description": "Opens Focus Audit Settings with color-zone thresholds for each metric."
                   }
                 }
               },
@@ -2115,7 +2224,7 @@
             }
           },
           "AuditSettings": {
-            "Title": "Threshold settings",
+            "Title": "Focus Audit Settings",
             "Intro": "For each elapsed-time metric, the moderator defines entry points for three warning zones.",
             "Sections": {
               "Blocks": {
@@ -2208,7 +2317,7 @@
     },
     "Controls": {
       "Title": "Spotlight Tools",
-      "Requests": "Requests",
+      "Requests": "Active Requests",
       "Timers": "Timers",
       "Break": "Break",
       "Stopwatch": "Stopwatch",

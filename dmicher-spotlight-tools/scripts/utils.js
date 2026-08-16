@@ -1,21 +1,12 @@
 import { I18N_PREFIX, MODULE_ID } from "./config.js";
 
 const ALLOWED_STYLE_PROPERTIES = new Set([
-  "background-color",
-  "border",
-  "border-radius",
   "color",
-  "font-family",
   "font-size",
   "font-style",
   "font-weight",
-  "letter-spacing",
-  "line-height",
-  "padding",
   "text-align",
-  "text-decoration",
-  "text-transform",
-  "white-space"
+  "text-decoration"
 ]);
 
 export function i18nKey(key) {

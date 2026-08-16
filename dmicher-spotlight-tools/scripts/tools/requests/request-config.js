@@ -50,7 +50,8 @@ export function createDefaultActiveRequestState() {
     initialized: false,
     revision: 0,
     entries: [],
-    cooldowns: {}
+    cooldowns: {},
+    cooldownsResetAt: 0
   };
 }
 
@@ -149,15 +150,19 @@ export function normalizeActiveRequestState(value) {
   const unique = new Map();
   for (const entry of entries) unique.set(entry.id, entry);
   const normalizedEntries = Array.from(unique.values()).sort(compareRequestEntries);
-  const cooldowns = normalizeRequestCooldowns(source.cooldowns);
+  const cooldownsResetAt = normalizeHistoricalTimestamp(source.cooldownsResetAt);
+  const cooldowns = normalizeRequestCooldowns(source.cooldowns, cooldownsResetAt);
   const state = {
     initialized: Boolean(source.initialized),
     revision: Math.max(0, Math.trunc(Number(source.revision) || 0)),
     entries: normalizedEntries,
-    cooldowns
+    cooldowns,
+    cooldownsResetAt
   };
   for (const entry of normalizedEntries) {
-    recordRequestTimeoutEvent(state, entry.urgency, entry.authorId, "submission", entry.submittedAt);
+    if (entry.submittedAt > cooldownsResetAt) {
+      recordRequestTimeoutEvent(state, entry.urgency, entry.authorId, "submission", entry.submittedAt);
+    }
   }
   return state;
 }
@@ -256,6 +261,13 @@ export function getRequestTimeoutStatus(type, authorId, state, configuration = g
   };
 }
 
+export function hasConfiguredRequestTimeouts(configuration = getRequestConfiguration()) {
+  return LIMITED_TYPES.some((type) => {
+    const mode = configuration.limits?.[type]?.timeoutMode;
+    return mode === REQUEST_TIMEOUT_MODES.submission || mode === REQUEST_TIMEOUT_MODES.grant;
+  });
+}
+
 export function recordRequestTimeoutEvent(state, type, authorId, event, timestamp = Date.now()) {
   type = normalizeRequestType(type);
   if (!LIMITED_TYPES.includes(type) || !authorId) return false;
@@ -289,7 +301,7 @@ export function clampRequestCount(value) {
   return Math.min(10, Math.max(1, number));
 }
 
-function normalizeRequestCooldowns(value) {
+function normalizeRequestCooldowns(value, resetAt = 0) {
   const source = value && typeof value === "object" ? value : {};
   const records = [];
   for (const [rawUserId, rawTypes] of Object.entries(source)) {
@@ -302,8 +314,8 @@ function normalizeRequestCooldowns(value) {
       const event = {};
       const submittedAt = normalizeHistoricalTimestamp(rawEvent.submittedAt);
       const grantedAt = normalizeHistoricalTimestamp(rawEvent.grantedAt);
-      if (submittedAt) event.submittedAt = submittedAt;
-      if (grantedAt) event.grantedAt = grantedAt;
+      if (submittedAt > resetAt) event.submittedAt = submittedAt;
+      if (grantedAt > resetAt) event.grantedAt = grantedAt;
       if (Object.keys(event).length) types[type] = event;
     }
     if (Object.keys(types).length) records.push([userId, types]);

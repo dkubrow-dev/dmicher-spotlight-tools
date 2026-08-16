@@ -1,6 +1,7 @@
 import { MODULE_ID, REQUEST_TYPES } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import { format, i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
+import { getRequestConfiguration, hasConfiguredRequestTimeouts } from "./request-config.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const ACTIVE_REQUESTS_TICK_MS = 15000;
@@ -58,6 +59,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
       urgentCount,
       summaryText: format("Requests.Active.Summary", { total: totalCount, urgent: urgentCount }),
       hasRequests: requests.length > 0,
+      showResetTimeouts: hasConfiguredRequestTimeouts(getRequestConfiguration()),
       duplicateNone: this.duplicateMode === "none",
       duplicateType: this.duplicateMode === "type",
       duplicatePlayer: this.duplicateMode === "player",
@@ -70,7 +72,8 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
         columnControls: i18nKey("Requests.Active.Columns.Controls"),
         openMessage: i18nKey("Requests.Active.OpenMessage"),
         cancel: i18nKey("Requests.Active.Cancel"),
-        environment: i18nKey(REQUEST_TYPES.stop.labelKey),
+        environment: i18nKey("Requests.Active.EnvironmentRequest"),
+        resetTimeouts: i18nKey("Requests.Limits.ResetTimers"),
         clear: i18nKey("Requests.Active.Clear")
       }
     };
@@ -93,6 +96,10 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   }
 
   activateListeners() {
+    this.element.querySelector("[data-active-request-action='reset-timeouts']")?.addEventListener("click", () => {
+      void this.activeRequests.confirmResetTimeouts();
+    });
+
     this.element.querySelector("[data-active-request-action='environment']")?.addEventListener("click", () => {
       void this.activeRequests.submitEnvironmentRequest();
     });

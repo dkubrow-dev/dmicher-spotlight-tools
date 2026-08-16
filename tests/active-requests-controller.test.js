@@ -30,13 +30,15 @@ test("active requests environment action uses the normal stop submission pipelin
   assert.deepEqual(submitted, ["stop"]);
 });
 
-test("active requests footer places the environment action next to clear", () => {
+test("active requests footer places reset before environment and clear", () => {
   const template = fs.readFileSync(
     path.join(ROOT, "dmicher-spotlight-tools", "templates", "requests", "active-requests.hbs"),
     "utf8"
   );
+  const reset = template.indexOf('data-active-request-action="reset-timeouts"');
   const environment = template.indexOf('data-active-request-action="environment"');
   const clear = template.indexOf('data-active-request-action="clear"');
-  assert.ok(environment >= 0);
+  assert.ok(reset >= 0);
+  assert.ok(environment > reset);
   assert.ok(clear > environment);
 });

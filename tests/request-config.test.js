@@ -3,11 +3,13 @@ import test from "node:test";
 
 import { REQUEST_LIMIT_MODES, REQUEST_TIMEOUT_MODES } from "../dmicher-spotlight-tools/scripts/config.js";
 import {
+  createDefaultActiveRequestState,
   createDefaultRequestConfiguration,
   DEFAULT_REQUEST_TIMEOUT_MS,
   getRequestBaseVolume,
   getRequestLimitViolation,
   getRequestTimeoutStatus,
+  hasConfiguredRequestTimeouts,
   normalizeActiveRequestState,
   normalizeRequestConfiguration,
   recordRequestTimeoutEvent
@@ -15,6 +17,8 @@ import {
 
 test("request configuration defaults keep every feature available", () => {
   const configuration = createDefaultRequestConfiguration();
+  const activeState = createDefaultActiveRequestState();
+  assert.equal(activeState.cooldownsResetAt, 0);
   assert.equal(configuration.chatEnabled, true);
   assert.equal(configuration.soundsEnabled, true);
   assert.equal(configuration.feed.enabled, true);
@@ -104,6 +108,15 @@ test("anti-spam detects count, environment, and forbidden violations", () => {
   assert.equal(getRequestLimitViolation("urgent", "other", entries, configuration), "forbidden");
 });
 
+test("configured request timeouts are detected only for supported active modes", () => {
+  assert.equal(hasConfiguredRequestTimeouts({ limits: {} }), false);
+  assert.equal(hasConfiguredRequestTimeouts(createDefaultRequestConfiguration()), false);
+  const configuration = normalizeRequestConfiguration({
+    limits: { urgent: { timeoutMode: "grant", timeoutDuration: 1000 } }
+  });
+  assert.equal(hasConfiguredRequestTimeouts(configuration), true);
+});
+
 test("request timeouts distinguish submission, grant, cancellation, and expiry", () => {
   const now = 1000000;
   const state = { entries: [], cooldowns: {} };
@@ -128,6 +141,27 @@ test("request timeouts distinguish submission, grant, cancellation, and expiry",
   assert.equal(timeout.active, true);
   assert.equal(timeout.startedAt, now + 2000);
   assert.equal(timeout.remaining, 299000);
+});
+
+test("a timeout reset marker prevents active requests from restoring cleared history", () => {
+  const state = normalizeActiveRequestState({
+    initialized: true,
+    revision: 4,
+    cooldownsResetAt: 1000,
+    entries: [
+      { id: "old", authorId: "old-player", urgency: "common", sequence: 0, submittedAt: 900 },
+      { id: "new", authorId: "new-player", urgency: "urgent", sequence: 1, submittedAt: 1100 }
+    ],
+    cooldowns: {
+      oldPlayer: { common: { submittedAt: 950, grantedAt: 990 } },
+      grantedLater: { urgent: { grantedAt: 1200 } }
+    }
+  });
+  assert.equal(state.cooldownsResetAt, 1000);
+  assert.equal(state.cooldowns.oldPlayer, undefined);
+  assert.equal(state.cooldowns["old-player"], undefined);
+  assert.equal(state.cooldowns["new-player"].urgent.submittedAt, 1100);
+  assert.equal(state.cooldowns.grantedLater.urgent.grantedAt, 1200);
 });
 
 test("active requests normalize and sort by queue sequence", () => {

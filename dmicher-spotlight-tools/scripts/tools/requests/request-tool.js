@@ -12,6 +12,7 @@ import {
   canUseRequest,
   createSerialTaskQueue,
   format,
+  formatDigitalDuration,
   getChatMessageClass,
   getChatMessageRenderHook,
   getWhisperRecipientsWithModerators,
@@ -31,6 +32,8 @@ import {
   getRequestImage,
   getRequestLimitViolation,
   getRequestSound,
+  getRequestTimeoutStatus,
+  hasConfiguredRequestTimeouts,
   normalizeActiveRequestEntry,
   normalizeActiveRequestState,
   recordRequestTimeoutEvent,
@@ -58,13 +61,15 @@ export class RequestTool {
     this.stateListeners = new Set();
     this.submitRequest = this.submitRequest.bind(this);
     this.resolveRequest = this.resolveRequest.bind(this);
+    this.resetRequestTimeouts = this.resetRequestTimeouts.bind(this);
     this.renderChatMessage = this.renderChatMessage.bind(this);
     this.handleChatMessageDeleted = this.handleChatMessageDeleted.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
     this.handleUserConnected = this.handleUserConnected.bind(this);
     this.activeRequests = new ActiveRequestsController({
       resolveRequest: this.resolveRequest,
-      submitRequest: this.submitRequest
+      submitRequest: this.submitRequest,
+      resetTimeouts: this.resetRequestTimeouts
     });
   }
 
@@ -119,6 +124,47 @@ export class RequestTool {
     return this.activeRequests.openWindow();
   }
 
+  async resetRequestTimeouts() {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Requests.Chat.Forbidden"));
+      return false;
+    }
+    if (!hasConfiguredRequestTimeouts(getRequestConfiguration())) {
+      ui.notifications.warn(localize("Requests.Limits.ResetUnavailable"));
+      return false;
+    }
+    if (isPrimaryModerator()) return this.processRequestTimeoutReset(game.user.id);
+    if (!this.hasActiveModerator()) {
+      ui.notifications.error(localize("Requests.Queue.NoModerator"));
+      return false;
+    }
+    game.socket.emit(SOCKET_CHANNEL, { action: "requestResetTimeouts", resolverId: game.user.id });
+    return true;
+  }
+
+  async processRequestTimeoutReset(resolverId) {
+    if (!isPrimaryModerator()) return false;
+    const resolver = game.users.get(String(resolverId ?? ""));
+    if (!isModerator(resolver)) {
+      this.sendFeedback(resolver?.id, "Requests.Chat.Forbidden", "warn");
+      return false;
+    }
+    if (!hasConfiguredRequestTimeouts(getRequestConfiguration())) {
+      this.sendFeedback(resolver.id, "Requests.Limits.ResetUnavailable", "warn");
+      return false;
+    }
+    return this.runStateTask(async () => {
+      const current = getActiveRequestState();
+      current.cooldowns = {};
+      current.cooldownsResetAt = Date.now();
+      current.revision += 1;
+      await game.settings.set(MODULE_ID, SETTINGS.activeRequests, current);
+      this.applyState(current);
+      this.sendFeedback(resolver.id, "Requests.Limits.ResetSuccess", "info");
+      return true;
+    });
+  }
+
   async submitRequest(type) {
     const normalizedType = normalizeRequestType(type);
     const request = REQUEST_TYPES[normalizedType];
@@ -127,14 +173,20 @@ export class RequestTool {
       return false;
     }
 
+    const configuration = getRequestConfiguration();
     const violation = getRequestLimitViolation(
       normalizedType,
       game.user.id,
       this.state,
-      getRequestConfiguration()
+      configuration
     );
     if (violation) {
-      this.showLimitViolation(violation);
+      this.showLimitViolation(violation, {
+        type: normalizedType,
+        authorId: game.user.id,
+        state: this.state,
+        configuration
+      });
       return false;
     }
 
@@ -192,7 +244,12 @@ export class RequestTool {
       const configuration = getRequestConfiguration();
       const violation = getRequestLimitViolation(type, user.id, current, configuration);
       if (violation) {
-        this.sendFeedback(user.id, this.getViolationKey(violation), "warn");
+        this.sendFeedback(
+          user.id,
+          this.getViolationKey(violation),
+          "warn",
+          this.getViolationData(violation, { type, authorId: user.id, state: current, configuration })
+        );
         return false;
       }
 
@@ -411,6 +468,9 @@ export class RequestTool {
       case "requestResolve":
         if (isPrimaryModerator()) void this.processResolution(payload.requestId, Boolean(payload.completed), payload.resolverId);
         break;
+      case "requestResetTimeouts":
+        if (isPrimaryModerator()) void this.processRequestTimeoutReset(payload.resolverId);
+        break;
       case "requestSound":
         void this.playRequestSound(payload);
         break;
@@ -464,8 +524,10 @@ export class RequestTool {
     }, 3000);
   }
 
-  showLimitViolation(violation) {
-    ui.notifications.warn(localize(this.getViolationKey(violation)));
+  showLimitViolation(violation, context = {}) {
+    const key = this.getViolationKey(violation);
+    const data = this.getViolationData(violation, context);
+    ui.notifications.warn(Object.keys(data).length ? format(key, data) : localize(key));
   }
 
   getViolationKey(violation) {
@@ -477,15 +539,23 @@ export class RequestTool {
     }[violation] ?? "Requests.Chat.Forbidden";
   }
 
-  sendFeedback(userId, key, level = "warn") {
-    const payload = { action: "requestFeedback", userId, key, level };
+  getViolationData(violation, { type, authorId, state = this.state, configuration = getRequestConfiguration(), now = Date.now() } = {}) {
+    if (violation !== "timeout") return {};
+    const timeout = getRequestTimeoutStatus(type, authorId, state, configuration, now);
+    return { time: formatDigitalDuration(timeout.remaining) };
+  }
+
+  sendFeedback(userId, key, level = "warn", data = {}) {
+    const payload = { action: "requestFeedback", userId, key, level, data };
     if (userId === game.user.id) this.showFeedback(payload);
     else game.socket.emit(SOCKET_CHANNEL, payload);
   }
 
   showFeedback(payload) {
     const method = ui.notifications[payload.level] ?? ui.notifications.warn;
-    method.call(ui.notifications, localize(payload.key));
+    const data = payload.data && typeof payload.data === "object" ? payload.data : {};
+    const message = Object.keys(data).length ? format(payload.key, data) : localize(payload.key);
+    method.call(ui.notifications, message);
   }
 
   hasActiveModerator() {

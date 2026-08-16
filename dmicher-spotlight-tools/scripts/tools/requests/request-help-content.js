@@ -17,19 +17,23 @@ const requestPages = [
   definePage("overview", "Overview", [
     ["Types", ["Regular", "Urgent", "Environment"]],
     ["Mechanics", ["Queue", "Chat", "Identity", "Authority", "Resolution"]],
-    ["Navigation", ["Contents", "OpenSettings", "OpenManagement", "ModuleMenu", "SceneControls"]]
+    ["Navigation", ["Contents", "Theme", "OpenSettings", "OpenMasterSettings", "OpenManagement", "ModuleMenu", "SceneControls"]]
   ]),
   definePage("players", "Players", [
-    ["Window", ["GeneralTab", "AdvancedTab", "RequestBlock", "Image", "Text", "Style", "Save", "TimeoutOverlay"]],
+    ["Window", ["SettingsWindow", "RequestBlock", "Image", "Text", "Color", "FontSize", "Underline", "Italic", "Bold", "Alignment", "Save", "TimeoutOverlay"]],
     ["Submission", ["Click", "Drag", "ExistingMacro", "RestrictionFeedback", "ModeratorRequired", "MacroMetadata", "MacroCleanup"]],
     ["Chat", ["Card", "Cancel", "Grant", "TakeFloor", "Technical"]],
     ["Volume", ["Slider", "Formula", "Mute", "FoundryMute"]]
+  ]),
+  definePage("master-settings", "MasterSettings", [
+    ["Access", ["Window", "GameSettingsButton", "ModeratorOnly"]],
+    ["Blocks", ["Feed", "Limits", "Images", "Sounds", "Welcome", "Save"]]
   ]),
   definePage("management", "Management", [
     ["Summary", ["WindowCounter", "Totals", "VisibleCounter", "Refresh"]],
     ["Filters", ["Type", "DuplicatesNone", "DuplicatesType", "DuplicatesPlayer"]],
     ["Row", ["Images", "Submitted", "Author", "OpenMessage", "Grant", "Cancel"]],
-    ["Queue", ["EnvironmentRequest", "Clear", "Empty", "EnvironmentGrant"]]
+    ["Queue", ["ResetTimeouts", "EnvironmentRequest", "Clear", "Empty", "EnvironmentGrant"]]
   ]),
   definePage("customization", "Customization", [
     ["Images", ["TypeSections", "CustomToggle", "Url", "Validation", "Preview", "ExistingMacros"]],
@@ -40,13 +44,13 @@ const requestPages = [
     ["Chat", ["ChatToggle", "QueueWithoutChat"]],
     ["Types", ["RegularSection", "UrgentSection", "Unlimited", "CountMode", "CountField", "Forbidden", "TimeoutSelect", "TimeoutNone", "TimeoutSubmission", "TimeoutGrant", "TimeoutTime"]],
     ["Environment", ["Toggle", "AllTypes", "Priority", "ExistingQueue"]],
-    ["Enforcement", ["LocalCheck", "AuthoritativeCheck", "Warnings", "TimeoutDisplay", "TimeoutWarning", "TimeoutDrag", "TimeoutExpiry"]]
+    ["Enforcement", ["LocalCheck", "AuthoritativeCheck", "Warnings", "TimeoutDisplay", "TimeoutWarning", "TimeoutDrag", "TimeoutReset", "TimeoutExpiry"]]
   ]),
   definePage("feed", "Feed", [
     ["Settings", ["Enable", "ReloadPrompt", "ReloadNow", "ReloadLater", "ShowTime"]],
     ["Rows", ["Tab", "Images", "Names", "Time", "Empty"]],
     ["Controls", ["PlayerCancel", "ModeratorGrant", "ModeratorCancel"]],
-    ["Footer", ["MacroClick", "MacroDrag", "Settings", "Help", "Management", "TimeoutOverlay"]]
+    ["Footer", ["MacroClick", "MacroDrag", "Settings", "ResetTimeouts", "Management", "TimeoutOverlay"]]
   ])
 ];
 

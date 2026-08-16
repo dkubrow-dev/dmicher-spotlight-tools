@@ -7,7 +7,12 @@ import {
   localize,
   openSingletonApplication
 } from "../../utils.js";
-import { getRequestImage, normalizeActiveRequestEntry } from "./request-config.js";
+import {
+  getRequestConfiguration,
+  getRequestImage,
+  hasConfiguredRequestTimeouts,
+  normalizeActiveRequestEntry
+} from "./request-config.js";
 import { ActiveRequestsApplication } from "./active-requests-window.js";
 import { getGrantActionKey, getRequestAnchorId } from "./request-message.js";
 
@@ -15,12 +20,13 @@ const CHAT_RENDER_BATCH_SIZE = 50;
 const CHAT_RENDER_BATCH_MAX_ATTEMPTS = 60;
 
 export class ActiveRequestsController {
-  constructor({ resolveRequest, submitRequest }) {
+  constructor({ resolveRequest, submitRequest, resetTimeouts }) {
     this.entries = [];
     this.window = null;
     this.feed = null;
     this.resolveRequest = resolveRequest;
     this.submitRequest = submitRequest;
+    this.resetTimeouts = resetTimeouts;
   }
 
   attachFeed(feed) {
@@ -146,6 +152,30 @@ export class ActiveRequestsController {
   async submitEnvironmentRequest() {
     if (typeof this.submitRequest !== "function") return false;
     return this.submitRequest("stop");
+  }
+
+  hasConfiguredTimeouts() {
+    return hasConfiguredRequestTimeouts(getRequestConfiguration());
+  }
+
+  async confirmResetTimeouts() {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Requests.Chat.Forbidden"));
+      return false;
+    }
+    if (!this.hasConfiguredTimeouts()) {
+      ui.notifications.warn(localize("Requests.Limits.ResetUnavailable"));
+      return false;
+    }
+    const confirmed = await confirmDialog({
+      title: localize("Requests.Limits.ResetTitle"),
+      content: `<p>${escapeHTML(localize("Requests.Limits.ResetConfirm"))}</p>`,
+      yes: localize("Requests.Limits.ResetYes"),
+      no: localize("Requests.Active.ClearNo"),
+      icon: "fa-solid fa-rotate-left"
+    });
+    if (!confirmed || typeof this.resetTimeouts !== "function") return false;
+    return this.resetTimeouts();
   }
 
   async confirmClear() {

@@ -32,6 +32,11 @@ import {
   normalizeRequestConfiguration
 } from "./request-config.js";
 import { REQUEST_TIMEOUT_TICK_MS, updateRequestTimeoutCounters } from "./request-timeout-display.js";
+import {
+  buildRequestTextStyle,
+  normalizeRequestColor,
+  parseRequestTextStyle
+} from "./request-text-style.js";
 import { parseDurationInput } from "../timers/timer-utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -40,6 +45,7 @@ const RESOURCE_VALIDATION_TIMEOUT_MS = 10000;
 
 let actions;
 let settingsWindow;
+let masterSettingsWindow;
 
 class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -59,7 +65,6 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
 
   constructor(options = {}) {
     super(options);
-    this.activeTab = "general";
     this.previewAudio = null;
     this.timeoutTickHandle = null;
     this.unsubscribeConfiguration = actions?.subscribeConfiguration?.(() => {
@@ -83,6 +88,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     const requests = getVisibleRequestEntries().map(([type, request]) => {
       const timeout = getRequestTimeoutStatus(type, game.user.id, activeState, configuration, now);
       const violation = !request.moderatorOnly && configuration.limits[type]?.mode === REQUEST_LIMIT_MODES.forbidden;
+      const appearance = parseRequestTextStyle(game.settings.get(MODULE_ID, request.styleSetting));
       return {
         urgency: type,
         label: localize(request.labelKey),
@@ -90,7 +96,15 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
         image: getRequestImage(type, configuration),
         text: getRequestTextOverride(request),
         placeholder: localize(request.defaultTextKey),
-        style: game.settings.get(MODULE_ID, request.styleSetting),
+        color: appearance.color,
+        fontSize: appearance.fontSize,
+        underline: appearance.underline,
+        italic: appearance.italic,
+        bold: appearance.bold,
+        alignment: appearance.alignment,
+        alignCenter: appearance.alignment === "center",
+        alignLeft: appearance.alignment === "left",
+        alignRight: appearance.alignment === "right",
         disabled: violation,
         disabledText: violation ? "disabled" : "",
         forbiddenHint: violation ? localize("Requests.Limits.ForbiddenHint") : "",
@@ -161,8 +175,6 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       timerSoundTypes,
       limits,
       moderator,
-      activeGeneral: this.activeTab === "general",
-      activeAdvanced: this.activeTab === "advanced",
       chatEnabled: configuration.chatEnabled,
       soundsEnabled: configuration.soundsEnabled,
       blockWhenEnvironment: configuration.blockWhenEnvironment,
@@ -177,9 +189,6 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       const form = this.element.querySelector(".dmicher-request-settings-form");
       if (!form) return;
       form.addEventListener("submit", (event) => void this._saveSettings(event));
-      for (const tab of form.querySelectorAll("[data-request-settings-tab]")) {
-        tab.addEventListener("click", () => this.selectTab(tab.dataset.requestSettingsTab));
-      }
       for (const image of form.querySelectorAll("[data-request-image]")) {
         image.addEventListener("click", () => {
           if (image.dataset.disabled === "true") {
@@ -201,6 +210,36 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
             return;
           }
           actions.onRequestDragStart(event);
+        });
+      }
+      for (const picker of form.querySelectorAll("[data-request-color-picker]")) {
+        const colorField = form.elements[`${picker.dataset.urgency}Color`];
+        picker.addEventListener("input", () => {
+          if (!colorField) return;
+          colorField.value = picker.value.toLowerCase();
+          colorField.setCustomValidity("");
+        });
+      }
+      for (const colorField of form.querySelectorAll("[data-request-color-field]")) {
+        const picker = form.elements[`${colorField.dataset.urgency}ColorPicker`];
+        const syncColor = (normalizeField = false) => {
+          const color = normalizeRequestColor(colorField.value);
+          colorField.setCustomValidity(color ? "" : localize("Requests.Settings.ColorInvalid"));
+          if (!color) return;
+          if (normalizeField) colorField.value = color;
+          if (picker) picker.value = color;
+        };
+        colorField.addEventListener("input", () => syncColor(false));
+        colorField.addEventListener("change", () => syncColor(true));
+        syncColor(true);
+      }
+      for (const button of form.querySelectorAll("[data-request-font-toggle]")) {
+        button.addEventListener("click", () => {
+          const active = button.getAttribute("aria-pressed") !== "true";
+          button.setAttribute("aria-pressed", String(active));
+          button.classList.toggle("active", active);
+          const field = form.elements[`${button.dataset.urgency}${button.dataset.requestFontToggle}`];
+          if (field) field.value = String(active);
         });
       }
       for (const toggle of form.querySelectorAll("[data-custom-resource-toggle]")) {
@@ -230,19 +269,6 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       }
       this.startTimeoutTicking();
     });
-  }
-
-  selectTab(tab) {
-    if (!["general", "advanced"].includes(tab) || (tab === "advanced" && !isModerator())) return;
-    this.activeTab = tab;
-    for (const button of this.element.querySelectorAll("[data-request-settings-tab]")) {
-      const active = button.dataset.requestSettingsTab === tab;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-selected", String(active));
-    }
-    for (const panel of this.element.querySelectorAll("[data-request-settings-panel]")) {
-      panel.hidden = panel.dataset.requestSettingsPanel !== tab;
-    }
   }
 
   updateResourceField(toggle) {
@@ -363,16 +389,29 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
 
     try {
       const settingUpdates = [];
-      for (const [type, request] of getVisibleRequestEntries()) {
-        if (form.elements[`${type}Text`]?.disabled) continue;
-        const text = String(formData.get(`${type}Text`) ?? "").trim().slice(0, 500);
-        const style = sanitizeTextStyle(formData.get(`${type}Style`));
-        settingUpdates.push([request.textSetting, text]);
-        settingUpdates.push([request.styleSetting, style]);
+      if (!this.isMasterSettings) {
+        for (const [type, request] of getVisibleRequestEntries()) {
+          if (form.elements[`${type}Text`]?.disabled) continue;
+          const text = String(formData.get(`${type}Text`) ?? "").trim().slice(0, 500);
+          const color = normalizeRequestColor(formData.get(`${type}Color`));
+          if (!color) throw new Error(localize("Requests.Settings.ColorInvalid"));
+          const style = buildRequestTextStyle({
+            color,
+            fontSize: formData.get(`${type}FontSize`),
+            underline: formData.get(`${type}Underline`) === "true",
+            italic: formData.get(`${type}Italic`) === "true",
+            bold: formData.get(`${type}Bold`) === "true",
+            alignment: formData.get(`${type}Alignment`)
+          });
+          if (!style) throw new Error(localize("Requests.Settings.FontSizeInvalid"));
+          settingUpdates.push([request.textSetting, text]);
+          settingUpdates.push([request.styleSetting, sanitizeTextStyle(style)]);
+        }
       }
 
       let feedEnabledChanged = false;
-      if (isModerator()) {
+      if (this.isMasterSettings) {
+        if (!isModerator()) throw new Error(localize("Requests.MasterSettings.Forbidden"));
         const previous = getRequestConfiguration();
         const next = normalizeRequestConfiguration({
           chatEnabled: formData.has("chatEnabled"),
@@ -441,6 +480,10 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     }
   }
 
+  get isMasterSettings() {
+    return false;
+  }
+
   async offerReload() {
     const confirmed = await confirmDialog({
       title: localize("Requests.Feed.ReloadTitle"),
@@ -461,6 +504,31 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     this.unsubscribeState?.();
     this.unsubscribeState = null;
     return super._onClose(options);
+  }
+}
+
+class RequestMasterSettingsApplication extends RequestSettingsApplication {
+  static DEFAULT_OPTIONS = {
+    id: "dmicher-spotlight-tools-request-master-settings",
+    classes: getThemedWindowClasses("dmicher-request-settings", "dmicher-request-master-settings"),
+    position: { width: 820, height: 720 },
+    window: {
+      icon: "fa-solid fa-user-shield",
+      title: "DMICHERSPOTLIGHTTOOLS.Requests.MasterSettings.WindowTitle",
+      resizable: true
+    }
+  };
+
+  static PARTS = {
+    form: { template: `modules/${MODULE_ID}/templates/request-master-settings.hbs` }
+  };
+
+  get title() {
+    return localize("Requests.MasterSettings.WindowTitle");
+  }
+
+  get isMasterSettings() {
+    return true;
   }
 }
 
@@ -489,7 +557,7 @@ export function registerRequestSettings(requestActions) {
       default: ""
     });
     game.settings.register(MODULE_ID, request.styleSetting, {
-      name: i18nKey("Requests.Settings.CssStyle"),
+      name: i18nKey("Requests.Settings.Appearance"),
       scope: userScope,
       config: false,
       type: String,
@@ -504,6 +572,15 @@ export function registerRequestSettings(requestActions) {
     icon: "fa-solid fa-hand",
     type: RequestSettingsApplication,
     restricted: false
+  });
+
+  game.settings.registerMenu(MODULE_ID, "requestMasterSettings", {
+    name: i18nKey("Requests.MasterSettings.MenuName"),
+    label: i18nKey("Requests.MasterSettings.MenuLabel"),
+    hint: i18nKey("Requests.MasterSettings.MenuHint"),
+    icon: "fa-solid fa-user-shield",
+    type: RequestMasterSettingsApplication,
+    restricted: true
   });
 }
 
@@ -546,6 +623,18 @@ export async function migrateLegacyClientRequestSettings() {
 export function openRequestSettings() {
   settingsWindow = openSingletonApplication(settingsWindow, () => new RequestSettingsApplication());
   return settingsWindow;
+}
+
+export function openRequestMasterSettings() {
+  if (!isModerator()) {
+    ui.notifications.warn(localize("Requests.MasterSettings.Forbidden"));
+    return null;
+  }
+  masterSettingsWindow = openSingletonApplication(
+    masterSettingsWindow,
+    () => new RequestMasterSettingsApplication()
+  );
+  return masterSettingsWindow;
 }
 
 export function getRequestText(request) {
