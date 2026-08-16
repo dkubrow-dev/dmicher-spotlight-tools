@@ -2,7 +2,6 @@ import { MODULE_ID, REQUEST_TYPES } from "../../config.js";
 import {
   canUseRequest,
   formatDigitalDuration,
-  getFoundryGeneration,
   getRenderedElement,
   i18nKey,
   isModerator,
@@ -18,11 +17,9 @@ import {
 } from "./request-config.js";
 import { REQUEST_TIMEOUT_TICK_MS, updateRequestTimeoutCounters } from "./request-timeout-display.js";
 
-const SIDEBAR_GENERATION = getFoundryGeneration();
-const LEGACY_SIDEBAR = SIDEBAR_GENERATION < 13;
-const ModernSidebarBase = LEGACY_SIDEBAR
-  ? null
-  : foundry.applications.sidebar?.AbstractSidebarTab;
+// The modern sidebar API is available before game.release is populated during module evaluation.
+const ModernSidebarBase = foundry.applications.sidebar?.AbstractSidebarTab;
+const LEGACY_SIDEBAR = typeof ModernSidebarBase !== "function";
 export function getLegacySidebarBase() {
   const configuredChat = globalThis.CONFIG?.ui?.chat;
   const configuredBase = typeof configuredChat === "function"
@@ -34,11 +31,12 @@ export function getLegacySidebarBase() {
     ?? foundry.applications.api.ApplicationV2;
 }
 
-const SidebarBase = ModernSidebarBase
-  ? foundry.applications.api.HandlebarsApplicationMixin(ModernSidebarBase)
-  : getLegacySidebarBase();
+const SidebarBase = LEGACY_SIDEBAR
+  ? getLegacySidebarBase()
+  : foundry.applications.api.HandlebarsApplicationMixin(ModernSidebarBase);
 const FEED_TICK_MS = 15000;
-const LEGACY_FEED_LAYOUT_CLASS = "dmicher-request-feed-enabled";
+const LEGACY_FEED_LAYOUT_CLASS = "dmicher-request-feed-enabled-v12";
+const OBSOLETE_LEGACY_FEED_LAYOUT_CLASS = "dmicher-request-feed-enabled";
 let feedActions = {};
 let activeRequestsController = null;
 
@@ -239,9 +237,7 @@ export function configureRequestFeed({ activeRequests, actions }) {
   activeRequestsController = activeRequests;
   feedActions = actions;
   const feedEnabled = getRequestConfiguration().feed.enabled;
-  if (LEGACY_SIDEBAR) {
-    applyLegacyRequestFeedLayout(globalThis.document?.querySelector?.("#sidebar"), feedEnabled);
-  }
+  applyLegacyRequestFeedLayout(globalThis.document?.querySelector?.("#sidebar"), feedEnabled);
   if (!feedEnabled) return false;
 
   CONFIG.ui ??= {};
@@ -300,7 +296,12 @@ export function handleLegacyRequestFeedTabClick(event, root = document.querySele
 }
 
 export function applyLegacyRequestFeedLayout(root, enabled = true) {
-  if (!LEGACY_SIDEBAR || !root?.classList) return false;
+  if (!root?.classList) return false;
+  root.classList.remove(OBSOLETE_LEGACY_FEED_LAYOUT_CLASS);
+  if (!LEGACY_SIDEBAR) {
+    root.classList.remove(LEGACY_FEED_LAYOUT_CLASS);
+    return false;
+  }
   root.classList.toggle(LEGACY_FEED_LAYOUT_CLASS, Boolean(enabled));
   return Boolean(enabled);
 }

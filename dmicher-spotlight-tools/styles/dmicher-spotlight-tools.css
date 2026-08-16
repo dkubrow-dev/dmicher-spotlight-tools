@@ -2400,7 +2400,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   min-height: 0;
 }
 
-#sidebar.dmicher-request-feed-enabled:not(.collapsed) {
+#sidebar.dmicher-request-feed-enabled-v12:not(.collapsed) {
   width: calc(var(--sidebar-width) + 24px);
 }
 

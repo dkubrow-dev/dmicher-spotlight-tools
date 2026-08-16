@@ -51,9 +51,12 @@ test("v12 request feed uses SidebarTab and remounts missing content", () => {
 });
 
 test("v12 expands one sidebar tab slot only while request feed is enabled", () => {
-  const classes = new Set();
+  const classes = new Set(["dmicher-request-feed-enabled"]);
   const root = {
     classList: {
+      remove(name) {
+        classes.delete(name);
+      },
       toggle(name, enabled) {
         if (enabled) classes.add(name);
         else classes.delete(name);
@@ -62,15 +65,17 @@ test("v12 expands one sidebar tab slot only while request feed is enabled", () =
   };
 
   assert.equal(applyLegacyRequestFeedLayout(root, true), true);
-  assert.equal(classes.has("dmicher-request-feed-enabled"), true);
-  assert.equal(applyLegacyRequestFeedLayout(root, false), false);
   assert.equal(classes.has("dmicher-request-feed-enabled"), false);
+  assert.equal(classes.has("dmicher-request-feed-enabled-v12"), true);
+  assert.equal(applyLegacyRequestFeedLayout(root, false), false);
+  assert.equal(classes.has("dmicher-request-feed-enabled-v12"), false);
 
   const css = fs.readFileSync(
     new URL("../dmicher-spotlight-tools/styles/dmicher-spotlight-tools.css", import.meta.url),
     "utf8"
   );
-  assert.match(css, /#sidebar\.dmicher-request-feed-enabled:not\(\.collapsed\)[\s\S]*?width: calc\(var\(--sidebar-width\) \+ 24px\);/);
+  assert.match(css, /#sidebar\.dmicher-request-feed-enabled-v12:not\(\.collapsed\)[\s\S]*?width: calc\(var\(--sidebar-width\) \+ 24px\);/);
+  assert.doesNotMatch(css, /#sidebar\.dmicher-request-feed-enabled:not/);
 });
 
 test("v12 collapsed request feed opens as a popout and stays hidden in the sidebar", () => {

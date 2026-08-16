@@ -210,11 +210,22 @@ globalThis.CONST = {
 };
 
 const documentRoot = { setAttribute() {} };
+const sidebarClasses = new Set(["dmicher-request-feed-enabled"]);
+const sidebarRoot = new MockHTMLElement();
+sidebarRoot.classList = {
+  add: (...names) => names.forEach((name) => sidebarClasses.add(name)),
+  remove: (...names) => names.forEach((name) => sidebarClasses.delete(name)),
+  toggle(name, enabled) {
+    if (enabled) sidebarClasses.add(name);
+    else sidebarClasses.delete(name);
+  }
+};
 globalThis.document = {
   documentElement: documentRoot,
   body: documentRoot,
   createElement: () => new MockHTMLElement(),
-  getElementById: () => null
+  getElementById: () => null,
+  querySelector: (selector) => selector === "#sidebar" ? sidebarRoot : null
 };
 globalThis.window = {
   setTimeout(callback) {
@@ -374,7 +385,15 @@ globalThis.ui = {
 };
 globalThis.canvas = { tokens: { controlled: [] } };
 
+const runtimeRelease = game.release;
+const runtimeVersion = game.version;
+if (generation >= 13) {
+  game.release = undefined;
+  game.version = "";
+}
 await import("../../dmicher-spotlight-tools/scripts/dmicher-spotlight-tools.js");
+game.release = runtimeRelease;
+game.version = runtimeVersion;
 assert.equal(hooks.count("init"), 1);
 assert.equal(hooks.count("ready"), 1);
 
@@ -387,8 +406,11 @@ if (generation === 12) {
   assert.equal(hooks.count("renderSidebar"), 1);
 } else {
   assert.equal(CONFIG.ui.requests.usesHandlebarsApplicationMixin, true);
+  assert.equal(hooks.count("renderSidebar"), 0);
   assert.deepEqual(Object.keys(CONFIG.ui.sidebar.TABS), ["chat", "combat", "requests", "scenes"]);
 }
+assert.equal(sidebarClasses.has("dmicher-request-feed-enabled"), false);
+assert.equal(sidebarClasses.has("dmicher-request-feed-enabled-v12"), generation === 12);
 assert.deepEqual(
   Array.from(registeredMenus.keys()).filter((key) => key.includes("request") || key.includes("thankAuthor")),
   [
