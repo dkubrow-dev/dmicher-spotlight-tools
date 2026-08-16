@@ -187,19 +187,26 @@ test("welcome actions cannot trigger browser navigation and work with every supp
   assert.match(content, /1\.2\.0/);
   assert.doesNotMatch(content, /<a\b|href\s*=/i);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="settings"/);
+  assert.match(content, /<button type="button"[^>]+data-request-welcome-action="master-settings"/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="help"/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="thanks"/);
+  assert.match(content, /<hr class="dmicher-request-welcome-divider">/);
+  assert.match(content, /<p class="dmicher-request-welcome-support">/);
+  assert.ok(content.indexOf("dmicher-request-welcome-divider") < content.indexOf("dmicher-request-welcome-support"));
+  assert.doesNotMatch(buildWelcomeMessageContent(false), /data-request-welcome-action="master-settings"/);
 
   for (const wrap of [(root) => ({ 0: root, length: 1 }), (root) => root]) {
     const root = new MockElement();
     const welcome = new MockElement();
     const settings = new MockElement();
+    const masterSettings = new MockElement();
     const help = new MockElement();
     const thanks = new MockElement();
     root.queries.set(".dmicher-request-card", null);
     root.queries.set(".dmicher-request-technical", null);
     root.queries.set(".dmicher-request-welcome", welcome);
     welcome.queries.set('[data-request-welcome-action="settings"]', settings);
+    welcome.queries.set('[data-request-welcome-action="master-settings"]', masterSettings);
     welcome.queries.set('[data-request-welcome-action="help"]', help);
     welcome.queries.set('[data-request-welcome-action="thanks"]', thanks);
     const message = {
@@ -211,11 +218,12 @@ test("welcome actions cannot trigger browser navigation and work with every supp
     renderRequestChatMessage(message, wrap(root), {
       resolveRequest() {},
       openSettings: () => calls.push("settings"),
+      openMasterSettings: () => calls.push("master-settings"),
       openHelp: () => calls.push("help"),
       openThankAuthor: () => calls.push("thanks")
     });
 
-    for (const [element, expected] of [[settings, "settings"], [help, "help"], [thanks, "thanks"]]) {
+    for (const [element, expected] of [[settings, "settings"], [masterSettings, "master-settings"], [help, "help"], [thanks, "thanks"]]) {
       let prevented = false;
       let stopped = false;
       element.listeners.get("click")({

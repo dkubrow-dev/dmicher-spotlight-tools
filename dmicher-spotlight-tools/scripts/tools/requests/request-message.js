@@ -45,13 +45,14 @@ export function buildWelcomeMessageContent(includeHelp) {
   const moduleTitle = String(moduleRecord?.title ?? localize("Title"));
   const moduleVersion = String(moduleRecord?.version ?? moduleRecord?.manifest?.version ?? "");
   const help = includeHelp
-    ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))}</p>`
+    ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))} ${escapeHTML(localize("Requests.Welcome.DisableBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="master-settings">${escapeHTML(localize("Requests.Welcome.MasterSettingsLink"))}</button>${escapeHTML(localize("Requests.Welcome.DisableAfter"))}</p>`
     : "";
-  const support = `<p>${escapeHTML(localize("Requests.Welcome.FreeBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="thanks">${escapeHTML(localize("Requests.Welcome.SupportLink"))}</button>${escapeHTML(localize("Requests.Welcome.FreeAfter"))}</p>`;
+  const support = `<p class="dmicher-request-welcome-support">${escapeHTML(localize("Requests.Welcome.FreeBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="thanks">${escapeHTML(localize("Requests.Welcome.SupportLink"))}</button>${escapeHTML(localize("Requests.Welcome.FreeAfter"))}</p>`;
   return `
     <section class="dmicher-technical-card dmicher-request-welcome">
       <p>${escapeHTML(format("Requests.Welcome.MainBefore", { module: moduleTitle, version: moduleVersion }))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="settings">${escapeHTML(localize("Requests.Welcome.MenuLink"))}</button>${escapeHTML(localize("Requests.Welcome.MainAfter"))}</p>
       ${help}
+      <hr class="dmicher-request-welcome-divider">
       ${support}
     </section>`;
 }
@@ -59,6 +60,7 @@ export function buildWelcomeMessageContent(includeHelp) {
 export function renderRequestChatMessage(message, html, {
   resolveRequest,
   openSettings,
+  openMasterSettings,
   openHelp,
   openThankAuthor
 }) {
@@ -80,6 +82,7 @@ export function renderRequestChatMessage(message, html, {
   if (message.getFlag(MODULE_ID, FLAGS.requestWelcome)) {
     const welcome = root.querySelector(".dmicher-request-welcome");
     activateWelcomeAction(welcome, "settings", openSettings);
+    activateWelcomeAction(welcome, "master-settings", openMasterSettings);
     activateWelcomeAction(welcome, "help", openHelp);
     activateWelcomeAction(welcome, "thanks", openThankAuthor);
   }

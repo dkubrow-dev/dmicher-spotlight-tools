@@ -315,6 +315,7 @@ export class RequestTool {
     renderRequestChatMessage(message, html, {
       resolveRequest: this.resolveRequest,
       openSettings: () => globalThis.game.modules.get(MODULE_ID)?.api?.openRequestSettings?.(),
+      openMasterSettings: () => globalThis.game.modules.get(MODULE_ID)?.api?.openRequestMasterSettings?.(),
       openHelp: () => globalThis.game.modules.get(MODULE_ID)?.api?.openHelp?.(),
       openThankAuthor: () => globalThis.game.modules.get(MODULE_ID)?.api?.openThankAuthor?.()
     });

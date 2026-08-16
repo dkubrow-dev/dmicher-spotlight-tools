@@ -489,6 +489,19 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
   text-shadow: 0 0 4px currentColor;
 }
 
+.dmicher-request-welcome-divider {
+  border: 0;
+  border-top: 1px solid currentColor;
+  margin: 0.5rem 0 0.4rem;
+  opacity: 0.35;
+}
+
+.dmicher-request-welcome-support {
+  font-size: var(--font-size-12);
+  line-height: 1.35;
+  margin-bottom: 0;
+}
+
 .dmicher-technical-title {
   display: block;
   font-weight: bold;

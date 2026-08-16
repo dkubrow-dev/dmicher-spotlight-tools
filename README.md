@@ -81,7 +81,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 В Playlists → User Volume Controls модуль добавляет ползунки «Заявки» и «Таймеры». Громкость заявки равна базовой громкости типа, умноженной на личную громкость «Заявки». Звуки таймеров также учитывают личный ползунок «Таймеры» и дополнительные уровни конкретного сигнала. Штатное отключение звука Foundry имеет приоритет над всеми звуками модуля.
 
-Приветствие отправляется приватно каждому вошедшему пользователю. В нём отображаются точное значение `title` и версия установленного модуля. Ссылки «игровое меню» и «справкой» открывают окна внутри клиента Foundry; «по ссылке» намеренно открывает внешнюю страницу поддержки.
+Приветствие отправляется приватно каждому вошедшему пользователю. В нём отображаются точное значение `title` и версия установленного модуля. Ссылки «игровое меню» и «справкой» открывают окна внутри клиента Foundry; мастер и ассистент также могут открыть «Настройки мастера» и отключить приветствие. Отделённый горизонтальной чертой уменьшенный текст сообщает о бесплатности модуля, а «по ссылке» намеренно открывает внешнюю страницу поддержки.
 
 Подробная интерактивная справка открывается из настроек игры и первой кнопкой в левом верхнем меню «Приспособы фокуса».
 
@@ -270,7 +270,7 @@ Active Requests works independently from chat. It shows the portrait or token an
 
 The module adds Requests and Timers sliders to Playlists → User Volume Controls. Request volume is the per-type base volume multiplied by the user's Requests volume. Timer audio also applies the user's Timers slider and any signal-specific levels. Foundry's global mute takes precedence over every module sound.
 
-A private welcome message is sent to each joining user and shows the exact installed module `title` and version. The game menu and Help links open windows inside Foundry; the support link intentionally opens the external support page.
+A private welcome message is sent to each joining user and shows the exact installed module `title` and version. The game menu and Help links open windows inside Foundry; Game Masters and Assistants can also open Game Master Settings and disable the welcome. Smaller text below a horizontal divider states that the module is free, while the support link intentionally opens the external support page.
 
 Detailed interactive Help opens from Game Settings and from the first button in the Spotlight Tools canvas controls.
 

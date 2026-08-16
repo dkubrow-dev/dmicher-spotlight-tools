@@ -213,6 +213,9 @@
         "HelpBefore": "Use the",
         "HelpLink": "help",
         "HelpAfter": " to learn about every module feature.",
+        "DisableBefore": "This welcome message can be disabled in",
+        "MasterSettingsLink": "Game Master Settings",
+        "DisableAfter": ".",
         "FreeBefore": "This module is completely free for you and all other users. If you would like to support the author, you can do so",
         "SupportLink": "at this link",
         "FreeAfter": "."
@@ -682,7 +685,7 @@
                 "Items": {
                   "Toggle": {
                     "Label": "Show welcome message",
-                    "Description": "Enables a private startup message for each joining user; it is enabled by default."
+                    "Description": "Enables a private startup message for each joining user; it is enabled by default. The moderator welcome provides a direct link to Game Master Settings."
                   },
                   "PlayerMessage": {
                     "Label": "Player text",
@@ -690,15 +693,15 @@
                   },
                   "ModeratorMessage": {
                     "Label": "Moderator addition",
-                    "Description": "Game Masters and Assistants also receive a Help link that opens the Help window."
+                    "Description": "Game Masters and Assistants also receive links that open Help and Game Master Settings, where this welcome can be disabled."
                   },
                   "InternalButtons": {
                     "Label": "Message buttons",
-                    "Description": "The game menu and Help links open windows inside Foundry; only the support link is intended for an external page."
+                    "Description": "The game menu, Help, and Game Master Settings links open windows inside Foundry; only the support link is intended for an external page."
                   },
                   "Free": {
                     "Label": "Free module",
-                    "Description": "The welcome tells every user that all module functionality is free."
+                    "Description": "Below a horizontal divider, smaller text tells every user that all module functionality is free."
                   },
                   "Support": {
                     "Label": "Support link",

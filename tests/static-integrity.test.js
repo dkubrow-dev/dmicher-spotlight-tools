@@ -200,6 +200,16 @@ test("poll template macro thumbnails keep a usable size across Foundry versions"
   assert.equal(en.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "Macro");
   assert.equal(ru.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "\u041c\u0430\u043a\u0440\u043e\u0441");
 });
+
+test("welcome support is visually separated and uses internal master settings action", () => {
+  const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
+  const requestTool = fs.readFileSync(path.join(MODULE_ROOT, "scripts", "tools", "requests", "request-tool.js"), "utf8");
+  assert.match(stylesheet, /\.dmicher-request-welcome-divider\s*\{[\s\S]*?border-top:[\s\S]*?\}/);
+  assert.match(stylesheet, /\.dmicher-request-welcome-support\s*\{[\s\S]*?font-size:\s*var\(--font-size-12\)/);
+  assert.match(requestTool, /openMasterSettings:[\s\S]*?openRequestMasterSettings/);
+  assert.doesNotMatch(requestTool, /fetch\(|XMLHttpRequest/);
+});
+
 test("timer manager exposes the immediate repeat control", () => {
   const template = fs.readFileSync(path.join(MODULE_ROOT, "templates", "timers", "timer-manager.hbs"), "utf8");
   const manager = fs.readFileSync(path.join(MODULE_ROOT, "scripts", "tools", "timers", "timer-manager.js"), "utf8");
