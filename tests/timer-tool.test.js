@@ -85,6 +85,12 @@ function installGame() {
 
   values.set("dmicher-spotlight-tools.timers", { version: 1, timers: {} });
   values.set("dmicher-spotlight-tools.timerAlertedExpirations", {});
+  values.set("dmicher-spotlight-tools.requestConfiguration", {
+    timerSounds: {
+      timer: { custom: false, url: "", volume: 1 },
+      break: { custom: false, url: "", volume: 1 }
+    }
+  });
   return { timeouts, values };
 }
 
@@ -105,6 +111,31 @@ function createTimer(overrides = {}) {
     ...overrides
   };
 }
+
+test("custom timer playback multiplies launch, world, and client levels", async () => {
+  const { values } = installGame();
+  values.set("dmicher-spotlight-tools.requestConfiguration", {
+    timerSounds: {
+      timer: { custom: true, url: "https://example.test/timer.ogg", volume: 0.4 },
+      break: { custom: false, url: "", volume: 1 }
+    }
+  });
+  let played = null;
+  const tool = new TimerTool({
+    volumeController: {
+      async playTimer(src, baseVolume, launchVolume) {
+        played = { src, baseVolume, launchVolume };
+      }
+    }
+  });
+
+  await tool.playTimerSound(TIMER_SOUND.custom, 0.5);
+  assert.deepEqual(played, {
+    src: "https://example.test/timer.ogg",
+    baseVolume: 0.4,
+    launchVolume: 0.5
+  });
+});
 
 test("expired timer alerts are cached before asynchronous persistence completes", async () => {
   const { values } = installGame();

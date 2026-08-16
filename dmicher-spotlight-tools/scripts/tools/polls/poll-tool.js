@@ -15,7 +15,12 @@ import {
   localize,
   openSingletonApplication
 } from "../../utils.js";
-import { createOrUpdateHotbarMacro, isHotbarDrop, setHotbarDragData } from "../hotbar-macro.js";
+import {
+  createOrUpdateHotbarMacro,
+  isHotbarDrop,
+  setHotbarDragData,
+  stripHotbarMacroMetadata
+} from "../hotbar-macro.js";
 import {
   TIMER_DISPLAY_STYLE,
   TIMER_MODE,
@@ -420,7 +425,8 @@ export class PollTool {
 
   isPollMacro(macro, templateId) {
     const flaggedTemplateId = macro.getFlag(MODULE_ID, FLAGS.pollMacro);
-    return (flaggedTemplateId === templateId) || (macro.command === this.getPollMacroCommand(templateId));
+    return (flaggedTemplateId === templateId)
+      || (stripHotbarMacroMetadata(macro.command) === this.getPollMacroCommand(templateId));
   }
 
   getPollMacroCommand(templateId) {

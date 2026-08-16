@@ -10,6 +10,7 @@ const TOOL_DEFINITIONS = Object.freeze([
     order: -1,
     action: null
   }),
+  Object.freeze({ name: "help", titleKey: "Controls.Help", icon: "fa-solid fa-circle-question", order: 0, action: "openHelp" }),
   Object.freeze({ name: "requests", titleKey: "Controls.Requests", icon: "fa-solid fa-hand", order: 10, action: "openRequests" }),
   Object.freeze({ name: "polls", titleKey: "Controls.Polls", icon: "fa-solid fa-square-poll-horizontal", order: 20, action: "openPolls" }),
   Object.freeze({ name: "break", titleKey: "Controls.Break", icon: "fa-solid fa-mug-saucer", order: 30, action: "openBreakTimer" }),
@@ -19,7 +20,8 @@ const TOOL_DEFINITIONS = Object.freeze([
 ]);
 
 export class SpotlightControls {
-  constructor({ openRequests, openTimers, openBreakTimer, openStopwatch, openFocusAudit, openPolls }) {
+  constructor({ openHelp, openRequests, openTimers, openBreakTimer, openStopwatch, openFocusAudit, openPolls }) {
+    this.openHelp = openHelp;
     this.openRequests = openRequests;
     this.openTimers = openTimers;
     this.openBreakTimer = openBreakTimer;

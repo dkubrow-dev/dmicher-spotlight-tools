@@ -326,7 +326,7 @@ export class FocusAuditTool {
       const entry = this.getMutableEntry(state, userId);
       entry.lastRequestAt = submittedAt;
       entry.lastChatAt = submittedAt;
-      entry.activeRequests[message.id] = submittedAt;
+      entry.activeRequests[requestData.id ?? message.id] = submittedAt;
       entry.activeRequestAt = getActiveRequestTimestamp(entry, submittedAt);
     });
   }
@@ -348,6 +348,29 @@ export class FocusAuditTool {
         const submittedAt = Number(requestData.submittedAt ?? message.timestamp ?? now);
         const entry = this.getMutableEntry(state, userId);
         entry.activeRequests[message.id] = submittedAt;
+        entry.activeRequestAt = getActiveRequestTimestamp(entry, now);
+        entry.lastRequestAt = Math.max(Number(entry.lastRequestAt) || 0, submittedAt);
+        entry.lastChatAt = Math.max(Number(entry.lastChatAt) || 0, submittedAt);
+      }
+    });
+  }
+
+  rebuildRequestsFromEntries(entries = []) {
+    if (!isPrimaryModerator()) return;
+    const now = Date.now();
+    void this.updateState((state) => {
+      for (const entry of Object.values(state.players)) {
+        entry.activeRequests = {};
+        entry.activeRequestAt = now;
+      }
+
+      for (const requestData of entries ?? []) {
+        const userId = String(requestData.authorId ?? "");
+        const requestId = String(requestData.id ?? requestData.messageId ?? "");
+        if (!userId || !requestId) continue;
+        const submittedAt = Number(requestData.submittedAt ?? now);
+        const entry = this.getMutableEntry(state, userId);
+        entry.activeRequests[requestId] = submittedAt;
         entry.activeRequestAt = getActiveRequestTimestamp(entry, now);
         entry.lastRequestAt = Math.max(Number(entry.lastRequestAt) || 0, submittedAt);
         entry.lastChatAt = Math.max(Number(entry.lastChatAt) || 0, submittedAt);

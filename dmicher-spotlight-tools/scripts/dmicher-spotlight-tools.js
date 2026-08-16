@@ -1,26 +1,40 @@
 import { MODULE_ID } from "./config.js";
+import {
+  installHotbarMacroCleanup,
+  synchronizeCurrentUserHotbarMacroMetadata
+} from "./tools/hotbar-macro.js";
 import { FocusAuditTool } from "./tools/focus/focus-audit-tool.js";
 import { openFocusAuditSettings } from "./tools/focus/focus-audit-settings.js";
 import { PollTool } from "./tools/polls/poll-tool.js";
+import { configureRequestFeed } from "./tools/requests/request-feed.js";
+import { openRequestHelp, registerRequestHelp } from "./tools/requests/request-help.js";
 import { RequestHotbar } from "./tools/requests/request-hotbar.js";
 import {
   migrateLegacyClientRequestSettings,
   openRequestSettings,
-  registerRequestSettings
+  openThankAuthor,
+  registerRequestSettings,
+  registerThankAuthorMenu
 } from "./tools/requests/request-settings.js";
 import { RequestTool } from "./tools/requests/request-tool.js";
+import { RequestVolumeController } from "./tools/requests/request-volume.js";
 import { SpotlightControls } from "./tools/spotlight-controls.js";
 import { StopwatchTool } from "./tools/stopwatch/stopwatch-tool.js";
 import { TimerTool } from "./tools/timers/timer-tool.js";
 import { applySpotlightTheme, registerThemeSetting } from "./theme.js";
 
 const focusAuditTool = new FocusAuditTool();
-const requestTool = new RequestTool({ focusAuditTool });
+const requestVolumeController = new RequestVolumeController();
+const requestTool = new RequestTool({
+  focusAuditTool,
+  volumeController: requestVolumeController
+});
 const requestHotbar = new RequestHotbar(requestTool.submitRequest);
 const stopwatchTool = new StopwatchTool();
-const timerTool = new TimerTool();
+const timerTool = new TimerTool({ volumeController: requestVolumeController });
 const pollTool = new PollTool({ timerTool });
 const spotlightControls = new SpotlightControls({
+  openHelp: () => openRequestHelp(),
   openRequests: () => requestTool.openActiveRequestsWindow(),
   openTimers: () => timerTool.openManager(),
   openBreakTimer: () => timerTool.openBreakTimer(),
@@ -33,13 +47,34 @@ Hooks.once("init", () => {
   registerThemeSetting();
   focusAuditTool.registerSettings();
   pollTool.registerSettings();
+  requestVolumeController.registerSetting();
+  requestTool.registerSettings();
   registerRequestSettings({
     submitRequest: requestTool.submitRequest,
-    onRequestDragStart: requestHotbar.onRequestDragStart
+    onRequestDragStart: requestHotbar.onRequestDragStart,
+    volumeController: requestVolumeController,
+    subscribeConfiguration: (listener) => requestTool.subscribeConfiguration(listener),
+    subscribeState: (listener) => requestTool.subscribeState(listener)
+  });
+  registerRequestHelp({
+    openSettings: () => openRequestSettings(),
+    openActiveRequests: () => requestTool.openActiveRequestsWindow()
+  });
+  registerThankAuthorMenu();
+  configureRequestFeed({
+    activeRequests: requestTool.activeRequests,
+    actions: {
+      submitRequest: requestTool.submitRequest,
+      onRequestDragStart: requestHotbar.onRequestDragStart,
+      openSettings: () => openRequestSettings(),
+      openHelp: () => openRequestHelp(),
+      openManagement: () => requestTool.openActiveRequestsWindow()
+    }
   });
   timerTool.registerSettings();
   timerTool.registerHooks();
   requestTool.registerHooks();
+  requestVolumeController.registerHooks();
   requestHotbar.registerHooks();
   focusAuditTool.registerHooks();
   pollTool.registerHooks();
@@ -48,6 +83,9 @@ Hooks.once("init", () => {
 
   game.modules.get(MODULE_ID).api = {
     openRequestSettings,
+    openRequestHelp,
+    openHelp: openRequestHelp,
+    openThankAuthor,
     openActiveRequests: () => requestTool.openActiveRequestsWindow(),
     openFocusAudit: () => focusAuditTool.openAuditWindow(),
     openFocusAuditSettings,
@@ -62,7 +100,7 @@ Hooks.once("init", () => {
   };
 });
 
-Hooks.once("ready", () => {
+Hooks.once("ready", async () => {
   applySpotlightTheme();
   void migrateLegacyClientRequestSettings().catch((error) => {
     console.error(`${MODULE_ID} | Unable to migrate legacy request settings`, error);
@@ -72,5 +110,15 @@ Hooks.once("ready", () => {
   pollTool.activate();
   timerTool.activate();
   stopwatchTool.activate();
-  void requestHotbar.migrateMacros();
+  installHotbarMacroCleanup();
+  try {
+    await requestHotbar.migrateMacros();
+  } catch (error) {
+    console.error(`${MODULE_ID} | Unable to migrate request hotbar macros`, error);
+  }
+  try {
+    await synchronizeCurrentUserHotbarMacroMetadata();
+  } catch (error) {
+    console.error(`${MODULE_ID} | Unable to synchronize hotbar macro metadata`, error);
+  }
 });

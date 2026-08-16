@@ -12,7 +12,12 @@ import {
   openSingletonApplication,
   preloadImage
 } from "../../utils.js";
-import { createOrUpdateHotbarMacro, isHotbarDrop, setHotbarDragData } from "../hotbar-macro.js";
+import {
+  createOrUpdateHotbarMacro,
+  isHotbarDrop,
+  setHotbarDragData,
+  stripHotbarMacroMetadata
+} from "../hotbar-macro.js";
 import {
   formatStopwatchElapsed,
   getStopwatchEventConfig,
@@ -180,7 +185,7 @@ export class StopwatchTool {
 
   handleChatMessage(_chatLog, message) {
     const pattern = new RegExp(`^${STOPWATCH_CHAT_MACRO_COMMAND}\\s+(\\S+)\\s*$`, "i");
-    const match = pattern.exec(String(message).trim());
+    const match = pattern.exec(stripHotbarMacroMetadata(message));
     const eventType = normalizeStopwatchEventType(match?.[1]);
     if (!eventType) return;
 
@@ -224,6 +229,7 @@ export class StopwatchTool {
   }
 
   isStopwatchMacro(macro, eventType) {
-    return macro.getFlag(MODULE_ID, FLAGS.stopwatchMacro) === eventType || macro.command === `${STOPWATCH_CHAT_MACRO_COMMAND} ${eventType}`;
+    return macro.getFlag(MODULE_ID, FLAGS.stopwatchMacro) === eventType
+      || stripHotbarMacroMetadata(macro.command) === `${STOPWATCH_CHAT_MACRO_COMMAND} ${eventType}`;
   }
 }

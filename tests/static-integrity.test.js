@@ -136,3 +136,47 @@ test("Handlebars block structure is balanced in every template", () => {
     assert.deepEqual(stack, [], path.relative(ROOT, template));
   }
 });
+
+
+test("interactive help navigation never exposes browser URLs", () => {
+  const helpTemplate = fs.readFileSync(
+    path.join(MODULE_ROOT, "templates", "requests", "help.hbs"),
+    "utf8"
+  );
+  assert.doesNotMatch(helpTemplate, /<a\b|href\s*=/i);
+  assert.match(helpTemplate, /<button type="button"[^>]+data-help-page=/);
+});
+
+test("literal module localization references exist", () => {
+  const en = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "en.json"), "utf8"));
+  const files = [
+    ...walk(path.join(MODULE_ROOT, "scripts")).filter((file) => file.endsWith(".js")),
+    ...walk(path.join(MODULE_ROOT, "templates")).filter((file) => file.endsWith(".hbs"))
+  ];
+  const hasKey = (key) => key.split(".").every((part, index, parts) => {
+    const parent = parts.slice(0, index).reduce((value, segment) => value?.[segment], en);
+    return parent && Object.hasOwn(parent, part);
+  });
+
+  for (const file of files) {
+    const source = fs.readFileSync(file, "utf8");
+    for (const match of source.matchAll(/(?:localize|format|i18nKey)\(\s*["']([^"']+)["']/g)) {
+      const key = match[1].startsWith("DMICHERSPOTLIGHTTOOLS.")
+        ? match[1]
+        : `DMICHERSPOTLIGHTTOOLS.${match[1]}`;
+      assert.ok(hasKey(key), `${path.relative(ROOT, file)} -> ${key}`);
+    }
+  }
+});
+
+test("stopwatch minimum height yields to ApplicationV2 minimization states", function (){
+  const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
+  assert.match(stylesheet, /\.dmicher-stopwatch\.minimizing,[\s\S]*\.dmicher-stopwatch\.minimized,[\s\S]*\.dmicher-stopwatch\.maximizing\s*\{\s*min-height:\s*0;/);
+});
+
+test("help content uses module theme colors", function (){
+  const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
+  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-item\s+dt\s*\{[\s\S]*?color:\s*var\(--dmicher-text-muted[\s\S]*?text-shadow:\s*none;/s);
+  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-item\s+dd\s*\{[\s\S]*?color:\s*var\(--dmicher-text/s);
+  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-page\s+h2[\s\S]*color:\s*var\(--dmicher-heading/);
+});

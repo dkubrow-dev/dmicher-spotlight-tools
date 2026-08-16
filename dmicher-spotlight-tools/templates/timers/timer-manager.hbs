@@ -37,13 +37,14 @@
         <label><input type="radio" name="style" value="compact"> {{labels.styleCompact}}</label>
       </fieldset>
 
-      <fieldset class="dmicher-timer-field">
-        <legend>{{localize keys.sound}}</legend>
-        <label><input type="radio" name="sound" value="none" checked> {{labels.soundNone}}</label>
-        <label><input type="radio" name="sound" value="signal1"> {{labels.soundSignal1}}</label>
-        <label><input type="radio" name="sound" value="signal2"> {{labels.soundSignal2}}</label>
-        <label><input type="radio" name="sound" value="signal3"> {{labels.soundSignal3}}</label>
-      </fieldset>
+      <label class="dmicher-timer-field">
+        <span>{{localize keys.sound}}</span>
+        <select name="sound">
+          {{#each soundChoices}}
+          <option value="{{value}}" {{selected}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </label>
     </div>
 
     <footer class="dmicher-timer-manager-actions">
@@ -58,6 +59,11 @@
         </button>
       </div>
       <div class="dmicher-timer-manager-action-group dmicher-timer-manager-action-group-right">
+        <label class="dmicher-timer-preview-volume">
+          <span>{{localize keys.volume}}</span>
+          <input type="range" name="volume" min="0" max="100" step="1" value="100">
+          <output data-timer-volume-output>100%</output>
+        </label>
         <button type="button" data-timer-action="preview-sound" title="{{localize keys.previewSound}}">
           <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
         </button>

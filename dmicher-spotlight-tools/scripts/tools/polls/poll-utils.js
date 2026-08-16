@@ -155,7 +155,12 @@ export function getPollTimerDurationMs(value) {
 }
 
 export function normalizePollTimerSound(sound) {
-  return Object.values(TIMER_SOUND).includes(sound) ? sound : TIMER_SOUND.none;
+  return [
+    TIMER_SOUND.none,
+    TIMER_SOUND.signal1,
+    TIMER_SOUND.signal2,
+    TIMER_SOUND.signal3
+  ].includes(sound) ? sound : TIMER_SOUND.none;
 }
 
 export function normalizePollType(type) {

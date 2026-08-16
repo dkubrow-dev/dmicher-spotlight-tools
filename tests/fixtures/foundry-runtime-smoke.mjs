@@ -108,6 +108,19 @@ class MockApplicationV2 {
   bringToFront() {}
 }
 
+class MockLegacySidebarTab extends MockApplicationV2 {
+  async getData() {
+    return {
+      cssId: "requests",
+      cssClass: "tab sidebar-tab dmicher-request-feed",
+      tabName: "requests"
+    };
+  }
+}
+class MockAbstractSidebarTab extends MockApplicationV2 {
+  _onActivate() {}
+}
+
 class MockImage {
   constructor() {
     this.listeners = new Map();
@@ -183,6 +196,7 @@ process.on("unhandledRejection", (error) => asyncErrors.push(error));
 globalThis.HTMLElement = MockHTMLElement;
 globalThis.Node = { TEXT_NODE: 3 };
 globalThis.Image = MockImage;
+globalThis.SidebarTab = generation === 12 ? MockLegacySidebarTab : undefined;
 globalThis.Hooks = hooks;
 globalThis.CONST = {
   USER_ROLES: {
@@ -284,15 +298,27 @@ globalThis.game = {
   }
 };
 
+class MockSidebar {
+  static TABS = {
+    chat: {},
+    combat: {},
+    scenes: {}
+  };
+}
+
 globalThis.CONFIG = {
   ChatMessage: { documentClass: MockChatMessage },
-  Macro: { documentClass: MockMacro }
+  Macro: { documentClass: MockMacro },
+  ui: { sidebar: MockSidebar }
 };
 globalThis.foundry = {
   applications: {
+    sidebar: generation >= 13 ? { AbstractSidebarTab: MockAbstractSidebarTab } : undefined,
     api: {
       ApplicationV2: MockApplicationV2,
-      HandlebarsApplicationMixin: (Base) => class extends Base {},
+      HandlebarsApplicationMixin: (Base) => class extends Base {
+        static usesHandlebarsApplicationMixin = true;
+      },
       DialogV2: { confirm: async () => true }
     }
   },
@@ -348,6 +374,44 @@ assert.equal(hooks.count("ready"), 1);
 hooks.call("init");
 assert.equal(invalidScopes.length, 0);
 assert.ok(moduleRecord.api);
+assert.ok(CONFIG.ui.requests);
+if (generation === 12) {
+  assert.equal(CONFIG.ui.requests.usesHandlebarsApplicationMixin, undefined);
+  assert.equal(hooks.count("renderSidebar"), 1);
+} else {
+  assert.equal(CONFIG.ui.requests.usesHandlebarsApplicationMixin, true);
+  assert.deepEqual(Object.keys(CONFIG.ui.sidebar.TABS), ["chat", "combat", "requests", "scenes"]);
+}
+assert.deepEqual(
+  Array.from(registeredMenus.keys()).filter((key) => key.includes("request") || key.includes("thankAuthor")),
+  [
+    "dmicher-spotlight-tools.requestsSettings",
+    "dmicher-spotlight-tools.requestsHelp",
+    "dmicher-spotlight-tools.thankAuthor"
+  ]
+);
+const requestConfiguration = registeredSettings.get("dmicher-spotlight-tools.requestConfiguration");
+assert.equal(requestConfiguration.default.feed.enabled, true);
+assert.equal(requestConfiguration.default.showWelcome, true);
+assert.equal(requestConfiguration.default.soundsEnabled, true);
+
+const feedApplication = new CONFIG.ui.requests();
+const feedContext = generation >= 13
+  ? await feedApplication._prepareContext({})
+  : await feedApplication.getData({});
+assert.equal(feedContext.legacy, generation === 12);
+if (generation === 12) {
+  assert.equal(feedContext.cssId, "requests");
+  assert.match(feedContext.cssClass, /sidebar-tab/);
+  assert.equal(feedContext.tabName, "requests");
+}
+const feedRenderCalls = [];
+feedApplication.render = (...args) => {
+  feedRenderCalls.push(args);
+  return Promise.resolve(feedApplication);
+};
+feedApplication._onActivate();
+assert.deepEqual(feedRenderCalls, generation >= 13 ? [[{force: true}]] : [[true]]);
 
 const expectedChatHook = generation === 12 ? "renderChatMessage" : "renderChatMessageHTML";
 assert.ok(hooks.count(expectedChatHook) >= 3);

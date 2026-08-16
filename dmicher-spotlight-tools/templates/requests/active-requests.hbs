@@ -1,6 +1,20 @@
 <section class="dmicher-active-requests-shell">
   <h2 class="dmicher-tool-window-heading">{{localize keys.heading}}</h2>
-  <p class="dmicher-active-requests-summary">{{summaryText}}</p>
+  <div class="dmicher-active-request-filters">
+    <fieldset>
+      <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Filters.Type"}}</legend>
+      {{#each typeFilters}}
+      <label><input type="checkbox" value="{{type}}" data-active-request-filter="type" {{#if checked}}checked{{/if}}> {{label}}</label>
+      {{/each}}
+    </fieldset>
+    <fieldset>
+      <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Filters.Duplicates"}}</legend>
+      <label><input type="radio" name="duplicates" value="none" data-active-request-filter="duplicates" {{#if duplicateNone}}checked{{/if}}> {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Filters.None"}}</label>
+      <label><input type="radio" name="duplicates" value="type" data-active-request-filter="duplicates" {{#if duplicateType}}checked{{/if}}> {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Filters.ByType"}}</label>
+      <label><input type="radio" name="duplicates" value="player" data-active-request-filter="duplicates" {{#if duplicatePlayer}}checked{{/if}}> {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Filters.ByPlayer"}}</label>
+    </fieldset>
+  </div>
+  <p class="dmicher-active-requests-summary">{{summaryText}} � {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Visible"}}: <span data-visible-request-count>{{totalCount}}</span></p>
 
   <div class="dmicher-tool-table-scroll dmicher-active-requests-table-wrap">
     {{#if hasRequests}}
@@ -15,20 +29,25 @@
       </thead>
       <tbody>
         {{#each requests}}
-        <tr>
+        <tr data-active-request-row data-request-id="{{id}}" data-author-id="{{authorId}}" data-urgency="{{urgency}}">
           <td class="dmicher-active-request-type">
-            <img src="{{image}}" alt="{{typeLabel}}" title="{{typeLabel}}">
+            <div class="dmicher-active-request-images">
+              <img src="{{portrait}}" alt="{{authorName}}" title="{{authorName}}">
+              <img src="{{image}}" alt="{{typeLabel}}" title="{{typeLabel}}">
+            </div>
           </td>
           <td>{{submittedText}}</td>
           <td>{{authorText}}</td>
           <td class="dmicher-tool-row-actions">
-            <button type="button" data-active-request-action="open" data-message-id="{{messageId}}" title="{{localize ../keys.openMessage}}">
+            {{#if hasChatMessage}}
+            <button type="button" data-active-request-action="open" data-request-id="{{id}}" title="{{localize ../keys.openMessage}}">
               <i class="fa-solid fa-eye" aria-hidden="true"></i>
             </button>
-            <button type="button" data-active-request-action="grant" data-message-id="{{messageId}}" title="{{grantLabel}}">
+            {{/if}}
+            <button type="button" data-active-request-action="grant" data-request-id="{{id}}" title="{{grantLabel}}">
               <i class="fa-solid fa-comment" aria-hidden="true"></i>
             </button>
-            <button type="button" data-active-request-action="cancel" data-message-id="{{messageId}}" title="{{localize ../keys.cancel}}">
+            <button type="button" data-active-request-action="cancel" data-request-id="{{id}}" title="{{localize ../keys.cancel}}">
               <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
           </td>
@@ -42,6 +61,10 @@
   </div>
 
   <footer class="dmicher-active-requests-footer">
+    <button type="button" data-active-request-action="environment">
+      <i class="fa-solid fa-mountain-sun" aria-hidden="true"></i>
+      {{localize keys.environment}}
+    </button>
     <button type="button" data-active-request-action="clear">
       <i class="fa-solid fa-trash" aria-hidden="true"></i>
       {{localize keys.clear}}

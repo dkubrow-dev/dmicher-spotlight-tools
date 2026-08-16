@@ -1,12 +1,13 @@
-import { FLAGS, MODULE_ID, REQUEST_TYPES, normalizeRequestType } from "../../config.js";
+import { DEFAULT_USER_PORTRAIT, MODULE_ID, REQUEST_TYPES, normalizeRequestType } from "../../config.js";
 import {
   confirmDialog,
   escapeHTML,
-  getMessageAuthorName,
+  format,
   isModerator,
   localize,
   openSingletonApplication
 } from "../../utils.js";
+import { getRequestImage, normalizeActiveRequestEntry } from "./request-config.js";
 import { ActiveRequestsApplication } from "./active-requests-window.js";
 import { getGrantActionKey, getRequestAnchorId } from "./request-message.js";
 
@@ -14,12 +15,16 @@ const CHAT_RENDER_BATCH_SIZE = 50;
 const CHAT_RENDER_BATCH_MAX_ATTEMPTS = 60;
 
 export class ActiveRequestsController {
-  constructor({ resolveRequest, onRequestResolved }) {
+  constructor({ resolveRequest, submitRequest }) {
     this.entries = [];
-    this.nextSequence = 0;
     this.window = null;
+    this.feed = null;
     this.resolveRequest = resolveRequest;
-    this.onRequestResolved = onRequestResolved;
+    this.submitRequest = submitRequest;
+  }
+
+  attachFeed(feed) {
+    this.feed = feed;
   }
 
   openWindow() {
@@ -27,11 +32,7 @@ export class ActiveRequestsController {
       ui.notifications.warn(localize("Requests.Chat.Forbidden"));
       return null;
     }
-
-    this.window = openSingletonApplication(
-      this.window,
-      () => new ActiveRequestsApplication(this)
-    );
+    this.window = openSingletonApplication(this.window, () => new ActiveRequestsApplication(this));
     return this.window;
   }
 
@@ -39,63 +40,53 @@ export class ActiveRequestsController {
     if (this.window === app) this.window = null;
   }
 
-  rebuild(messages = game.messages, { notify = true } = {}) {
-    this.entries = [];
-    this.nextSequence = 0;
-    for (const message of messages ?? []) {
-      const requestData = message.getFlag(MODULE_ID, FLAGS.request);
-      if (requestData) this.register(message, requestData, { notify: false });
-    }
+  setEntries(entries, { notify = true } = {}) {
+    this.entries = (entries ?? []).map(normalizeActiveRequestEntry).filter(Boolean);
     this.sort();
     if (notify) this.notifyChanged();
   }
 
+  rebuild(_messages = game.messages, { notify = true } = {}) {
+    if (notify) this.notifyChanged();
+  }
+
   refresh() {
-    this.rebuild(game.messages, { notify: false });
+    this.sort();
   }
 
   register(message, requestData, { notify = true } = {}) {
-    const entry = this.createEntry(message, requestData);
-    const existingIndex = this.entries.findIndex((request) => request.messageId === entry.messageId);
-    if (existingIndex >= 0) {
-      entry.sequence = this.entries[existingIndex].sequence;
-      this.entries[existingIndex] = entry;
-    }
+    const entry = normalizeActiveRequestEntry({
+      ...requestData,
+      id: requestData.id ?? message?.id,
+      messageId: message?.id ?? requestData.messageId
+    });
+    if (!entry) return;
+    const index = this.entries.findIndex((item) => item.id === entry.id);
+    if (index >= 0) this.entries[index] = entry;
     else this.entries.push(entry);
     this.sort();
     if (notify) this.notifyChanged();
   }
 
-  createEntry(message, requestData) {
-    const submittedAt = Number(message.timestamp ?? requestData.submittedAt ?? requestData.createdAt ?? Date.now());
-    return {
-      messageId: message.id,
-      urgency: normalizeRequestType(requestData.urgency),
-      authorId: String(requestData.authorId ?? ""),
-      authorName: String(requestData.authorName ?? getMessageAuthorName(message)).slice(0, 100),
-      submittedAt,
-      sequence: this.nextSequence++
-    };
-  }
-
   sort() {
     this.entries.sort((left, right) => (
       (Number(left.sequence) - Number(right.sequence))
-      || String(left.messageId).localeCompare(String(right.messageId))
+      || (Number(left.submittedAt) - Number(right.submittedAt))
+      || left.id.localeCompare(right.id)
     ));
   }
 
-  remove(messageId, { broadcast = false } = {}) {
+  remove(requestId) {
     const initialLength = this.entries.length;
-    this.entries = this.entries.filter((request) => request.messageId !== messageId);
-    if (this.entries.length === initialLength) return false;
+    this.entries = this.entries.filter((entry) => entry.id !== requestId && entry.messageId !== requestId);
+    if (initialLength === this.entries.length) return false;
     this.notifyChanged();
-    if (broadcast) this.onRequestResolved(messageId);
     return true;
   }
 
   notifyChanged() {
     this.window?.onActiveRequestsChanged();
+    this.feed?.onActiveRequestsChanged?.();
   }
 
   getCount() {
@@ -106,26 +97,34 @@ export class ActiveRequestsController {
     return this.entries.filter((entry) => normalizeRequestType(entry.urgency) === "urgent").length;
   }
 
-  getRows() {
+  getRows({ showTime = true } = {}) {
     this.sort();
     return this.entries.map((entry) => {
       const request = REQUEST_TYPES[normalizeRequestType(entry.urgency)];
       const submittedAt = Number(entry.submittedAt);
+      const characterSuffix = entry.characterName ? ` \u2014 ${entry.characterName}` : "";
       return {
         ...entry,
-        image: request.image,
+        portrait: entry.portrait || DEFAULT_USER_PORTRAIT,
+        image: getRequestImage(entry.urgency),
         typeLabel: localize(request.labelKey),
-        authorText: entry.authorName || localize("Requests.Active.UnknownAuthor"),
-        submittedText: foundry.utils.timeSince(new Date(Number.isFinite(submittedAt) ? submittedAt : Date.now())),
-        grantLabel: localize(getGrantActionKey(entry.urgency))
+        authorText: `${entry.authorName || localize("Requests.Active.UnknownAuthor")}${characterSuffix}`,
+        submittedText: showTime
+          ? foundry.utils.timeSince(new Date(Number.isFinite(submittedAt) ? submittedAt : Date.now()))
+          : "",
+        grantLabel: localize(getGrantActionKey(entry.urgency)),
+        mayCancel: isModerator() || entry.authorId === game.user.id,
+        mayGrant: isModerator()
       };
     });
   }
 
-  async goToMessage(messageId) {
-    const message = game.messages.get(messageId);
+  async goToMessage(requestId) {
+    const entry = this.entries.find((item) => item.id === requestId);
+    const messageId = entry?.messageId;
+    const message = messageId ? game.messages.get(messageId) : null;
     if (!message) {
-      await this.confirmMissingCleanup(messageId);
+      ui.notifications.warn(localize("Requests.Active.NoChatMessage"));
       return;
     }
 
@@ -135,19 +134,18 @@ export class ActiveRequestsController {
       ui.notifications.warn(localize("Requests.Active.MessageNotRendered"));
       return;
     }
-
     element.scrollIntoView({ behavior: "smooth", block: "center" });
     element.classList.add("dmicher-request-message-highlight");
     window.setTimeout(() => element.classList.remove("dmicher-request-message-highlight"), 1600);
   }
 
-  async resolve(messageId, action) {
-    const message = game.messages.get(messageId);
-    if (!message) {
-      await this.confirmMissingCleanup(messageId);
-      return;
-    }
-    await this.resolveRequest(message, action);
+  async resolve(requestId, action) {
+    await this.resolveRequest(requestId, action);
+  }
+
+  async submitEnvironmentRequest() {
+    if (typeof this.submitRequest !== "function") return false;
+    return this.submitRequest("stop");
   }
 
   async confirmClear() {
@@ -155,12 +153,10 @@ export class ActiveRequestsController {
       ui.notifications.warn(localize("Requests.Chat.Forbidden"));
       return;
     }
-
     if (!this.entries.length) {
       ui.notifications.warn(localize("Requests.Active.Empty"));
       return;
     }
-
     const confirmed = await confirmDialog({
       title: localize("Requests.Active.ClearTitle"),
       content: `<p>${escapeHTML(localize("Requests.Active.ClearConfirm"))}</p>`,
@@ -169,35 +165,14 @@ export class ActiveRequestsController {
       icon: "fa-solid fa-trash"
     });
     if (!confirmed) return;
-
-    for (const entry of Array.from(this.entries)) {
-      const message = game.messages.get(entry.messageId);
-      if (!message) {
-        this.remove(entry.messageId, { broadcast: true });
-        continue;
-      }
-      await this.resolveRequest(message, "cancel");
-    }
-  }
-
-  async confirmMissingCleanup(messageId) {
-    const confirmed = await confirmDialog({
-      title: localize("Requests.Active.MissingTitle"),
-      content: `<p>${escapeHTML(localize("Requests.Active.MissingContent"))}</p>`,
-      yes: localize("Requests.Active.MissingDelete"),
-      no: localize("Requests.Active.MissingKeep"),
-      icon: "fa-solid fa-trash"
-    });
-    if (confirmed) this.remove(messageId, { broadcast: true });
+    for (const entry of Array.from(this.entries)) await this.resolveRequest(entry.id, "cancel");
   }
 
   async activateChatSidebar() {
     ui.chat?.activate?.();
     ui.sidebar?.changeTab?.("chat", "primary");
     ui.sidebar?.activateTab?.("chat");
-    if ((typeof ui.chat?.render === "function") && !ui.chat.rendered) {
-      await ui.chat.render(true);
-    }
+    if ((typeof ui.chat?.render === "function") && !ui.chat.rendered) await ui.chat.render(true);
     await this.wait(50);
   }
 
@@ -206,8 +181,7 @@ export class ActiveRequestsController {
     for (let attempt = 0; attempt <= batchAttempts; attempt += 1) {
       const element = document.getElementById(getRequestAnchorId(messageId));
       if (element) return element;
-      if (attempt >= batchAttempts) break;
-      if (!await this.renderOlderChatBatch()) break;
+      if (attempt >= batchAttempts || !await this.renderOlderChatBatch()) break;
       await this.wait(50);
     }
     return null;
@@ -227,14 +201,12 @@ export class ActiveRequestsController {
   getChatRenderBatchAttempts(messageId) {
     const message = game.messages.get(messageId);
     if (!message) return 0;
-
     const messages = Array.from(game.messages ?? []);
     const targetTimestamp = Number(message.timestamp ?? message.createdAt ?? 0);
     const newerMessages = targetTimestamp
       ? messages.filter((item) => Number(item.timestamp ?? item.createdAt ?? 0) > targetTimestamp).length
       : messages.length;
-    const requiredAttempts = Math.ceil((newerMessages + 1) / CHAT_RENDER_BATCH_SIZE) + 2;
-    return Math.min(CHAT_RENDER_BATCH_MAX_ATTEMPTS, Math.max(6, requiredAttempts));
+    return Math.min(CHAT_RENDER_BATCH_MAX_ATTEMPTS, Math.max(6, Math.ceil((newerMessages + 1) / CHAT_RENDER_BATCH_SIZE) + 2));
   }
 
   wait(milliseconds) {

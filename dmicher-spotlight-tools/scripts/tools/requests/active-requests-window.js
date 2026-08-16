@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../../config.js";
+import { MODULE_ID, REQUEST_TYPES } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import { format, i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 
@@ -9,10 +9,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   static DEFAULT_OPTIONS = {
     id: "dmicher-spotlight-tools-active-requests",
     classes: getThemedWindowClasses("dmicher-active-requests"),
-    position: {
-      width: 720,
-      height: 420
-    },
+    position: { width: 820, height: 520 },
     window: {
       icon: "fa-solid fa-hand",
       title: "DMICHERSPOTLIGHTTOOLS.Requests.Active.WindowTitle",
@@ -21,15 +18,15 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   };
 
   static PARTS = {
-    main: {
-      template: `modules/${MODULE_ID}/templates/requests/active-requests.hbs`
-    }
+    main: { template: `modules/${MODULE_ID}/templates/requests/active-requests.hbs` }
   };
 
   constructor(activeRequests, options = {}) {
     super(options);
     this.activeRequests = activeRequests;
     this.tickHandle = null;
+    this.visibleTypes = new Set(Object.keys(REQUEST_TYPES));
+    this.duplicateMode = "none";
   }
 
   get title() {
@@ -42,16 +39,28 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const requests = this.activeRequests.getRows();
+    const requests = this.activeRequests.getRows().map((row) => ({
+      ...row,
+      hasChatMessage: Boolean(row.messageId)
+    }));
     const totalCount = requests.length;
     const urgentCount = this.activeRequests.getUrgentCount();
+    const typeFilters = Object.entries(REQUEST_TYPES).map(([type, request]) => ({
+      type,
+      label: localize(request.labelKey),
+      checked: this.visibleTypes.has(type)
+    }));
     return {
       ...context,
       requests,
+      typeFilters,
       totalCount,
       urgentCount,
       summaryText: format("Requests.Active.Summary", { total: totalCount, urgent: urgentCount }),
       hasRequests: requests.length > 0,
+      duplicateNone: this.duplicateMode === "none",
+      duplicateType: this.duplicateMode === "type",
+      duplicatePlayer: this.duplicateMode === "player",
       keys: {
         heading: i18nKey("Requests.Active.Heading"),
         empty: i18nKey("Requests.Active.Empty"),
@@ -61,6 +70,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
         columnControls: i18nKey("Requests.Active.Columns.Controls"),
         openMessage: i18nKey("Requests.Active.OpenMessage"),
         cancel: i18nKey("Requests.Active.Cancel"),
+        environment: i18nKey(REQUEST_TYPES.stop.labelKey),
         clear: i18nKey("Requests.Active.Clear")
       }
     };
@@ -71,6 +81,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
       ui.chat?.updateTimestamps?.();
       this.updateWindowTitle();
       this.activateListeners();
+      this.applyFilters();
       this.startTicking();
     });
   }
@@ -82,35 +93,70 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   }
 
   activateListeners() {
+    this.element.querySelector("[data-active-request-action='environment']")?.addEventListener("click", () => {
+      void this.activeRequests.submitEnvironmentRequest();
+    });
+
     this.element.querySelector("[data-active-request-action='clear']")?.addEventListener("click", () => {
       void this.activeRequests.confirmClear();
     });
 
-    for (const button of this.element.querySelectorAll("[data-active-request-action][data-message-id]")) {
+    for (const input of this.element.querySelectorAll("[data-active-request-filter='type']")) {
+      input.addEventListener("change", () => {
+        if (input.checked) this.visibleTypes.add(input.value);
+        else this.visibleTypes.delete(input.value);
+        this.applyFilters();
+      });
+    }
+    for (const input of this.element.querySelectorAll("[data-active-request-filter='duplicates']")) {
+      input.addEventListener("change", () => {
+        if (!input.checked) return;
+        this.duplicateMode = input.value;
+        this.applyFilters();
+      });
+    }
+
+    for (const button of this.element.querySelectorAll("[data-active-request-action][data-request-id]")) {
       button.addEventListener("click", (event) => {
         event.preventDefault();
-        const messageId = button.dataset.messageId;
+        const requestId = button.dataset.requestId;
         switch (button.dataset.activeRequestAction) {
           case "open":
-            void this.activeRequests.goToMessage(messageId);
+            void this.activeRequests.goToMessage(requestId);
             break;
           case "grant":
-            void this.activeRequests.resolve(messageId, "grant");
+            void this.activeRequests.resolve(requestId, "grant");
             break;
           case "cancel":
-            void this.activeRequests.resolve(messageId, "cancel");
+            void this.activeRequests.resolve(requestId, "cancel");
             break;
         }
       });
     }
   }
 
+  applyFilters() {
+    const seen = new Set();
+    let visibleCount = 0;
+    for (const row of this.element?.querySelectorAll?.("[data-active-request-row]") ?? []) {
+      const typeVisible = this.visibleTypes.has(row.dataset.urgency);
+      const duplicateKey = this.duplicateMode === "type"
+        ? `${row.dataset.authorId}:${row.dataset.urgency}`
+        : this.duplicateMode === "player"
+          ? row.dataset.authorId
+          : "";
+      const duplicate = duplicateKey && seen.has(duplicateKey);
+      if (typeVisible && duplicateKey && !duplicate) seen.add(duplicateKey);
+      row.hidden = !typeVisible || Boolean(duplicate);
+      if (!row.hidden) visibleCount += 1;
+    }
+    const counter = this.element?.querySelector?.("[data-visible-request-count]");
+    if (counter) counter.textContent = String(visibleCount);
+  }
+
   startTicking() {
     this.stopTicking();
-    this.tickHandle = window.setInterval(
-      () => this.onActiveRequestsChanged({ refresh: true }),
-      ACTIVE_REQUESTS_TICK_MS
-    );
+    this.tickHandle = window.setInterval(() => this.onActiveRequestsChanged({ refresh: true }), ACTIVE_REQUESTS_TICK_MS);
   }
 
   stopTicking() {

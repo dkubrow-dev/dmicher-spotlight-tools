@@ -8,6 +8,7 @@ import {
   isModerator,
   localize
 } from "../../utils.js";
+import { getRequestImage } from "./request-config.js";
 
 export function getGrantActionKey(type) {
   return normalizeRequestType(type) === "stop" ? "Requests.Chat.TakeFloor" : "Requests.Chat.GiveFloor";
@@ -17,14 +18,15 @@ export function getRequestAnchorId(messageId) {
   return `dmicher-request-message-${messageId}`;
 }
 
-export function buildRequestMessageContent(type, text, style) {
+export function buildRequestMessageContent(type, text, style, image = getRequestImage(type)) {
+  type = normalizeRequestType(type);
   const request = REQUEST_TYPES[type];
   const message = escapeHTML(String(text ?? "")).replace(/\r?\n/g, "<br>");
   return `
     <section class="dmicher-request-card dmicher-request-${type}">
       <h3 data-request-label>${escapeHTML(localize(request.labelKey))}</h3>
       <p class="dmicher-request-text" style="${escapeHTML(style)}">${message}</p>
-      <img class="dmicher-request-card-image" src="${request.image}" alt="${escapeHTML(localize(request.imageAltKey))}">
+      <img class="dmicher-request-card-image" src="${escapeHTML(image)}" alt="${escapeHTML(localize(request.imageAltKey))}">
       <div class="dmicher-request-actions" aria-label="${escapeHTML(localize("Requests.Chat.Actions"))}">
         <button type="button" data-request-action="cancel">
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -38,7 +40,25 @@ export function buildRequestMessageContent(type, text, style) {
     </section>`;
 }
 
-export function renderRequestChatMessage(message, html, { resolveRequest }) {
+export function buildWelcomeMessageContent(includeHelp) {
+  const help = includeHelp
+    ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))}</p>`
+    : "";
+  const support = `<p>${escapeHTML(localize("Requests.Welcome.FreeBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="thanks">${escapeHTML(localize("Requests.Welcome.SupportLink"))}</button>${escapeHTML(localize("Requests.Welcome.FreeAfter"))}</p>`;
+  return `
+    <section class="dmicher-technical-card dmicher-request-welcome">
+      <p>${escapeHTML(format("Requests.Welcome.MainBefore", { module: localize("Title") }))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="settings">${escapeHTML(localize("Requests.Welcome.MenuLink"))}</button>${escapeHTML(localize("Requests.Welcome.MainAfter"))}</p>
+      ${help}
+      ${support}
+    </section>`;
+}
+
+export function renderRequestChatMessage(message, html, {
+  resolveRequest,
+  openSettings,
+  openHelp,
+  openThankAuthor
+}) {
   const root = getRenderedElement(html);
   if (!root) return;
 
@@ -49,9 +69,37 @@ export function renderRequestChatMessage(message, html, { resolveRequest }) {
   }
 
   const resolutionData = message.getFlag(MODULE_ID, FLAGS.resolution);
-  if (!resolutionData || (typeof resolutionData !== "object")) return;
-  const technicalMessage = root.querySelector(".dmicher-request-technical");
-  if (technicalMessage) renderTechnicalMessageContent(technicalMessage, resolutionData);
+  if (resolutionData && typeof resolutionData === "object") {
+    const technicalMessage = root.querySelector(".dmicher-request-technical");
+    if (technicalMessage) renderTechnicalMessageContent(technicalMessage, resolutionData);
+  }
+
+  if (message.getFlag(MODULE_ID, FLAGS.requestWelcome)) {
+    const welcome = root.querySelector(".dmicher-request-welcome");
+    activateWelcomeAction(welcome, "settings", openSettings);
+    activateWelcomeAction(welcome, "help", openHelp);
+    activateWelcomeAction(welcome, "thanks", openThankAuthor);
+  }
+}
+
+function activateWelcomeAction(welcome, action, callback) {
+  let control = welcome?.querySelector(`[data-request-welcome-action="${action}"]`);
+  if (!control) return;
+  if (String(control.tagName ?? "").toLowerCase() === "a") {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = control.className;
+    button.classList.add("dmicher-inline-link");
+    button.dataset.requestWelcomeAction = action;
+    button.textContent = control.textContent;
+    control.replaceWith(button);
+    control = button;
+  }
+  control.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    callback?.();
+  });
 }
 
 export function buildTechnicalMessageLines(resolutionData) {
@@ -69,9 +117,8 @@ export function buildTechnicalMessageLines(resolutionData) {
 function getTechnicalMessageContent(resolutionData) {
   const requestData = resolutionData.requestData ?? {};
   const request = REQUEST_TYPES[normalizeRequestType(requestData.urgency)];
-  const author = requestData.tokenName
-    ? `${requestData.authorName} (${requestData.tokenName})`
-    : requestData.authorName;
+  const characterName = requestData.characterName ?? requestData.tokenName ?? "";
+  const author = characterName ? `${requestData.authorName} (${characterName})` : requestData.authorName;
   const submittedAt = Number(requestData.submittedAt ?? requestData.createdAt ?? (game.time.serverTime - Number(resolutionData.elapsed ?? 0)));
   const data = {
     author,
@@ -96,15 +143,12 @@ function renderTechnicalMessageContent(element, resolutionData) {
   const title = document.createElement("strong");
   title.className = "dmicher-request-technical-title";
   title.textContent = content.title;
-
   const details = document.createElement("small");
   details.className = "dmicher-request-technical-meta";
   details.textContent = content.details;
-
   const type = document.createElement("small");
   type.className = "dmicher-request-technical-meta";
   type.textContent = content.type;
-
   const nodes = [title, details];
   if (content.resolver) {
     const resolver = document.createElement("small");
@@ -124,25 +168,26 @@ function attachRequestAnchor(message, html) {
 }
 
 function activateRequestMessageActions(message, html, requestData, resolveRequest) {
-  const request = REQUEST_TYPES[normalizeRequestType(requestData.urgency)];
+  const type = normalizeRequestType(requestData.urgency);
+  const request = REQUEST_TYPES[type];
   const heading = html.querySelector("[data-request-label], .dmicher-request-card h3");
   const image = html.querySelector(".dmicher-request-card-image");
   const actions = html.querySelector(".dmicher-request-actions");
   if (!actions) return;
-
   if (heading) heading.textContent = localize(request.labelKey);
-  if (image) image.alt = localize(request.imageAltKey);
+  if (image) {
+    image.src = getRequestImage(type);
+    image.alt = localize(request.imageAltKey);
+  }
   actions.setAttribute("aria-label", localize("Requests.Chat.Actions"));
-
   const mayCancel = isModerator() || requestData.authorId === game.user.id;
   const mayGrant = isModerator();
   const cancelButton = actions.querySelector('[data-request-action="cancel"]');
   const grantButton = actions.querySelector('[data-request-action="grant"]');
   localizeActionButton(cancelButton, "Requests.Chat.Cancel", "cancel");
-  localizeActionButton(grantButton, getGrantActionKey(requestData.urgency), "grant");
+  localizeActionButton(grantButton, getGrantActionKey(type), "grant");
   if (cancelButton) cancelButton.hidden = !mayCancel;
   if (grantButton) grantButton.hidden = !mayGrant;
-
   if (mayCancel || mayGrant) actions.classList.add("is-available");
   actions.addEventListener("click", (event) => {
     const button = event.target.closest("[data-request-action]");
@@ -156,9 +201,7 @@ function localizeActionButton(button, key, action) {
   if (!button) return;
   let label = button.querySelector(`[data-request-action-label="${action}"]`);
   if (!label) {
-    for (const node of Array.from(button.childNodes)) {
-      if (node.nodeType === Node.TEXT_NODE) node.remove();
-    }
+    for (const node of Array.from(button.childNodes)) if (node.nodeType === Node.TEXT_NODE) node.remove();
     label = document.createElement("span");
     label.dataset.requestActionLabel = action;
     button.append(" ", label);
