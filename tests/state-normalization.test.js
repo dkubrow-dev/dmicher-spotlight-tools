@@ -53,9 +53,13 @@ test("obsolete timer messageId is dropped during state normalization", () => {
     startAt: 1_000,
     endsAt: 2_000,
     duration: 1_000,
+    sound: "custom",
+    volume: 4,
     messageId: "obsolete-chat-message"
   });
   assert.ok(timer);
+  assert.equal(timer.sound, "custom");
+  assert.equal(timer.volume, 1);
   assert.equal(Object.hasOwn(timer, "messageId"), false);
 
   const state = normalizeTimerState({ timers: { "timer-1": timer } });

@@ -22,6 +22,11 @@ import {
   playAudio,
   setGamePaused
 } from "../../utils.js";
+import {
+  getCustomTimerSound,
+  getCustomTimerSoundVolume,
+  getRequestConfiguration
+} from "../requests/request-config.js";
 import { BreakTimerApplication } from "./break-timer.js";
 import { TimerManagerApplication } from "./timer-manager.js";
 import { TimerWindowApplication } from "./timer-window.js";
@@ -32,6 +37,7 @@ import {
   TIMER_TICK_MS,
   TIMER_VISIBILITY,
   calculateRoundedDeadline,
+  clampTimerVolume,
   cloneTimerState,
   createEmptyTimerState,
   isTimerExpired,
@@ -42,7 +48,8 @@ import {
 } from "./timer-utils.js";
 
 export class TimerTool {
-  constructor() {
+  constructor({ volumeController = null } = {}) {
+    this.volumeController = volumeController;
     this.state = createEmptyTimerState();
     this.managerWindow = null;
     this.breakWindow = null;
@@ -86,6 +93,10 @@ export class TimerTool {
     this.tickHandle = window.setInterval(this.tick, TIMER_TICK_MS);
     for (const src of Object.values(TIMER_SOUND_SOURCES)) {
       void foundry.audio.AudioHelper.preloadSound(src);
+    }
+    for (const type of ["timer", "break"]) {
+      const src = getCustomTimerSound(type);
+      if (src) void foundry.audio.AudioHelper.preloadSound(src);
     }
     window.setTimeout(() => this.openExistingPublicTimers(), 250);
     this.tick();
@@ -137,6 +148,33 @@ export class TimerTool {
     return timer?.visibility === TIMER_VISIBILITY.public || isModerator(user);
   }
 
+  getSoundSource(sound, configuration = getRequestConfiguration()) {
+    if (Object.hasOwn(TIMER_SOUND_SOURCES, sound)) return TIMER_SOUND_SOURCES[sound];
+    if (sound === TIMER_SOUND.custom) return getCustomTimerSound("timer", configuration);
+    if (sound === TIMER_SOUND.breakCustom) return getCustomTimerSound("break", configuration);
+    return "";
+  }
+
+  getSoundBaseVolume(sound, configuration = getRequestConfiguration()) {
+    if (sound === TIMER_SOUND.custom) return getCustomTimerSoundVolume("timer", configuration);
+    if (sound === TIMER_SOUND.breakCustom) return getCustomTimerSoundVolume("break", configuration);
+    return 1;
+  }
+
+  async playTimerSound(sound, launchVolume = 1) {
+    const configuration = getRequestConfiguration();
+    const src = this.getSoundSource(sound, configuration);
+    if (!src) return null;
+    const baseVolume = this.getSoundBaseVolume(sound, configuration);
+    if (this.volumeController?.playTimer) {
+      return this.volumeController.playTimer(src, baseVolume, launchVolume);
+    }
+    return playAudio(src, {
+      broadcast: false,
+      volume: clampTimerVolume(baseVolume) * clampTimerVolume(launchVolume)
+    });
+  }
+
   openExistingPublicTimers() {
     for (const timer of listTimers(this.state)) {
       if (timer.visibility !== TIMER_VISIBILITY.public) continue;
@@ -152,7 +190,8 @@ export class TimerTool {
     const name = String(input.name ?? "").trim().slice(0, 120) || format("Timers.DefaultName", { number: this.getTimerCount() + 1 });
     const visibility = input.visibility === TIMER_VISIBILITY.private ? TIMER_VISIBILITY.private : TIMER_VISIBILITY.public;
     const style = input.style === TIMER_DISPLAY_STYLE.compact ? TIMER_DISPLAY_STYLE.compact : TIMER_DISPLAY_STYLE.prominent;
-    const sound = Object.hasOwn(TIMER_SOUND_SOURCES, input.sound) ? input.sound : TIMER_SOUND.none;
+    const sound = this.getSoundSource(input.sound) ? input.sound : TIMER_SOUND.none;
+    const volume = clampTimerVolume(input.volume);
     const roundedDurationMinutes = Number(input.roundedDurationMinutes);
     const duration = mode === TIMER_MODE.duration
       ? parseDurationInput(input.time)
@@ -181,6 +220,7 @@ export class TimerTool {
       visibility,
       style,
       sound,
+      volume,
       createdBy: game.user.id,
       createdByName: game.user.name,
       createdAt: now
@@ -227,7 +267,8 @@ export class TimerTool {
         roundedDurationMinutes: minutes,
         visibility: TIMER_VISIBILITY.public,
         style: TIMER_DISPLAY_STYLE.prominent,
-        sound: TIMER_SOUND.signal1,
+        sound: this.getSoundSource(TIMER_SOUND.breakCustom) ? TIMER_SOUND.breakCustom : TIMER_SOUND.signal1,
+        volume: 1,
         onDeadlineCalculated
       });
     } catch (error) {
@@ -556,11 +597,8 @@ export class TimerTool {
   }
 
   async playExpiredSound(timer) {
-    const src = TIMER_SOUND_SOURCES[timer?.sound];
-    if (!src) return;
-
     try {
-      await playAudio(src);
+      await this.playTimerSound(timer?.sound, timer?.volume);
     } catch (error) {
       console.warn(`${MODULE_ID} | Unable to play timer expiration sound`, error);
     }

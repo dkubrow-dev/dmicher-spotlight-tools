@@ -1,0 +1,58 @@
+<section class="dmicher-request-feed-shell{{#if legacy}} {{cssClass}}{{/if}}"{{#if legacy}} id="{{cssId}}" data-tab="{{tabName}}"{{/if}}>
+  <header><h2>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Heading"}}</h2></header>
+  <ol class="dmicher-request-feed-list">
+    {{#each requests}}
+    <li data-request-id="{{id}}">
+      <div class="dmicher-feed-images">
+        <img src="{{portrait}}" alt="{{authorName}}">
+        <img src="{{image}}" alt="{{typeLabel}}">
+      </div>
+      <div class="dmicher-feed-person">
+        <strong>{{authorName}}</strong>
+        {{#if characterName}}<small>{{characterName}}</small>{{/if}}
+        {{#if ../showTime}}<time>{{submittedText}}</time>{{/if}}
+      </div>
+      <div class="dmicher-feed-controls">
+        {{#if ../moderator}}
+        <button type="button" data-feed-request-action="grant" data-request-id="{{id}}" title="{{grantLabel}}" aria-label="{{grantLabel}}">
+          <i class="fa-solid fa-comment" aria-hidden="true"></i>
+        </button>
+        <button type="button" data-feed-request-action="cancel" data-request-id="{{id}}" title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Active.Cancel'}}" aria-label="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Active.Cancel'}}">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </button>
+        {{else}}
+          {{#if mayCancel}}
+          <button type="button" data-feed-request-action="cancel" data-request-id="{{id}}" title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Feed.CancelOwn'}}" aria-label="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Feed.CancelOwn'}}">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
+          {{/if}}
+        {{/if}}
+      </div>
+    </li>
+    {{else}}
+    <li class="notes dmicher-feed-empty">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Empty"}}</li>
+    {{/each}}
+  </ol>
+
+  <footer class="dmicher-request-feed-footer">
+    <div class="dmicher-feed-macros">
+      {{#each macros}}
+      <span class="dmicher-feed-macro">
+        <img src="{{image}}" alt="{{label}}" title="{{label}}" data-feed-macro data-urgency="{{urgency}}" draggable="true">
+        {{#if timeoutActive}}
+        <span class="dmicher-request-timeout-countdown" data-request-timeout-countdown
+          data-request-timeout-expires-at="{{timeoutExpiresAt}}" role="timer"
+          title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutNotice'}}">{{timeoutRemainingText}}</span>
+        {{/if}}
+      </span>
+      {{/each}}
+    </div>
+    <div class="dmicher-feed-footer-actions">
+      <button type="button" data-feed-action="settings">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Settings"}}</button>
+      {{#if moderator}}
+      <button type="button" data-feed-action="help">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Help"}}</button>
+      <button type="button" data-feed-action="management">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Management"}}</button>
+      {{/if}}
+    </div>
+  </footer>
+</section>

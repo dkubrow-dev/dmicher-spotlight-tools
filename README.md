@@ -57,27 +57,21 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 ### Заявки пользователей
 
-Пригласите игроков зайти в настройки игры: правая панель, меню "Настройки", кнопка "Настройка игры", окно "Настройки", раздел "dmicher 🛠️ Spotlight Tools | Приспособы фокуса", кнопка "Открыть настройки заявок".
+Окно «Настройки заявок» разделено на вкладки «Общие» и «Продвинутые». На общей вкладке игроки видят обычную и срочную заявки, а мастер и ассистенты — также заявку «Окружение». Изображение можно нажать для подачи заявки или перетащить на панель быстрого доступа; текст и безопасный CSS-стиль настраиваются отдельно каждым пользователем.
 
-В окне игроки увидят два, а мастер и ассистенты - три типа заявок:
-1. Обычная заявка: предназначена для регистрации заявок обычного приоритета, когда игрок хочет получить фокус внимания для своего персонажа и готов подождать в очереди.
-2. Срочная заявка: предназначена для регистрации срочных заявок, когда игрок хочет перебить других игроков или мастера либо вмешаться в чужую сцену, не дожидаясь очереди.
-3. (только мастер или ассистент) Окружение: предназначено для отсечения всех предыдущих заявок игроков линией, после которой слово возьмёт мастер, чтобы изменить окружение, дать реакцию мира или поменять сцену.
+В правой панели, во вкладке Playlists, модуль добавляет в «User Volume Controls» ползунок «Заявки». Итоговая громкость складывается из базовой громкости, заданной мастером для типа заявки, и личной громкости пользователя.
 
-Расскажите игрокам, что они могут:
-- настроить постоянный текст, который будет отображаться в их заявках, когда они будут подавать их;
-- настроить CSS стиль текста, если игроки понимают, что это такое;
-- нажать на изображения в настройках, чтобы протестировать заявку;
-- перетащить изображение из настроек в хотбар, чтобы там появился макрос для подачи заявки.
+Мастеру на вкладке «Продвинутые» доступны:
 
-Когда игрок подаёт заявку кликом на изображение в настройках или активацией макроса из хотбара:
-- появляется сообщение в чате от имени игрока с заявкой;
-- игрок может отменить эту заявку, нажав кнопку "Отменить" в сообщении;
-- мастер может отменить заявку или предоставить слово игроку, нажав кнопку "Дать слово".
+- отключение вывода заявок в чат без отключения самой очереди;
+- ограничения количества обычных и срочных заявок, полный запрет отдельных типов и блокировка заявок игроков при активном «Окружении»;
+- боковая вкладка «Заявки» с очередью, персонажами, временем, кнопками управления и перетаскиваемыми макросами;
+- собственные изображения и звуки по внешним RAW-ссылкам с проверкой загрузки и CORS перед сохранением;
+- базовая громкость каждого типа, общий выключатель звука и приветственное сообщение.
 
-Мастер может перейти в левое боковое меню и найти там категорию "Приспособы фокуса", затем нажать кнопку "Заявки".
-В окне "Активные заявки" будут отображены все необработанные к настоящему моменту заявки с указанием их типа, последовательности получения и автора.
-Из этого окна можно управлять заявками так же, как из чата.
+Окно «Активные заявки» работает независимо от чата. Оно показывает аватар или токен, тип заявки, игрока и выбранного персонажа; позволяет фильтровать типы, скрывать повторы по типу или игроку, давать слово, отменять заявки и очищать очередь.
+
+Интерактивная справка открывается из настроек модуля, верхнего меню «Приспособы фокуса» и боковой ленты заявок.
 
 ### Личные статусы игроков на игре
 
@@ -237,27 +231,21 @@ The module is localized in Russian and English.
 
 ### Player requests
 
-Invite players to open the game settings: right sidebar, "Settings" tab, "Game Settings" button, "Game Settings" window, "dmicher 🛠️ Spotlight Tools | Приспособы фокуса" section, "Open request settings" button.
+The Request Settings window has General and Advanced tabs. Players see Regular and Urgent requests on General; Game Masters and Assistants also see Environment. Click an image to submit a request or drag it to the hotbar. Each user configures their own text and safe CSS style.
 
-In the window, players will see two request types, while the Game Master and assistants will see three:
-1. Regular request: used to register normal-priority requests, when a player wants to get spotlight for their character and is ready to wait in the queue.
-2. Urgent request: used to register urgent requests, when a player wants to interrupt other players or the Game Master, or enter someone else's scene without waiting for the queue.
-3. (Game Master or assistant only) Environment: used to draw a line after all previous player requests, after which the Game Master takes the floor to change the environment, give the world's reaction, or change the scene.
+The module adds a Reports slider to User Volume Controls in the Playlists sidebar tab. Final playback volume combines the per-type base volume configured by the Game Master with the user's own Reports volume.
 
-Tell players that they can:
-- configure permanent text that will be shown in their requests when they submit them;
-- configure the CSS style of the text as well, if they understand what it is;
-- click the images in the settings to test a request;
-- drag an image from the settings to the hotbar to create a request macro there.
+The Advanced tab lets the Game Master:
 
-When a player submits a request by clicking an image in the settings or activating a macro from the hotbar:
-- a chat message with the request appears on behalf of the player;
-- the player can cancel this request by clicking "Cancel" in the message;
-- the Game Master can cancel the request or give the floor to the player by clicking "Give the floor".
+- disable request chat cards without disabling the queue;
+- limit Regular and Urgent requests, forbid a type, and block player requests while Environment is active;
+- enable the Requests sidebar feed with characters, time, controls, and draggable macros;
+- use custom images and sounds from external RAW URLs, validated for loading and CORS before saving;
+- configure per-type base volume, disable all request sounds, and control the welcome message.
 
-The Game Master can go to the left canvas controls, find the "Spotlight Tools" category, and then click "Requests".
-The "Active Requests" window will show all requests that have not yet been handled, with their type, submission order, and author.
-Requests can be managed from this window in the same way as from chat.
+The Active Requests window works independently from chat. It shows an avatar or token, request type, player, and selected character; filters types; hides duplicates by type or player; grants the floor; cancels requests; and clears the queue.
+
+Interactive help is available from module settings, the Spotlight Tools canvas controls, and the request feed.
 
 ### Player game statuses
 

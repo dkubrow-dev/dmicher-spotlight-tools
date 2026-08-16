@@ -7,10 +7,37 @@ import {
   getChatMessageRenderHook,
   getFoundryGeneration,
   getUserSettingScope,
+  isFoundryAudioMuted,
   openSingletonApplication,
+  playAudio,
   runAfterApplicationLifecycle,
   setGamePaused
 } from "../dmicher-spotlight-tools/scripts/utils.js";
+
+test("Foundry global mute blocks module audio in v13 and v14 and stays neutral in v12", async () => {
+  let calls = 0;
+  globalThis.foundry = {
+    audio: {
+      AudioHelper: {
+        play: async () => {
+          calls += 1;
+          return "sound";
+        }
+      }
+    }
+  };
+
+  globalThis.game = { release: { generation: 12 }, audio: {} };
+  assert.equal(isFoundryAudioMuted(), false);
+  assert.equal(await playAudio("v12.ogg"), "sound");
+
+  for (const generation of [13, 14]) {
+    globalThis.game = { release: { generation }, audio: { globalMute: true } };
+    assert.equal(isFoundryAudioMuted(), true);
+    assert.equal(playAudio("muted.ogg"), null);
+  }
+  assert.equal(calls, 1);
+});
 
 function installGame(generation, { rollMode = "selfroll" } = {}) {
   const calls = [];

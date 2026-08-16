@@ -15,9 +15,11 @@ export const TIMER_MODE = Object.freeze({
 
 export const TIMER_SOUND = Object.freeze({
   none: "none",
+  custom: "custom",
   signal1: "signal1",
   signal2: "signal2",
-  signal3: "signal3"
+  signal3: "signal3",
+  breakCustom: "breakCustom"
 });
 
 export const TIMER_TICK_MS = 1000;
@@ -72,6 +74,7 @@ export function normalizeTimer(timer) {
     visibility,
     style,
     sound,
+    volume: clampTimerVolume(timer.volume),
     createdBy: String(timer.createdBy ?? "").trim(),
     createdByName: String(timer.createdByName ?? "").trim(),
     createdAt: Number(timer.createdAt) || startAt
@@ -94,6 +97,11 @@ export function isTimerExpired(timer, now = Date.now()) {
 
 export function getRemainingMilliseconds(timer, now = Date.now()) {
   return Math.max(0, Number(timer?.endsAt ?? 0) - Number(now));
+}
+
+export function clampTimerVolume(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.min(1, Math.max(0, number)) : 1;
 }
 
 export function parseDurationInput(value) {

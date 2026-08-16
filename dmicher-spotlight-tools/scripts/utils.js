@@ -242,7 +242,12 @@ export function preloadImage(src) {
   });
 }
 
+export function isFoundryAudioMuted() {
+  return globalThis.game?.audio?.globalMute === true;
+}
+
 export function playAudio(src, { broadcast = false, volume = 1 } = {}) {
+  if (isFoundryAudioMuted()) return null;
   return foundry.audio.AudioHelper.play({
     src,
     volume,

@@ -1,4 +1,4 @@
-import { MODULE_ID, TIMER_SOUND_SOURCES } from "../../config.js";
+import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import {
   TIMER_MODE,
@@ -11,7 +11,6 @@ import {
   i18nKey,
   isModerator,
   localize,
-  playAudio,
   runAfterApplicationLifecycle
 } from "../../utils.js";
 
@@ -67,12 +66,17 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
         visibilityPublic: localize("Timers.Visibility.Public"),
         visibilityPrivate: localize("Timers.Visibility.Private"),
         styleProminent: localize("Timers.Style.Prominent"),
-        styleCompact: localize("Timers.Style.Compact"),
-        soundNone: localize("Timers.Sound.None"),
-        soundSignal1: localize("Timers.Sound.Signal1"),
-        soundSignal2: localize("Timers.Sound.Signal2"),
-        soundSignal3: localize("Timers.Sound.Signal3")
+        styleCompact: localize("Timers.Style.Compact")
       },
+      soundChoices: [
+        { value: TIMER_SOUND.none, label: localize("Timers.Sound.None") },
+        ...(this.timerTool.getSoundSource(TIMER_SOUND.custom)
+          ? [{ value: TIMER_SOUND.custom, label: localize("Timers.Sound.Custom") }]
+          : []),
+        { value: TIMER_SOUND.signal1, label: localize("Timers.Sound.Signal1") },
+        { value: TIMER_SOUND.signal2, label: localize("Timers.Sound.Signal2") },
+        { value: TIMER_SOUND.signal3, label: localize("Timers.Sound.Signal3") }
+      ].map((choice) => ({ ...choice, selected: choice.value === TIMER_SOUND.none ? "selected" : "" })),
       keys: {
         createTitle: i18nKey("Timers.Manager.CreateTitle"),
         title: i18nKey("Timers.Manager.Name"),
@@ -81,6 +85,7 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
         visibility: i18nKey("Timers.Manager.Visibility"),
         style: i18nKey("Timers.Manager.Style"),
         sound: i18nKey("Timers.Manager.Sound"),
+        volume: i18nKey("Timers.Manager.Volume"),
         reset: i18nKey("Timers.Manager.Reset"),
         deleteExpired: i18nKey("Timers.Manager.DeleteExpired"),
         previewSound: i18nKey("Timers.Manager.PreviewSound"),
@@ -132,6 +137,11 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
       void this.timerTool.confirmDeleteExpiredTimers();
     });
     form.querySelector("[data-timer-action='preview-sound']")?.addEventListener("click", () => void this.previewSound(form));
+    const volumeSlider = form.elements.namedItem("volume");
+    const volumeOutput = form.querySelector("[data-timer-volume-output]");
+    volumeSlider?.addEventListener("input", () => {
+      if (volumeOutput) volumeOutput.textContent = `${volumeSlider.value}%`;
+    });
 
     const timeInput = form.querySelector("[data-timer-time-input]");
     for (const radio of form.querySelectorAll("input[name='mode']")) {
@@ -159,14 +169,14 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
 
   async previewSound(form) {
     const sound = form.elements.namedItem("sound")?.value ?? TIMER_SOUND.none;
-    const src = TIMER_SOUND_SOURCES[sound];
-    if (!src) {
+    if (!this.timerTool.getSoundSource(sound)) {
       ui.notifications.warn(localize("Timers.Manager.NoSoundSelected"));
       return;
     }
 
     try {
-      await playAudio(src);
+      const volume = Number(form.elements.namedItem("volume")?.value ?? 100) / 100;
+      await this.timerTool.playTimerSound(sound, volume);
     } catch (error) {
       console.warn(`${MODULE_ID} | Unable to preview timer sound`, error);
       ui.notifications.error(localize("Timers.Errors.SoundPreviewFailed"));
@@ -192,7 +202,8 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
         time: elements.namedItem("time")?.value,
         visibility: elements.namedItem("visibility")?.value,
         style: elements.namedItem("style")?.value,
-        sound: elements.namedItem("sound")?.value ?? TIMER_SOUND.none
+        sound: elements.namedItem("sound")?.value ?? TIMER_SOUND.none,
+        volume: Number(elements.namedItem("volume")?.value ?? 100) / 100
       });
       this.defaultDeadlineBase = Date.now();
       await this.render({ parts: ["main"] });
