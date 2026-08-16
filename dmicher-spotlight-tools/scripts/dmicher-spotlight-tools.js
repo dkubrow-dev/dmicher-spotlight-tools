@@ -11,6 +11,7 @@ import { openRequestHelp, registerRequestHelp } from "./tools/requests/request-h
 import { RequestHotbar } from "./tools/requests/request-hotbar.js";
 import {
   migrateLegacyClientRequestSettings,
+  openRequestMasterSettings,
   openRequestSettings,
   openThankAuthor,
   registerRequestSettings,
@@ -67,7 +68,6 @@ Hooks.once("init", () => {
       submitRequest: requestTool.submitRequest,
       onRequestDragStart: requestHotbar.onRequestDragStart,
       openSettings: () => openRequestSettings(),
-      openHelp: () => openRequestHelp(),
       openManagement: () => requestTool.openActiveRequestsWindow()
     }
   });
@@ -83,6 +83,7 @@ Hooks.once("init", () => {
 
   game.modules.get(MODULE_ID).api = {
     openRequestSettings,
+    openRequestMasterSettings,
     openRequestHelp,
     openHelp: openRequestHelp,
     openThankAuthor,

@@ -50,7 +50,9 @@
     <div class="dmicher-feed-footer-actions">
       <button type="button" data-feed-action="settings">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Settings"}}</button>
       {{#if moderator}}
-      <button type="button" data-feed-action="help">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Help"}}</button>
+      {{#if showResetTimeouts}}
+      <button type="button" data-feed-action="reset-timeouts">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.ResetTimers"}}</button>
+      {{/if}}
       <button type="button" data-feed-action="management">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Management"}}</button>
       {{/if}}
     </div>

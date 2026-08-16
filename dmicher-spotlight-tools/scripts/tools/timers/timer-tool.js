@@ -32,6 +32,7 @@ import { TimerManagerApplication } from "./timer-manager.js";
 import { TimerWindowApplication } from "./timer-window.js";
 import {
   TIMER_DISPLAY_STYLE,
+  TIMER_KIND,
   TIMER_MODE,
   TIMER_SOUND,
   TIMER_TICK_MS,
@@ -192,12 +193,15 @@ export class TimerTool {
     const style = input.style === TIMER_DISPLAY_STYLE.compact ? TIMER_DISPLAY_STYLE.compact : TIMER_DISPLAY_STYLE.prominent;
     const sound = this.getSoundSource(input.sound) ? input.sound : TIMER_SOUND.none;
     const volume = clampTimerVolume(input.volume);
+    const explicitDuration = Number(input.durationMilliseconds);
     const roundedDurationMinutes = Number(input.roundedDurationMinutes);
     const duration = mode === TIMER_MODE.duration
       ? parseDurationInput(input.time)
       : null;
     let endsAt;
-    if (Number.isFinite(roundedDurationMinutes) && roundedDurationMinutes > 0) {
+    if (Number.isFinite(explicitDuration) && explicitDuration > 0) {
+      endsAt = now + explicitDuration;
+    } else if (Number.isFinite(roundedDurationMinutes) && roundedDurationMinutes > 0) {
       endsAt = calculateRoundedDeadline(roundedDurationMinutes, now);
     } else if (mode === TIMER_MODE.duration) {
       endsAt = now + Number(duration);
@@ -214,6 +218,7 @@ export class TimerTool {
       id: foundry.utils.randomID(),
       name,
       mode,
+      kind: input.kind === TIMER_KIND.break ? TIMER_KIND.break : TIMER_KIND.standard,
       startAt: now,
       endsAt,
       duration: totalDuration,
@@ -257,20 +262,45 @@ export class TimerTool {
   }
 
   async startBreakTimer(minutes, { onDeadlineCalculated } = {}) {
+    return this.startPausedTimer({
+      name: localize("Timers.Break.TimerName"),
+      mode: TIMER_MODE.deadline,
+      kind: TIMER_KIND.break,
+      roundedDurationMinutes: minutes,
+      visibility: TIMER_VISIBILITY.public,
+      style: TIMER_DISPLAY_STYLE.prominent,
+      sound: this.getSoundSource(TIMER_SOUND.breakCustom) ? TIMER_SOUND.breakCustom : TIMER_SOUND.signal1,
+      volume: 1,
+      onDeadlineCalculated
+    });
+  }
+
+  async repeatTimer(timerId) {
+    if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
+    const timer = this.getTimer(timerId);
+    if (!timer) throw new Error(localize("Timers.Errors.NotFound"));
+
+    const input = {
+      name: timer.name,
+      mode: timer.mode,
+      kind: timer.kind,
+      durationMilliseconds: timer.duration,
+      visibility: timer.visibility,
+      style: timer.style,
+      sound: timer.sound,
+      volume: timer.volume
+    };
+    return timer.kind === TIMER_KIND.break
+      ? this.startPausedTimer(input)
+      : this.startTimer(input);
+  }
+
+  async startPausedTimer(input) {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
     const wasPaused = Boolean(game.paused);
     try {
       await setGamePaused(true);
-      return await this.startTimer({
-        name: localize("Timers.Break.TimerName"),
-        mode: TIMER_MODE.deadline,
-        roundedDurationMinutes: minutes,
-        visibility: TIMER_VISIBILITY.public,
-        style: TIMER_DISPLAY_STYLE.prominent,
-        sound: this.getSoundSource(TIMER_SOUND.breakCustom) ? TIMER_SOUND.breakCustom : TIMER_SOUND.signal1,
-        volume: 1,
-        onDeadlineCalculated
-      });
+      return await this.startTimer(input);
     } catch (error) {
       if (!wasPaused) {
         try {

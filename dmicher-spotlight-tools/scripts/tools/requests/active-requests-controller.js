@@ -2,12 +2,17 @@ import { DEFAULT_USER_PORTRAIT, MODULE_ID, REQUEST_TYPES, normalizeRequestType }
 import {
   confirmDialog,
   escapeHTML,
-  format,
   isModerator,
   localize,
   openSingletonApplication
 } from "../../utils.js";
-import { getRequestImage, normalizeActiveRequestEntry } from "./request-config.js";
+import {
+  compareActiveRequestEntries,
+  getRequestConfiguration,
+  getRequestImage,
+  hasConfiguredRequestTimeouts,
+  normalizeActiveRequestEntry
+} from "./request-config.js";
 import { ActiveRequestsApplication } from "./active-requests-window.js";
 import { getGrantActionKey, getRequestAnchorId } from "./request-message.js";
 
@@ -15,12 +20,13 @@ const CHAT_RENDER_BATCH_SIZE = 50;
 const CHAT_RENDER_BATCH_MAX_ATTEMPTS = 60;
 
 export class ActiveRequestsController {
-  constructor({ resolveRequest, submitRequest }) {
+  constructor({ resolveRequest, submitRequest, resetTimeouts }) {
     this.entries = [];
     this.window = null;
     this.feed = null;
     this.resolveRequest = resolveRequest;
     this.submitRequest = submitRequest;
+    this.resetTimeouts = resetTimeouts;
   }
 
   attachFeed(feed) {
@@ -40,49 +46,14 @@ export class ActiveRequestsController {
     if (this.window === app) this.window = null;
   }
 
-  setEntries(entries, { notify = true } = {}) {
-    this.entries = (entries ?? []).map(normalizeActiveRequestEntry).filter(Boolean);
-    this.sort();
-    if (notify) this.notifyChanged();
-  }
-
-  rebuild(_messages = game.messages, { notify = true } = {}) {
-    if (notify) this.notifyChanged();
-  }
-
-  refresh() {
-    this.sort();
-  }
-
-  register(message, requestData, { notify = true } = {}) {
-    const entry = normalizeActiveRequestEntry({
-      ...requestData,
-      id: requestData.id ?? message?.id,
-      messageId: message?.id ?? requestData.messageId
-    });
-    if (!entry) return;
-    const index = this.entries.findIndex((item) => item.id === entry.id);
-    if (index >= 0) this.entries[index] = entry;
-    else this.entries.push(entry);
-    this.sort();
-    if (notify) this.notifyChanged();
-  }
-
-  sort() {
-    this.entries.sort((left, right) => (
-      (Number(left.sequence) - Number(right.sequence))
-      || (Number(left.submittedAt) - Number(right.submittedAt))
-      || left.id.localeCompare(right.id)
-    ));
-  }
-
-  remove(requestId) {
-    const initialLength = this.entries.length;
-    this.entries = this.entries.filter((entry) => entry.id !== requestId && entry.messageId !== requestId);
-    if (initialLength === this.entries.length) return false;
+  setEntries(entries) {
+    this.entries = (entries ?? [])
+      .map(normalizeActiveRequestEntry)
+      .filter(Boolean)
+      .sort(compareActiveRequestEntries);
     this.notifyChanged();
-    return true;
   }
+
 
   notifyChanged() {
     this.window?.onActiveRequestsChanged();
@@ -93,12 +64,8 @@ export class ActiveRequestsController {
     return this.entries.length;
   }
 
-  getUrgentCount() {
-    return this.entries.filter((entry) => normalizeRequestType(entry.urgency) === "urgent").length;
-  }
 
   getRows({ showTime = true } = {}) {
-    this.sort();
     return this.entries.map((entry) => {
       const request = REQUEST_TYPES[normalizeRequestType(entry.urgency)];
       const submittedAt = Number(entry.submittedAt);
@@ -146,6 +113,30 @@ export class ActiveRequestsController {
   async submitEnvironmentRequest() {
     if (typeof this.submitRequest !== "function") return false;
     return this.submitRequest("stop");
+  }
+
+  hasConfiguredTimeouts() {
+    return hasConfiguredRequestTimeouts(getRequestConfiguration());
+  }
+
+  async confirmResetTimeouts() {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Requests.Chat.Forbidden"));
+      return false;
+    }
+    if (!this.hasConfiguredTimeouts()) {
+      ui.notifications.warn(localize("Requests.Limits.ResetUnavailable"));
+      return false;
+    }
+    const confirmed = await confirmDialog({
+      title: localize("Requests.Limits.ResetTitle"),
+      content: `<p>${escapeHTML(localize("Requests.Limits.ResetConfirm"))}</p>`,
+      yes: localize("Requests.Limits.ResetYes"),
+      no: localize("Requests.Active.ClearNo"),
+      icon: "fa-solid fa-rotate-left"
+    });
+    if (!confirmed || typeof this.resetTimeouts !== "function") return false;
+    return this.resetTimeouts();
   }
 
   async confirmClear() {

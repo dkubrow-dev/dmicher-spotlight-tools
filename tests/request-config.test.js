@@ -3,28 +3,35 @@ import test from "node:test";
 
 import { REQUEST_LIMIT_MODES, REQUEST_TIMEOUT_MODES } from "../dmicher-spotlight-tools/scripts/config.js";
 import {
+  createDefaultActiveRequestState,
   createDefaultRequestConfiguration,
   DEFAULT_REQUEST_TIMEOUT_MS,
+  DEFAULT_URGENT_REQUEST_TIMEOUT_MS,
   getRequestBaseVolume,
   getRequestLimitViolation,
   getRequestTimeoutStatus,
+  hasConfiguredRequestTimeouts,
   normalizeActiveRequestState,
   normalizeRequestConfiguration,
   recordRequestTimeoutEvent
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-config.js";
 
-test("request configuration defaults keep every feature available", () => {
+test("fresh-world request configuration matches the 1.2.0 policy", () => {
   const configuration = createDefaultRequestConfiguration();
+  const activeState = createDefaultActiveRequestState();
+  assert.equal(activeState.cooldownsResetAt, 0);
   assert.equal(configuration.chatEnabled, true);
   assert.equal(configuration.soundsEnabled, true);
   assert.equal(configuration.feed.enabled, true);
-  assert.equal(configuration.feed.showTime, false);
+  assert.equal(configuration.feed.showTime, true);
   assert.equal(configuration.showWelcome, true);
-  assert.equal(configuration.blockWhenEnvironment, false);
+  assert.equal(configuration.blockWhenEnvironment, true);
   assert.equal(configuration.limits.common.mode, REQUEST_LIMIT_MODES.none);
+  assert.equal(configuration.limits.urgent.mode, REQUEST_LIMIT_MODES.count);
   assert.equal(configuration.limits.urgent.count, 1);
   assert.equal(configuration.limits.common.timeoutMode, REQUEST_TIMEOUT_MODES.none);
-  assert.equal(configuration.limits.urgent.timeoutDuration, DEFAULT_REQUEST_TIMEOUT_MS);
+  assert.equal(configuration.limits.urgent.timeoutMode, REQUEST_TIMEOUT_MODES.grant);
+  assert.equal(configuration.limits.urgent.timeoutDuration, DEFAULT_URGENT_REQUEST_TIMEOUT_MS);
   for (const type of ["common", "urgent", "stop"]) {
     assert.equal(configuration.images[type].custom, false);
     assert.equal(configuration.sounds[type].custom, false);
@@ -72,13 +79,20 @@ test("request configuration clamps volumes and counts", () => {
     timeoutDuration: 90000
   });
   assert.deepEqual(configuration.limits.urgent, {
-    mode: "none",
+    mode: "count",
     count: 1,
-    timeoutMode: "none",
-    timeoutDuration: DEFAULT_REQUEST_TIMEOUT_MS
+    timeoutMode: "grant",
+    timeoutDuration: DEFAULT_URGENT_REQUEST_TIMEOUT_MS
   });
   configuration.soundsEnabled = false;
   assert.equal(getRequestBaseVolume("common", configuration), 0);
+
+  const explicitOptOut = normalizeRequestConfiguration({
+    blockWhenEnvironment: false,
+    feed: { showTime: false }
+  });
+  assert.equal(explicitOptOut.blockWhenEnvironment, false);
+  assert.equal(explicitOptOut.feed.showTime, false);
 });
 
 test("anti-spam detects count, environment, and forbidden violations", () => {
@@ -87,6 +101,7 @@ test("anti-spam detects count, environment, and forbidden violations", () => {
     { id: "environment", authorId: "gm", urgency: "stop" }
   ];
   let configuration = normalizeRequestConfiguration({
+    blockWhenEnvironment: false,
     limits: { common: { mode: "count", count: 1 } }
   });
   assert.equal(getRequestLimitViolation("common", "player", entries, configuration), "count");
@@ -102,6 +117,15 @@ test("anti-spam detects count, environment, and forbidden violations", () => {
 
   configuration.blockWhenEnvironment = false;
   assert.equal(getRequestLimitViolation("urgent", "other", entries, configuration), "forbidden");
+});
+
+test("configured request timeouts are detected only for supported active modes", () => {
+  assert.equal(hasConfiguredRequestTimeouts({ limits: {} }), false);
+  assert.equal(hasConfiguredRequestTimeouts(createDefaultRequestConfiguration()), true);
+  const configuration = normalizeRequestConfiguration({
+    limits: { urgent: { timeoutMode: "grant", timeoutDuration: 1000 } }
+  });
+  assert.equal(hasConfiguredRequestTimeouts(configuration), true);
 });
 
 test("request timeouts distinguish submission, grant, cancellation, and expiry", () => {
@@ -128,6 +152,27 @@ test("request timeouts distinguish submission, grant, cancellation, and expiry",
   assert.equal(timeout.active, true);
   assert.equal(timeout.startedAt, now + 2000);
   assert.equal(timeout.remaining, 299000);
+});
+
+test("a timeout reset marker prevents active requests from restoring cleared history", () => {
+  const state = normalizeActiveRequestState({
+    initialized: true,
+    revision: 4,
+    cooldownsResetAt: 1000,
+    entries: [
+      { id: "old", authorId: "old-player", urgency: "common", sequence: 0, submittedAt: 900 },
+      { id: "new", authorId: "new-player", urgency: "urgent", sequence: 1, submittedAt: 1100 }
+    ],
+    cooldowns: {
+      oldPlayer: { common: { submittedAt: 950, grantedAt: 990 } },
+      grantedLater: { urgent: { grantedAt: 1200 } }
+    }
+  });
+  assert.equal(state.cooldownsResetAt, 1000);
+  assert.equal(state.cooldowns.oldPlayer, undefined);
+  assert.equal(state.cooldowns["old-player"], undefined);
+  assert.equal(state.cooldowns["new-player"].urgent.submittedAt, 1100);
+  assert.equal(state.cooldowns.grantedLater.urgent.grantedAt, 1200);
 });
 
 test("active requests normalize and sort by queue sequence", () => {

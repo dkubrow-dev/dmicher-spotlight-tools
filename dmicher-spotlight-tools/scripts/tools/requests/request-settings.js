@@ -20,10 +20,12 @@ import {
   localize,
   openSingletonApplication,
   playAudio,
-  runAfterApplicationLifecycle,
-  sanitizeTextStyle
+  runAfterApplicationLifecycle
 } from "../../utils.js";
 import {
+  REQUEST_LIMIT_TYPES,
+  REQUEST_RESOURCE_TYPES,
+  TIMER_SOUND_TYPES,
   clampRequestCount,
   getActiveRequestState,
   getRequestConfiguration,
@@ -32,6 +34,12 @@ import {
   normalizeRequestConfiguration
 } from "./request-config.js";
 import { REQUEST_TIMEOUT_TICK_MS, updateRequestTimeoutCounters } from "./request-timeout-display.js";
+import {
+  buildRequestTextStyle,
+  normalizeRequestColor,
+  parseRequestTextStyle,
+  sanitizeRequestTextStyle
+} from "./request-text-style.js";
 import { parseDurationInput } from "../timers/timer-utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -40,6 +48,7 @@ const RESOURCE_VALIDATION_TIMEOUT_MS = 10000;
 
 let actions;
 let settingsWindow;
+let masterSettingsWindow;
 
 class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -59,15 +68,16 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
 
   constructor(options = {}) {
     super(options);
-    this.activeTab = "general";
     this.previewAudio = null;
     this.timeoutTickHandle = null;
     this.unsubscribeConfiguration = actions?.subscribeConfiguration?.(() => {
       if (this.rendered) void this.render({ force: true });
     });
-    this.unsubscribeState = actions?.subscribeState?.(() => {
-      if (this.rendered) void this.render({ force: true });
-    });
+    this.unsubscribeState = this.isMasterSettings
+      ? null
+      : actions?.subscribeState?.(() => {
+        if (this.rendered) void this.render({ force: true });
+      });
   }
 
   get title() {
@@ -76,99 +86,12 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const moderator = isModerator();
     const configuration = getRequestConfiguration();
-    const activeState = getActiveRequestState();
-    const now = Date.now();
-    const requests = getVisibleRequestEntries().map(([type, request]) => {
-      const timeout = getRequestTimeoutStatus(type, game.user.id, activeState, configuration, now);
-      const violation = !request.moderatorOnly && configuration.limits[type]?.mode === REQUEST_LIMIT_MODES.forbidden;
-      return {
-        urgency: type,
-        label: localize(request.labelKey),
-        imageAlt: localize(request.imageAltKey),
-        image: getRequestImage(type, configuration),
-        text: getRequestTextOverride(request),
-        placeholder: localize(request.defaultTextKey),
-        style: game.settings.get(MODULE_ID, request.styleSetting),
-        disabled: violation,
-        disabledText: violation ? "disabled" : "",
-        forbiddenHint: violation ? localize("Requests.Limits.ForbiddenHint") : "",
-        timeoutActive: timeout.active,
-        timeoutExpiresAt: timeout.expiresAt,
-        timeoutRemainingText: formatDigitalDuration(timeout.remaining)
-      };
-    });
-
-    const resourceTypes = Object.entries(REQUEST_TYPES).map(([type, request]) => ({
-      urgency: type,
-      label: localize(request.labelKey),
-      imageAlt: localize(request.imageAltKey),
-      image: getRequestImage(type, configuration),
-      customImage: configuration.images[type].custom,
-      customImageChecked: configuration.images[type].custom ? "checked" : "",
-      imageUrl: configuration.images[type].url,
-      imageUrlDisabled: configuration.images[type].custom ? "" : "disabled",
-      customSound: configuration.sounds[type].custom,
-      customSoundChecked: configuration.sounds[type].custom ? "checked" : "",
-      soundUrl: configuration.sounds[type].url,
-      soundUrlDisabled: configuration.sounds[type].custom ? "" : "disabled",
-      volumePercent: Math.round(configuration.sounds[type].volume * 100)
-    }));
-
-    const timerSoundTypes = ["timer", "break"].map((type) => {
-      const sound = configuration.timerSounds[type];
-      return {
-        kind: type,
-        label: localize(type === "timer"
-          ? "Requests.Resources.TimerSound"
-          : "Requests.Resources.BreakSound"),
-        toggleLabel: localize(type === "timer"
-          ? "Requests.Resources.UseCustomTimerSound"
-          : "Requests.Resources.UseCustomBreakSound"),
-        customChecked: sound.custom ? "checked" : "",
-        url: sound.url,
-        urlDisabled: sound.custom ? "" : "disabled",
-        controlsDisabled: sound.custom ? "" : "disabled",
-        volumePercent: Math.round(sound.volume * 100)
-      };
-    });
-
-    const limits = ["common", "urgent"].map((type) => {
-      const limit = configuration.limits[type];
-      return {
-        urgency: type,
-        label: localize(REQUEST_TYPES[type].labelKey),
-        mode: limit.mode,
-        isNone: limit.mode === REQUEST_LIMIT_MODES.none,
-        isCount: limit.mode === REQUEST_LIMIT_MODES.count,
-        isForbidden: limit.mode === REQUEST_LIMIT_MODES.forbidden,
-        count: limit.count,
-        countDisabled: limit.mode === REQUEST_LIMIT_MODES.count ? "" : "disabled",
-        timeoutMode: limit.timeoutMode,
-        isTimeoutNone: limit.timeoutMode === REQUEST_TIMEOUT_MODES.none,
-        isTimeoutSubmission: limit.timeoutMode === REQUEST_TIMEOUT_MODES.submission,
-        isTimeoutGrant: limit.timeoutMode === REQUEST_TIMEOUT_MODES.grant,
-        timeoutTime: formatDigitalDuration(limit.timeoutDuration),
-        timeoutTimeDisabled: limit.timeoutMode === REQUEST_TIMEOUT_MODES.none ? "disabled" : ""
-      };
-    });
-
     return {
       ...context,
-      requests,
-      resourceTypes,
-      timerSoundTypes,
-      limits,
-      moderator,
-      activeGeneral: this.activeTab === "general",
-      activeAdvanced: this.activeTab === "advanced",
-      chatEnabled: configuration.chatEnabled,
-      soundsEnabled: configuration.soundsEnabled,
-      blockWhenEnvironment: configuration.blockWhenEnvironment,
-      showWelcome: configuration.showWelcome,
-      feedEnabled: configuration.feed.enabled,
-      feedShowTime: configuration.feed.showTime
+      ...(this.isMasterSettings
+        ? prepareMasterSettingsContext(configuration)
+        : preparePersonalSettingsContext(configuration))
     };
   }
 
@@ -177,9 +100,6 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       const form = this.element.querySelector(".dmicher-request-settings-form");
       if (!form) return;
       form.addEventListener("submit", (event) => void this._saveSettings(event));
-      for (const tab of form.querySelectorAll("[data-request-settings-tab]")) {
-        tab.addEventListener("click", () => this.selectTab(tab.dataset.requestSettingsTab));
-      }
       for (const image of form.querySelectorAll("[data-request-image]")) {
         image.addEventListener("click", () => {
           if (image.dataset.disabled === "true") {
@@ -203,13 +123,39 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
           actions.onRequestDragStart(event);
         });
       }
-      for (const toggle of form.querySelectorAll("[data-custom-resource-toggle]")) {
-        toggle.addEventListener("change", () => this.updateResourceField(toggle));
-        this.updateResourceField(toggle);
+      for (const picker of form.querySelectorAll("[data-request-color-picker]")) {
+        const colorField = form.elements[`${picker.dataset.urgency}Color`];
+        picker.addEventListener("input", () => {
+          if (!colorField) return;
+          colorField.value = picker.value.toLowerCase();
+          colorField.setCustomValidity("");
+        });
       }
-      for (const toggle of form.querySelectorAll("[data-custom-timer-sound]")) {
-        toggle.addEventListener("change", () => this.updateTimerSoundField(toggle));
-        this.updateTimerSoundField(toggle);
+      for (const colorField of form.querySelectorAll("[data-request-color-field]")) {
+        const picker = form.elements[`${colorField.dataset.urgency}ColorPicker`];
+        const syncColor = (normalizeField = false) => {
+          const color = normalizeRequestColor(colorField.value);
+          colorField.setCustomValidity(color ? "" : localize("Requests.Settings.ColorInvalid"));
+          if (!color) return;
+          if (normalizeField) colorField.value = color;
+          if (picker) picker.value = color;
+        };
+        colorField.addEventListener("input", () => syncColor(false));
+        colorField.addEventListener("change", () => syncColor(true));
+        syncColor(true);
+      }
+      for (const button of form.querySelectorAll("[data-request-font-toggle]")) {
+        button.addEventListener("click", () => {
+          const active = button.getAttribute("aria-pressed") !== "true";
+          button.setAttribute("aria-pressed", String(active));
+          button.classList.toggle("active", active);
+          const field = form.elements[`${button.dataset.urgency}${button.dataset.requestFontToggle}`];
+          if (field) field.value = String(active);
+        });
+      }
+      for (const toggle of form.querySelectorAll("[data-custom-resource-toggle]")) {
+        toggle.addEventListener("change", () => this.updateCustomResourceControls(toggle, form));
+        this.updateCustomResourceControls(toggle, form);
       }
       for (const select of form.querySelectorAll("[data-request-limit-mode]")) {
         select.addEventListener("change", () => this.updateLimitCount(select));
@@ -228,43 +174,21 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       for (const button of form.querySelectorAll("[data-sound-preview]")) {
         button.addEventListener("click", () => void this.toggleSoundPreview(button, form));
       }
-      this.startTimeoutTicking();
+      if (!this.isMasterSettings) this.startTimeoutTicking();
     });
   }
 
-  selectTab(tab) {
-    if (!["general", "advanced"].includes(tab) || (tab === "advanced" && !isModerator())) return;
-    this.activeTab = tab;
-    for (const button of this.element.querySelectorAll("[data-request-settings-tab]")) {
-      const active = button.dataset.requestSettingsTab === tab;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-selected", String(active));
-    }
-    for (const panel of this.element.querySelectorAll("[data-request-settings-panel]")) {
-      panel.hidden = panel.dataset.requestSettingsPanel !== tab;
-    }
-  }
-
-  updateResourceField(toggle) {
-    const kind = toggle.dataset.customResourceToggle;
-    const type = toggle.dataset.urgency;
-    const field = this.element.querySelector(`[name="${type}${kind === "image" ? "ImageUrl" : "SoundUrl"}"]`);
-    if (!field) return;
-    field.disabled = !toggle.checked;
-    field.required = toggle.checked;
-    if (!toggle.checked) field.value = "";
-  }
-
-  updateTimerSoundField(toggle) {
-    const kind = toggle.dataset.soundKind;
-    const url = this.element.querySelector(`[name="${kind}TimerSoundUrl"]`);
-    const volume = this.element.querySelector(`[name="${kind}TimerSoundVolume"]`);
-    const preview = this.element.querySelector(`[data-sound-preview][data-timer-sound-kind="${kind}"]`);
+  updateCustomResourceControls(toggle, form) {
+    const prefix = toggle.dataset.resourcePrefix;
+    const url = form.elements[prefix + "Url"];
     if (url) {
       url.disabled = !toggle.checked;
       url.required = toggle.checked;
       if (!toggle.checked) url.value = "";
     }
+    if (toggle.dataset.disableResourceControls !== "true") return;
+    const volume = form.elements[prefix + "Volume"];
+    const preview = form.querySelector('[data-sound-preview][data-resource-prefix="' + prefix + '"]');
     if (volume) volume.disabled = !toggle.checked;
     if (preview) preview.disabled = !toggle.checked;
   }
@@ -298,29 +222,24 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
   }
 
   async toggleSoundPreview(button, form) {
+    const stopOnly = Boolean(this.previewAudio) && button.dataset.playing === "true";
     if (this.previewAudio) {
       await this.previewAudio.stop();
       this.previewAudio = null;
       this.updatePreviewButtons();
-      if (button.dataset.playing === "true") return;
+      if (stopOnly) return;
     }
     if (isFoundryAudioMuted()) return;
-    const timerKind = button.dataset.timerSoundKind;
-    const type = button.dataset.urgency;
-    const custom = timerKind
-      ? form.querySelector(`[name="${timerKind}TimerSoundCustom"]`)?.checked
-      : form.querySelector(`[name="${type}SoundCustom"]`)?.checked;
-    const customUrl = timerKind
-      ? form.querySelector(`[name="${timerKind}TimerSoundUrl"]`)?.value.trim()
-      : form.querySelector(`[name="${type}SoundUrl"]`)?.value.trim();
-    const src = custom ? customUrl : REQUEST_TYPES[type]?.sound ?? TIMER_SOUND_SOURCES.signal1;
+    const prefix = button.dataset.resourcePrefix;
+    const custom = form.elements[prefix + "Custom"]?.checked;
+    const customUrl = form.elements[prefix + "Url"]?.value.trim();
+    const src = custom ? customUrl : button.dataset.defaultSound;
     if (!src) {
       ui.notifications.warn(localize("Requests.Resources.Required"));
       return;
     }
-    const volumeName = timerKind ? `${timerKind}TimerSoundVolume` : `${type}SoundVolume`;
-    const volume = Number(form.querySelector(`[name="${volumeName}"]`)?.value ?? 100) / 100;
-    const userVolume = timerKind
+    const volume = Number(form.elements[prefix + "Volume"]?.value ?? 100) / 100;
+    const userVolume = button.dataset.volumeChannel === "timer"
       ? actions.volumeController?.getTimerVolume?.() ?? 1
       : actions.volumeController?.getVolume?.() ?? 1;
     try {
@@ -363,16 +282,29 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
 
     try {
       const settingUpdates = [];
-      for (const [type, request] of getVisibleRequestEntries()) {
-        if (form.elements[`${type}Text`]?.disabled) continue;
-        const text = String(formData.get(`${type}Text`) ?? "").trim().slice(0, 500);
-        const style = sanitizeTextStyle(formData.get(`${type}Style`));
-        settingUpdates.push([request.textSetting, text]);
-        settingUpdates.push([request.styleSetting, style]);
+      if (!this.isMasterSettings) {
+        for (const [type, request] of getVisibleRequestEntries()) {
+          if (form.elements[`${type}Text`]?.disabled) continue;
+          const text = String(formData.get(`${type}Text`) ?? "").trim().slice(0, 500);
+          const color = normalizeRequestColor(formData.get(`${type}Color`));
+          if (!color) throw new Error(localize("Requests.Settings.ColorInvalid"));
+          const style = buildRequestTextStyle({
+            color,
+            fontSize: formData.get(`${type}FontSize`),
+            underline: formData.get(`${type}Underline`) === "true",
+            italic: formData.get(`${type}Italic`) === "true",
+            bold: formData.get(`${type}Bold`) === "true",
+            alignment: formData.get(`${type}Alignment`)
+          });
+          if (!style) throw new Error(localize("Requests.Settings.FontSizeInvalid"));
+          settingUpdates.push([request.textSetting, text]);
+          settingUpdates.push([request.styleSetting, sanitizeRequestTextStyle(style)]);
+        }
       }
 
       let feedEnabledChanged = false;
-      if (isModerator()) {
+      if (this.isMasterSettings) {
+        if (!isModerator()) throw new Error(localize("Requests.MasterSettings.Forbidden"));
         const previous = getRequestConfiguration();
         const next = normalizeRequestConfiguration({
           chatEnabled: formData.has("chatEnabled"),
@@ -389,7 +321,8 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
           limits: {}
         });
 
-        for (const type of Object.keys(REQUEST_TYPES)) {
+        const resourceValidations = [];
+        for (const type of REQUEST_RESOURCE_TYPES) {
           next.images[type] = {
             custom: formData.has(`${type}ImageCustom`),
             url: String(formData.get(`${type}ImageUrl`) ?? "").trim()
@@ -399,18 +332,19 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
             url: String(formData.get(`${type}SoundUrl`) ?? "").trim(),
             volume: Number(formData.get(`${type}SoundVolume`) ?? 100) / 100
           };
-          if (next.images[type].custom) await validateResource(next.images[type].url, "image");
-          if (next.sounds[type].custom) await validateResource(next.sounds[type].url, "sound");
+          if (next.images[type].custom) resourceValidations.push(validateResource(next.images[type].url, "image"));
+          if (next.sounds[type].custom) resourceValidations.push(validateResource(next.sounds[type].url, "sound"));
         }
-        for (const type of ["timer", "break"]) {
+        for (const type of TIMER_SOUND_TYPES) {
           next.timerSounds[type] = {
             custom: formData.has(`${type}TimerSoundCustom`),
             url: String(formData.get(`${type}TimerSoundUrl`) ?? "").trim(),
             volume: Number(formData.get(`${type}TimerSoundVolume`) ?? 100) / 100
           };
-          if (next.timerSounds[type].custom) await validateResource(next.timerSounds[type].url, "sound");
+          if (next.timerSounds[type].custom) resourceValidations.push(validateResource(next.timerSounds[type].url, "sound"));
         }
-        for (const type of ["common", "urgent"]) {
+        await Promise.all(resourceValidations);
+        for (const type of REQUEST_LIMIT_TYPES) {
           const timeoutModeValue = String(form.elements[type + "TimeoutMode"]?.value ?? REQUEST_TIMEOUT_MODES.none);
           const timeoutMode = Object.values(REQUEST_TIMEOUT_MODES).includes(timeoutModeValue)
             ? timeoutModeValue
@@ -441,6 +375,10 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     }
   }
 
+  get isMasterSettings() {
+    return false;
+  }
+
   async offerReload() {
     const confirmed = await confirmDialog({
       title: localize("Requests.Feed.ReloadTitle"),
@@ -461,6 +399,31 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     this.unsubscribeState?.();
     this.unsubscribeState = null;
     return super._onClose(options);
+  }
+}
+
+class RequestMasterSettingsApplication extends RequestSettingsApplication {
+  static DEFAULT_OPTIONS = {
+    id: "dmicher-spotlight-tools-request-master-settings",
+    classes: getThemedWindowClasses("dmicher-request-settings", "dmicher-request-master-settings"),
+    position: { width: 820, height: 720 },
+    window: {
+      icon: "fa-solid fa-user-shield",
+      title: "DMICHERSPOTLIGHTTOOLS.Requests.MasterSettings.WindowTitle",
+      resizable: true
+    }
+  };
+
+  static PARTS = {
+    form: { template: `modules/${MODULE_ID}/templates/request-master-settings.hbs` }
+  };
+
+  get title() {
+    return localize("Requests.MasterSettings.WindowTitle");
+  }
+
+  get isMasterSettings() {
+    return true;
   }
 }
 
@@ -489,7 +452,7 @@ export function registerRequestSettings(requestActions) {
       default: ""
     });
     game.settings.register(MODULE_ID, request.styleSetting, {
-      name: i18nKey("Requests.Settings.CssStyle"),
+      name: i18nKey("Requests.Settings.Appearance"),
       scope: userScope,
       config: false,
       type: String,
@@ -504,6 +467,15 @@ export function registerRequestSettings(requestActions) {
     icon: "fa-solid fa-hand",
     type: RequestSettingsApplication,
     restricted: false
+  });
+
+  game.settings.registerMenu(MODULE_ID, "requestMasterSettings", {
+    name: i18nKey("Requests.MasterSettings.MenuName"),
+    label: i18nKey("Requests.MasterSettings.MenuLabel"),
+    hint: i18nKey("Requests.MasterSettings.MenuHint"),
+    icon: "fa-solid fa-user-shield",
+    type: RequestMasterSettingsApplication,
+    restricted: true
   });
 }
 
@@ -548,12 +520,149 @@ export function openRequestSettings() {
   return settingsWindow;
 }
 
+export function openRequestMasterSettings() {
+  if (!isModerator()) {
+    ui.notifications.warn(localize("Requests.MasterSettings.Forbidden"));
+    return null;
+  }
+  masterSettingsWindow = openSingletonApplication(
+    masterSettingsWindow,
+    () => new RequestMasterSettingsApplication()
+  );
+  return masterSettingsWindow;
+}
+
 export function getRequestText(request) {
   return getRequestTextOverride(request) || localize(request.defaultTextKey);
 }
 
 export function getRequestStyle(request) {
-  return sanitizeTextStyle(game.settings.get(MODULE_ID, request.styleSetting));
+  return sanitizeRequestTextStyle(game.settings.get(MODULE_ID, request.styleSetting));
+}
+
+function preparePersonalSettingsContext(configuration) {
+  const activeState = getActiveRequestState();
+  const now = Date.now();
+  return {
+    requests: getVisibleRequestEntries().map(([type, request]) => {
+      const timeout = getRequestTimeoutStatus(type, game.user.id, activeState, configuration, now);
+      const forbidden = !request.moderatorOnly
+        && configuration.limits[type]?.mode === REQUEST_LIMIT_MODES.forbidden;
+      const appearance = parseRequestTextStyle(game.settings.get(MODULE_ID, request.styleSetting));
+      return {
+        urgency: type,
+        label: localize(request.labelKey),
+        imageAlt: localize(request.imageAltKey),
+        image: getRequestImage(type, configuration),
+        text: getRequestTextOverride(request),
+        placeholder: localize(request.defaultTextKey),
+        ...appearance,
+        alignCenter: appearance.alignment === "center",
+        alignLeft: appearance.alignment === "left",
+        alignRight: appearance.alignment === "right",
+        disabled: forbidden,
+        forbiddenHint: forbidden ? localize("Requests.Limits.ForbiddenHint") : "",
+        timeoutActive: timeout.active,
+        timeoutExpiresAt: timeout.expiresAt,
+        timeoutRemainingText: formatDigitalDuration(timeout.remaining)
+      };
+    })
+  };
+}
+
+function prepareMasterSettingsContext(configuration) {
+  const imageResources = REQUEST_RESOURCE_TYPES.map((type) => {
+    const request = REQUEST_TYPES[type];
+    const image = configuration.images[type];
+    return {
+      prefix: type + "Image",
+      label: localize(request.labelKey),
+      imageAlt: localize(request.imageAltKey),
+      image: getRequestImage(type, configuration),
+      custom: image.custom,
+      url: image.url
+    };
+  });
+  const requestSounds = REQUEST_RESOURCE_TYPES.map((type) => {
+    const request = REQUEST_TYPES[type];
+    return prepareSoundResource({
+      prefix: type + "Sound",
+      label: localize(request.labelKey),
+      toggleLabel: localize("Requests.Resources.CustomSound"),
+      sound: configuration.sounds[type],
+      placeholder: localize("Requests.Resources.DefaultSoundPlaceholder"),
+      defaultSound: request.sound,
+      volumeChannel: "request",
+      controlsRequireCustom: false
+    });
+  });
+  const timerSounds = TIMER_SOUND_TYPES.map((type) => prepareSoundResource({
+    prefix: type + "TimerSound",
+    label: localize(type === "timer"
+      ? "Requests.Resources.TimerSound"
+      : "Requests.Resources.BreakSound"),
+    toggleLabel: localize(type === "timer"
+      ? "Requests.Resources.UseCustomTimerSound"
+      : "Requests.Resources.UseCustomBreakSound"),
+    sound: configuration.timerSounds[type],
+    placeholder: localize("Requests.Resources.CustomTimerSoundPlaceholder"),
+    defaultSound: TIMER_SOUND_SOURCES.signal1,
+    volumeChannel: "timer",
+    controlsRequireCustom: true
+  }));
+  const limits = REQUEST_LIMIT_TYPES.map((type) => {
+    const limit = configuration.limits[type];
+    return {
+      urgency: type,
+      label: localize(REQUEST_TYPES[type].labelKey),
+      mode: limit.mode,
+      isNone: limit.mode === REQUEST_LIMIT_MODES.none,
+      isCount: limit.mode === REQUEST_LIMIT_MODES.count,
+      isForbidden: limit.mode === REQUEST_LIMIT_MODES.forbidden,
+      count: limit.count,
+      timeoutMode: limit.timeoutMode,
+      isTimeoutNone: limit.timeoutMode === REQUEST_TIMEOUT_MODES.none,
+      isTimeoutSubmission: limit.timeoutMode === REQUEST_TIMEOUT_MODES.submission,
+      isTimeoutGrant: limit.timeoutMode === REQUEST_TIMEOUT_MODES.grant,
+      timeoutTime: formatDigitalDuration(limit.timeoutDuration)
+    };
+  });
+  return {
+    imageResources,
+    soundResources: [...requestSounds, ...timerSounds],
+    limits,
+    chatEnabled: configuration.chatEnabled,
+    soundsEnabled: configuration.soundsEnabled,
+    blockWhenEnvironment: configuration.blockWhenEnvironment,
+    showWelcome: configuration.showWelcome,
+    feedEnabled: configuration.feed.enabled,
+    feedShowTime: configuration.feed.showTime
+  };
+}
+
+function prepareSoundResource({
+  prefix,
+  label,
+  toggleLabel,
+  sound,
+  placeholder,
+  defaultSound,
+  volumeChannel,
+  controlsRequireCustom
+}) {
+  return {
+    prefix,
+    label,
+    toggleLabel,
+    custom: sound.custom,
+    url: sound.url,
+    volumePercent: Math.round(sound.volume * 100),
+    placeholder,
+    defaultSound,
+    volumeChannel,
+    controlsRequireCustom,
+    controlsEnabled: !controlsRequireCustom || sound.custom
+  };
 }
 
 function getVisibleRequestEntries() {

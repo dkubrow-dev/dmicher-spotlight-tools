@@ -2,6 +2,25 @@ import { MODULE_ID } from "../config.js";
 import { isModerator, localize } from "../utils.js";
 
 const MENU_ROOT_TOOL = "spotlight-tools-root";
+const LEGACY_CONTROL_LAYER = "dmicherSpotlightTools";
+const LEGACY_CONTROL_LAYER_MARKER = Symbol.for(MODULE_ID + ".legacy-control-layer");
+
+export function ensureLegacyControlLayer(target = globalThis.canvas) {
+  if (!target) return LEGACY_CONTROL_LAYER;
+  if (target[LEGACY_CONTROL_LAYER]?.[LEGACY_CONTROL_LAYER_MARKER]) return LEGACY_CONTROL_LAYER;
+  const layer = {
+    [LEGACY_CONTROL_LAYER_MARKER]: true,
+    activate() {
+      globalThis.ui?.controls?.initialize?.({ control: MODULE_ID });
+    }
+  };
+  Object.defineProperty(target, LEGACY_CONTROL_LAYER, {
+    configurable: true,
+    value: layer,
+    writable: true
+  });
+  return LEGACY_CONTROL_LAYER;
+}
 const TOOL_DEFINITIONS = Object.freeze([
   Object.freeze({
     name: MENU_ROOT_TOOL,
@@ -69,7 +88,7 @@ export class SpotlightControls {
       name: control.name,
       title: control.title,
       icon: control.icon,
-      layer: "controls",
+      layer: ensureLegacyControlLayer(),
       visible: control.visible,
       activeTool: control.activeTool,
       tools: Object.values(control.tools).map((tool) => ({

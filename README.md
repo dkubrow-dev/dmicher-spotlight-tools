@@ -55,23 +55,35 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 Модуль имеет локализацию на русский и английский языки.
 
-### Заявки пользователей
+### Заявки игроков
 
-Окно «Настройки заявок» разделено на вкладки «Общие» и «Продвинутые». На общей вкладке игроки видят обычную и срочную заявки, а мастер и ассистенты — также заявку «Окружение». Изображение можно нажать для подачи заявки или перетащить на панель быстрого доступа; текст и безопасный CSS-стиль настраиваются отдельно каждым пользователем.
+Окно «Настройки заявок» — личное окно пользователя без вкладок. Игрок видит обычную и срочную заявки, а мастер и ассистент — также «Окружение». Изображение можно нажать для подачи заявки или перетащить на панель быстрого доступа. Для каждого типа отдельно настраиваются строго текстовое сообщение, цвет, CSS-размер шрифта, подчёркивание, курсив, жирное начертание и выравнивание.
 
-В правой панели, во вкладке Playlists, модуль добавляет в «User Volume Controls» ползунок «Заявки». Итоговая громкость складывается из базовой громкости, заданной мастером для типа заявки, и личной громкости пользователя.
+Общие параметры мира вынесены в отдельное окно «Настройки мастера», доступное мастеру и ассистенту по одноимённой кнопке в настройках игры. В разделе модуля настройка «Тема окон модуля» располагается перед кнопками подменю. В окне «Настройки мастера» блоки идут в порядке «Лента заявок», «Антиспам ограничения заявок», «Изображения», «Звуки» и «Приветствие».
 
-Мастеру на вкладке «Продвинутые» доступны:
+При первой активации модуля в новом мире действуют следующие значения:
 
-- отключение вывода заявок в чат без отключения самой очереди;
-- ограничения количества обычных и срочных заявок, полный запрет отдельных типов и блокировка заявок игроков при активном «Окружении»;
-- боковая вкладка «Заявки» с очередью, персонажами, временем, кнопками управления и перетаскиваемыми макросами;
-- собственные изображения и звуки по внешним RAW-ссылкам с проверкой загрузки и CORS перед сохранением;
-- базовая громкость каждого типа, общий выключатель звука и приветственное сообщение.
+- «Лента заявок» включена, время подачи показывается;
+- заявки выводятся в чат;
+- обычные заявки не ограничены по количеству и таймауту;
+- для срочных заявок разрешена одна активная заявка на игрока, а после предоставления слова действует таймаут 10 минут;
+- при активной заявке окружения блокируются все новые заявки, включая повторное окружение;
+- используются стандартные изображения и звуки, звуки заявок включены;
+- приветствие включено.
 
-Окно «Активные заявки» работает независимо от чата. Оно показывает аватар или токен, тип заявки, игрока и выбранного персонажа; позволяет фильтровать типы, скрывать повторы по типу или игроку, давать слово, отменять заявки и очищать очередь.
+«Лента заявок» — отдельная вкладка правой боковой панели после боя и перед сценами. Она показывает очередь, портреты, типы, игроков, персонажей и время; позволяет автору отменить свою заявку, а модератору — отменить любую или предоставить слово. Внизу находятся кнопки подачи и перетаскивания макросов, «Настройки заявок», «Активные заявки» и, когда настроен хотя бы один таймаут, мастерская кнопка «Сброс таймеров». Изменение переключателя ленты требует перестройки боковой панели, поэтому модуль предлагает перезагрузить клиент.
 
-Интерактивная справка открывается из настроек модуля, верхнего меню «Приспособы фокуса» и боковой ленты заявок.
+Блок антиспама независимо настраивает количество и таймаут обычных и срочных заявок. Таймаут может считаться с подачи или с предоставления слова; предупреждение сообщает оставшееся время. Сброс таймеров не удаляет активные заявки. Вывод карточек в чат можно отключить без отключения очереди, ленты и окна управления.
+
+Собственные изображения и звуки принимаются по прямым RAW-ссылкам. При сохранении клиент проверяет CORS-доступность и возможность отобразить изображение или воспроизвести звук. Старые макросы сохраняют назначенную им иконку, но при запуске используют актуальные ресурсы и ограничения.
+
+Окно «Активные заявки» работает независимо от чата. Оно показывает портрет или токен и изображение типа, игрока и выбранного персонажа; фильтрует типы; скрывает повторы по типу или игроку; переходит к карточке чата; позволяет давать слово, отменять заявки, создать «Заявку окружения», сбросить настроенные таймеры и очистить очередь.
+
+В Playlists → User Volume Controls модуль добавляет ползунки «Заявки» и «Таймеры». Громкость заявки равна базовой громкости типа, умноженной на личную громкость «Заявки». Звуки таймеров также учитывают личный ползунок «Таймеры» и дополнительные уровни конкретного сигнала. Штатное отключение звука Foundry имеет приоритет над всеми звуками модуля.
+
+Приветствие отправляется приватно каждому вошедшему пользователю. В нём отображаются точное значение `title` и версия установленного модуля. Ссылки «игровое меню» и «справкой» открывают окна внутри клиента Foundry; мастер и ассистент также могут открыть «Настройки мастера» и отключить приветствие. Отделённый горизонтальной чертой уменьшенный текст сообщает о бесплатности модуля, а «по ссылке» намеренно открывает внешнюю страницу поддержки.
+
+Подробная интерактивная справка открывается из настроек игры и первой кнопкой в левом верхнем меню «Приспособы фокуса».
 
 ### Личные статусы игроков на игре
 
@@ -119,13 +131,16 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 - выбрать время в двух режимах: указать время, через которое таймер сработает, либо время по часам, когда этот таймер завершится;
 - выбрать видимость: публичный таймер будет виден всем игрокам, а приватный - только мастеру и ассистентам;
 - выбрать стиль, в котором таймер будет отображаться при открытии: заметный таймер будет хорошо виден в интерфейсе, компактный будет занимать мало места и быть едва заметным (игроки и вы сможете поменять стиль отображения таймера после открытия окна);
-- выбрать сигнал, который прозвучит, когда время таймера истечёт.
+- выбрать «Без звука», доступный настроенный «Свой звук» или один из трёх стандартных сигналов;
+- ползунком рядом с предпрослушиванием задать громкость этого запуска.
+
+Для собственного сигнала итоговая громкость равна уровню нового таймера, умноженному на базовую громкость «Настраиваемого звука таймера» из «Настроек мастера» и личный ползунок «Таймеры» в Playlists → User Volume Controls. Для стандартного сигнала базовый уровень мастера считается равным 100%. Кнопка предпрослушивания использует те же уровни, а штатное отключение звука Foundry блокирует воспроизведение.
 
 После запуска таймера сообщение о его запуске появится в чате, а окно таймера появится на экране.
 Сообщения и окна приватных таймеров увидят только мастера и ассистенты.
 Окно таймера можно закрыть: открыть окно таймера можно будет в любой момент по кнопке в чате или из таблицы текущих таймеров.
 
-Вы можете отменить таймер из таблицы текущих таймеров.
+Из таблицы текущих таймеров таймер можно открыть, немедленно повторить со всеми исходными параметрами или отменить. При повторе таймера перерыва мир снова ставится на паузу.
 Завершённые таймеры самостоятельно не удаляются из памяти: вы можете очистить список зарегистрированных таймеров в окне "Таймеры".
 
 #### Таймер перерыва
@@ -142,7 +157,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 - будет создан таймер "Перерыв", который попадёт в таблицу "Текущие таймеры" в окне "Таймеры" (вы сможете управлять им оттуда);
 - игроки увидят таймер;
 - игра будет поставлена на паузу;
-- при истечении времени прозвучит звуковой сигнал.
+- при истечении времени прозвучит стандартный или включённый мастером «Свой сигнал перерыва» с учётом его базовой громкости и личного ползунка «Таймеры».
 
 ### Секундомер
 
@@ -231,21 +246,33 @@ The module is localized in Russian and English.
 
 ### Player requests
 
-The Request Settings window has General and Advanced tabs. Players see Regular and Urgent requests on General; Game Masters and Assistants also see Environment. Click an image to submit a request or drag it to the hotbar. Each user configures their own text and safe CSS style.
+The Request Settings window is a personal, tab-free window. Players see Regular and Urgent requests; Game Masters and Assistants also see Environment. Click an image to submit a request or drag it to the hotbar. Each type has user-specific plain text, color, CSS font size, underline, italic, bold, and alignment controls.
 
-The module adds a Reports slider to User Volume Controls in the Playlists sidebar tab. Final playback volume combines the per-type base volume configured by the Game Master with the user's own Reports volume.
+World-wide options live in the separate Game Master Settings window, available to Game Masters and Assistants from the matching Game Settings button. The Module Window Theme setting is placed before the module submenu buttons. Game Master Settings contains Request Feed, Request Anti-spam Limits, Images, Sounds, and Welcome in that order.
 
-The Advanced tab lets the Game Master:
+A newly configured world starts with these defaults:
 
-- disable request chat cards without disabling the queue;
-- limit Regular and Urgent requests, forbid a type, and block player requests while Environment is active;
-- enable the Requests sidebar feed with characters, time, controls, and draggable macros;
-- use custom images and sounds from external RAW URLs, validated for loading and CORS before saving;
-- configure per-type base volume, disable all request sounds, and control the welcome message.
+- Request Feed is enabled and submission time is shown;
+- request cards are posted to chat;
+- Regular requests have no count limit or timeout;
+- Urgent requests allow one active request per player and start a 10-minute timeout when the floor is granted;
+- an active Environment request blocks every new request, including another Environment request;
+- standard images and sounds are used, and request sounds are enabled;
+- the welcome message is enabled.
 
-The Active Requests window works independently from chat. It shows an avatar or token, request type, player, and selected character; filters types; hides duplicates by type or player; grants the floor; cancels requests; and clears the queue.
+Request Feed is a right-sidebar tab placed after Combat and before Scenes. It shows the queue, portraits, types, players, characters, and time. Authors can cancel their own requests; moderators can cancel any request or grant the floor. Its footer contains submit-or-drag request controls, Request Settings, Active Requests, and—when at least one timeout is configured—a moderator-only Reset Timers button. Changing whether the feed is enabled requires rebuilding the sidebar, so the module offers to reload the client.
 
-Interactive help is available from module settings, the Spotlight Tools canvas controls, and the request feed.
+Anti-spam settings independently control the count and timeout of Regular and Urgent requests. A timeout can start on submission or when the floor is granted, and rejection feedback includes the remaining time. Reset Timers preserves active requests. Chat cards can be disabled without disabling the queue, Request Feed, or management window.
+
+Custom images and sounds use direct RAW URLs. On save, the client verifies CORS access and whether the image can be displayed or the audio can be played. Existing macros keep their assigned icon, but execution uses current resources and restrictions.
+
+Active Requests works independently from chat. It shows the portrait or token and type image, player and selected character; filters request types; hides duplicates by type or player; navigates to a chat card; grants the floor; cancels requests; creates an Environment Request; resets configured timers; and clears the queue.
+
+The module adds Requests and Timers sliders to Playlists → User Volume Controls. Request volume is the per-type base volume multiplied by the user's Requests volume. Timer audio also applies the user's Timers slider and any signal-specific levels. Foundry's global mute takes precedence over every module sound.
+
+A private welcome message is sent to each joining user and shows the exact installed module `title` and version. The game menu and Help links open windows inside Foundry; Game Masters and Assistants can also open Game Master Settings and disable the welcome. Smaller text below a horizontal divider states that the module is free, while the support link intentionally opens the external support page.
+
+Detailed interactive Help opens from Game Settings and from the first button in the Spotlight Tools canvas controls.
 
 ### Player game statuses
 
@@ -293,13 +320,16 @@ For a new timer, you can:
 - choose time in two modes: specify the duration after which the timer expires, or specify the clock time when the timer expires;
 - choose visibility: a public timer is visible to all players, while a private timer is visible only to the Game Master and assistants;
 - choose the style in which the timer appears when opened: a prominent timer is easy to see in the interface, while a compact timer takes little space and is barely noticeable (players and you can change the timer display style after opening its window);
-- choose the signal that will play when the timer time expires.
+- choose No Sound, the configured Custom Sound when available, or one of three standard signals;
+- set this launch volume with the slider next to Preview.
+
+For a custom signal, final volume is the New Timer level multiplied by the Game Master Settings base volume for Custom Timer Sound and the user's Timers slider in Playlists → User Volume Controls. A standard signal uses a 100% Game Master base level. Preview uses the same levels, and Foundry's global mute blocks playback.
 
 After the timer starts, a message about its start appears in chat, and the timer window appears on screen.
 Messages and windows of private timers are visible only to the Game Master and assistants.
 The timer window can be closed: it can be opened again at any time from the chat button or from the current timers table.
 
-You can cancel a timer from the current timers table.
+From the current timers table, a timer can be opened, immediately repeated with all original parameters, or cancelled. Repeating a break timer pauses the world again.
 Expired timers are not automatically removed from memory: you can clear the list of registered timers in the "Timers" window.
 
 #### Break timer
@@ -316,7 +346,7 @@ When a break is announced:
 - a "Break" timer is created and added to the "Current timers" table in the "Timers" window (you can manage it from there);
 - players see the timer;
 - the game is paused;
-- a sound signal plays when the time expires.
+- the standard or Game Master-enabled Custom Break Signal plays at expiry, using its base volume and the user's Timers slider.
 
 ### Stopwatch
 

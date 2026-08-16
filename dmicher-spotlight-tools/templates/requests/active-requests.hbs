@@ -14,7 +14,7 @@
       <label><input type="radio" name="duplicates" value="player" data-active-request-filter="duplicates" {{#if duplicatePlayer}}checked{{/if}}> {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Filters.ByPlayer"}}</label>
     </fieldset>
   </div>
-  <p class="dmicher-active-requests-summary">{{summaryText}} � {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Visible"}}: <span data-visible-request-count>{{totalCount}}</span></p>
+  <p class="dmicher-active-requests-summary">{{summaryText}} &mdash; {{localize "DMICHERSPOTLIGHTTOOLS.Requests.Active.Visible"}}: <span data-visible-request-count>{{totalCount}}</span></p>
 
   <div class="dmicher-tool-table-scroll dmicher-active-requests-table-wrap">
     {{#if hasRequests}}
@@ -61,6 +61,12 @@
   </div>
 
   <footer class="dmicher-active-requests-footer">
+    {{#if showResetTimeouts}}
+    <button type="button" data-active-request-action="reset-timeouts">
+      <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+      {{localize keys.resetTimeouts}}
+    </button>
+    {{/if}}
     <button type="button" data-active-request-action="environment">
       <i class="fa-solid fa-mountain-sun" aria-hidden="true"></i>
       {{localize keys.environment}}

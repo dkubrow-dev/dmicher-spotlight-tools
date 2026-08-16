@@ -2,7 +2,6 @@ import { MODULE_ID, REQUEST_TYPES } from "../../config.js";
 import {
   canUseRequest,
   formatDigitalDuration,
-  getFoundryGeneration,
   getRenderedElement,
   i18nKey,
   isModerator,
@@ -13,15 +12,31 @@ import {
   getActiveRequestState,
   getRequestConfiguration,
   getRequestImage,
-  getRequestTimeoutStatus
+  getRequestTimeoutStatus,
+  hasConfiguredRequestTimeouts
 } from "./request-config.js";
 import { REQUEST_TIMEOUT_TICK_MS, updateRequestTimeoutCounters } from "./request-timeout-display.js";
 
+// The modern sidebar API is available before game.release is populated during module evaluation.
 const ModernSidebarBase = foundry.applications.sidebar?.AbstractSidebarTab;
-const SidebarBase = ModernSidebarBase
-  ? foundry.applications.api.HandlebarsApplicationMixin(ModernSidebarBase)
-  : (globalThis.SidebarTab ?? foundry.applications.api.ApplicationV2);
+const LEGACY_SIDEBAR = typeof ModernSidebarBase !== "function";
+export function getLegacySidebarBase() {
+  const configuredChat = globalThis.CONFIG?.ui?.chat;
+  const configuredBase = typeof configuredChat === "function"
+    ? Object.getPrototypeOf(configuredChat)
+    : null;
+  if (configuredBase?.prototype && configuredBase !== Function.prototype) return configuredBase;
+  return globalThis.SidebarTab
+    ?? globalThis.Application
+    ?? foundry.applications.api.ApplicationV2;
+}
+
+const SidebarBase = LEGACY_SIDEBAR
+  ? getLegacySidebarBase()
+  : foundry.applications.api.HandlebarsApplicationMixin(ModernSidebarBase);
 const FEED_TICK_MS = 15000;
+const LEGACY_FEED_LAYOUT_CLASS = "dmicher-request-feed-enabled-v12";
+const OBSOLETE_LEGACY_FEED_LAYOUT_CLASS = "dmicher-request-feed-enabled";
 let feedActions = {};
 let activeRequestsController = null;
 
@@ -45,6 +60,10 @@ export class RequestFeedSidebar extends SidebarBase {
       classes: ["tab", "sidebar-tab", "dmicher-request-feed"],
       popOut: false
     });
+  }
+
+  get title() {
+    return localize("Requests.Feed.Tab");
   }
 
   constructor(...args) {
@@ -90,7 +109,8 @@ export class RequestFeedSidebar extends SidebarBase {
       hasRequests: rows.length > 0,
       showTime: configuration.feed.showTime,
       moderator,
-      legacy: getFoundryGeneration() < 13,
+      showResetTimeouts: moderator && hasConfiguredRequestTimeouts(configuration),
+      legacy: LEGACY_SIDEBAR,
       macros
     };
   }
@@ -142,14 +162,14 @@ export class RequestFeedSidebar extends SidebarBase {
 
   onActiveRequestsChanged() {
     if (!this.rendered) return;
-    if (getFoundryGeneration() >= 13) void this.render({ force: true });
+    if (!LEGACY_SIDEBAR) void this.render({ force: true });
     else this.render(true);
   }
 
   _onActivate() {
     const result = super._onActivate?.();
     if (!this.element?.querySelector(".dmicher-request-feed-shell")) {
-      if (getFoundryGeneration() >= 13) void this.render({ force: true });
+      if (!LEGACY_SIDEBAR) void this.render({ force: true });
       else this.render(true);
     }
     return result;
@@ -194,8 +214,8 @@ export function dispatchRequestFeedClick(event, {
     case "settings":
       actions.openSettings?.();
       break;
-    case "help":
-      actions.openHelp?.();
+    case "reset-timeouts":
+      void controller?.confirmResetTimeouts?.();
       break;
     case "management":
       actions.openManagement?.();
@@ -216,11 +236,13 @@ export function dispatchRequestFeedDragStart(event, { actions = feedActions } = 
 export function configureRequestFeed({ activeRequests, actions }) {
   activeRequestsController = activeRequests;
   feedActions = actions;
-  if (!getRequestConfiguration().feed.enabled) return false;
+  const feedEnabled = getRequestConfiguration().feed.enabled;
+  applyLegacyRequestFeedLayout(globalThis.document?.querySelector?.("#sidebar"), feedEnabled);
+  if (!feedEnabled) return false;
 
   CONFIG.ui ??= {};
   CONFIG.ui.requests = RequestFeedSidebar;
-  if (getFoundryGeneration() >= 13) installModernSidebarDescriptor();
+  if (!LEGACY_SIDEBAR) installModernSidebarDescriptor();
   else Hooks.on("renderSidebar", injectLegacySidebarTab);
   return true;
 }
@@ -247,37 +269,82 @@ function installModernSidebarDescriptor() {
   Object.assign(tabs, reordered);
 }
 
+export function ensureLegacyRequestFeedRendered(root = document.querySelector("#sidebar")) {
+  if (!LEGACY_SIDEBAR) return ui.requests;
+  const application = ui.requests ?? (ui.requests = new RequestFeedSidebar());
+  const mounted = root?.querySelector("#requests.dmicher-request-feed-shell");
+  if (mounted && application.rendered) return application;
+
+  const cachedRoot = getRenderedElement(application.element);
+  if (cachedRoot && !cachedRoot.isConnected) application._element = null;
+  application.render(true);
+  return application;
+}
+
+export function handleLegacyRequestFeedTabClick(event, root = document.querySelector("#sidebar")) {
+  event.preventDefault?.();
+  const application = ui.requests ?? (ui.requests = new RequestFeedSidebar());
+  if (ui.sidebar?._collapsed) {
+    application.renderPopout?.(application);
+    return "popout";
+  }
+
+  ui.sidebar?.activateTab?.("requests");
+  ensureLegacyRequestFeedRendered(root);
+  application.activate?.();
+  return "embedded";
+}
+
+export function applyLegacyRequestFeedLayout(root, enabled = true) {
+  if (!root?.classList) return false;
+  root.classList.remove(OBSOLETE_LEGACY_FEED_LAYOUT_CLASS);
+  if (!LEGACY_SIDEBAR) {
+    root.classList.remove(LEGACY_FEED_LAYOUT_CLASS);
+    return false;
+  }
+  root.classList.toggle(LEGACY_FEED_LAYOUT_CLASS, Boolean(enabled));
+  return Boolean(enabled);
+}
+
 function injectLegacySidebarTab(application, html) {
   const root = getRenderedElement(html) ?? application?.element;
-  if (!root || root.querySelector('[data-tab="requests"]')) return;
+  if (!root) return;
+  applyLegacyRequestFeedLayout(root);
   const nav = root.querySelector("#sidebar-tabs");
   if (!nav) return;
-  const anchor = document.createElement("a");
-  anchor.className = "item";
-  anchor.dataset.tab = "requests";
-  anchor.setAttribute("aria-label", localize("Requests.Feed.Tab"));
-  anchor.setAttribute("aria-controls", "requests");
-  anchor.setAttribute("role", "tab");
-  anchor.dataset.tooltip = localize("Requests.Feed.Tab");
-  const icon = document.createElement("i");
-  icon.className = "fa-solid fa-hand";
-  anchor.append(icon);
-  const combat = nav.querySelector('[data-tab="combat"]');
-  if (combat?.after) combat.after(anchor);
-  else {
-    const scenes = nav.querySelector('[data-tab="scenes"]');
-    if (scenes) scenes.before(anchor);
-    else nav.prepend(anchor);
+
+  let anchor = nav.querySelector('[data-tab="requests"]');
+  if (!anchor) {
+    anchor = document.createElement("a");
+    anchor.className = "item";
+    anchor.dataset.tab = "requests";
+    anchor.setAttribute("aria-label", localize("Requests.Feed.Tab"));
+    anchor.setAttribute("aria-controls", "requests");
+    anchor.setAttribute("role", "tab");
+    anchor.dataset.tooltip = localize("Requests.Feed.Tab");
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-hand";
+    anchor.append(icon);
+    const combat = nav.querySelector('[data-tab="combat"]');
+    if (combat?.after) combat.after(anchor);
+    else {
+      const scenes = nav.querySelector('[data-tab="scenes"]');
+      if (scenes) scenes.before(anchor);
+      else nav.prepend(anchor);
+    }
+    anchor.addEventListener("click", (event) => {
+      handleLegacyRequestFeedTabClick(event, root);
+    });
   }
-  const template = document.createElement("template");
-  template.className = "tab";
-  template.id = "requests";
-  template.dataset.tab = "requests";
-  template.setAttribute("role", "tabpanel");
-  root.append(template);
-  anchor.addEventListener("click", (event) => {
-    event.preventDefault();
-    ui.sidebar?.activateTab?.("requests");
-    ui.requests?.activate?.();
-  });
+
+  if (!root.querySelector('#requests[data-tab="requests"]')) {
+    const template = document.createElement("template");
+    template.className = "tab";
+    template.id = "requests";
+    template.dataset.tab = "requests";
+    template.setAttribute("role", "tabpanel");
+    root.append(template);
+  }
+
+  globalThis.setTimeout?.(() => ensureLegacyRequestFeedRendered(root), 0);
 }

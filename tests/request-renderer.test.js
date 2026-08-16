@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { FLAGS, MODULE_ID } from "../dmicher-spotlight-tools/scripts/config.js";
 import {
+  buildRequestMessageContent,
   buildWelcomeMessageContent,
   getRequestAnchorId,
   renderRequestChatMessage
@@ -98,12 +99,28 @@ function installFoundryGlobals() {
     user: { id: "player-1", role: 1 },
     i18n: {
       localize: (key) => key,
-      format: (key) => key,
+      format: (key, data = {}) => key + ":" + JSON.stringify(data),
       lang: "en"
     },
+    modules: new Map([[MODULE_ID, { title: "Manifest Title", version: "1.2.0" }]]),
     time: { serverTime: Date.now() }
   };
 }
+
+test("request text renders HTML and CSS-like input strictly as text", () => {
+  installFoundryGlobals();
+  const content = buildRequestMessageContent(
+    "common",
+    '<img src=x onerror="alert(1)">\n<style>body { display: none; }</style>',
+    "color: #000000; text-align: center;",
+    "modules/example/request.webp"
+  );
+
+  assert.doesNotMatch(content, /<img src=x|<style>/i);
+  assert.match(content, /&lt;img src=x onerror=&quot;alert\(1\)&quot;&gt;/);
+  assert.match(content, /&lt;style&gt;body \{ display: none; \}&lt;\/style&gt;/);
+  assert.match(content, /<br>/);
+});
 
 test("request renderer accepts the jQuery-like wrapper supplied by v12", () => {
   installFoundryGlobals();
@@ -166,21 +183,31 @@ test("request renderer also accepts the raw HTMLElement supplied by v13 and v14"
 test("welcome actions cannot trigger browser navigation and work with every supported chat wrapper", () => {
   installFoundryGlobals();
   const content = buildWelcomeMessageContent(true);
+  assert.match(content, /Manifest Title/);
+  assert.match(content, /1\.2\.0/);
   assert.doesNotMatch(content, /<a\b|href\s*=/i);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="settings"/);
+  assert.match(content, /<button type="button"[^>]+data-request-welcome-action="master-settings"/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="help"/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="thanks"/);
+  assert.match(content, /<hr class="dmicher-request-welcome-divider">/);
+  assert.match(content, /<p class="dmicher-request-welcome-support">/);
+  assert.equal((content.match(/class="dmicher-inline-link-tail"/g) ?? []).length, 2);
+  assert.ok(content.indexOf("dmicher-request-welcome-divider") < content.indexOf("dmicher-request-welcome-support"));
+  assert.doesNotMatch(buildWelcomeMessageContent(false), /data-request-welcome-action="master-settings"/);
 
   for (const wrap of [(root) => ({ 0: root, length: 1 }), (root) => root]) {
     const root = new MockElement();
     const welcome = new MockElement();
     const settings = new MockElement();
+    const masterSettings = new MockElement();
     const help = new MockElement();
     const thanks = new MockElement();
     root.queries.set(".dmicher-request-card", null);
     root.queries.set(".dmicher-request-technical", null);
     root.queries.set(".dmicher-request-welcome", welcome);
     welcome.queries.set('[data-request-welcome-action="settings"]', settings);
+    welcome.queries.set('[data-request-welcome-action="master-settings"]', masterSettings);
     welcome.queries.set('[data-request-welcome-action="help"]', help);
     welcome.queries.set('[data-request-welcome-action="thanks"]', thanks);
     const message = {
@@ -192,11 +219,12 @@ test("welcome actions cannot trigger browser navigation and work with every supp
     renderRequestChatMessage(message, wrap(root), {
       resolveRequest() {},
       openSettings: () => calls.push("settings"),
+      openMasterSettings: () => calls.push("master-settings"),
       openHelp: () => calls.push("help"),
       openThankAuthor: () => calls.push("thanks")
     });
 
-    for (const [element, expected] of [[settings, "settings"], [help, "help"], [thanks, "thanks"]]) {
+    for (const [element, expected] of [[settings, "settings"], [masterSettings, "master-settings"], [help, "help"], [thanks, "thanks"]]) {
       let prevented = false;
       let stopped = false;
       element.listeners.get("click")({

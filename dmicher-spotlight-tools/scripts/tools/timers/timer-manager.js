@@ -99,6 +99,7 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
         columnRemaining: i18nKey("Timers.Manager.Columns.Remaining"),
         columnControls: i18nKey("Timers.Manager.Columns.Controls"),
         open: i18nKey("Timers.Manager.Open"),
+        repeat: i18nKey("Timers.Manager.Repeat"),
         delete: i18nKey("Timers.Manager.Delete")
       }
     };
@@ -162,8 +163,29 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
       button.addEventListener("click", () => this.timerTool.openTimerWindow(button.dataset.timerId, { force: true }));
     }
 
+    for (const button of this.element.querySelectorAll("[data-timer-action='repeat']")) {
+      button.addEventListener("click", () => void this.handleRepeat(button));
+    }
+
     for (const button of this.element.querySelectorAll("[data-timer-action='delete']")) {
       button.addEventListener("click", () => void this.timerTool.confirmDeleteTimer(button.dataset.timerId));
+    }
+  }
+
+  async handleRepeat(button) {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Timers.Errors.Forbidden"));
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      await this.timerTool.repeatTimer(button.dataset.timerId);
+    } catch (error) {
+      console.error(`${MODULE_ID} | Unable to repeat timer`, error);
+      ui.notifications.error(error?.message || localize("Timers.Errors.StartFailed"));
+    } finally {
+      button.disabled = false;
     }
   }
 

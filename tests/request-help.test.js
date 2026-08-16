@@ -67,3 +67,19 @@ test("module help describes every configured interface element in both locales",
   }
   assert.ok(itemCount >= 600);
 });
+
+
+test("interface and help use canonical window and request-feed names", () => {
+  for (const locale of ["ru", "en"]) {
+    const root = readLocale(locale).DMICHERSPOTLIGHTTOOLS;
+    const requests = root.Requests;
+    assert.equal(requests.Feed.SettingsHeading, requests.Feed.Tab);
+    assert.equal(requests.Feed.Tab, requests.Feed.Heading);
+    assert.equal(requests.Feed.Heading, requests.Help.Pages.Feed.Title);
+    assert.equal(requests.Feed.Management, requests.Active.Heading);
+    assert.equal(root.Controls.Requests, requests.Active.Heading);
+    assert.equal(requests.Help.Pages.Limits.Title, requests.Limits.Heading);
+    assert.equal(requests.Help.Pages.AuditWindow.Title, root.Focus.Audit.WindowTitle);
+    assert.equal(requests.Help.Pages.AuditSettings.Title, root.Focus.Settings.WindowTitle);
+  }
+});

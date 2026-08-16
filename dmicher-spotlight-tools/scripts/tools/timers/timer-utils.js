@@ -13,6 +13,11 @@ export const TIMER_MODE = Object.freeze({
   deadline: "deadline"
 });
 
+export const TIMER_KIND = Object.freeze({
+  standard: "standard",
+  break: "break"
+});
+
 export const TIMER_SOUND = Object.freeze({
   none: "none",
   custom: "custom",
@@ -68,6 +73,7 @@ export function normalizeTimer(timer) {
     id,
     name,
     mode: timer.mode === TIMER_MODE.deadline ? TIMER_MODE.deadline : TIMER_MODE.duration,
+    kind: timer.kind === TIMER_KIND.break ? TIMER_KIND.break : TIMER_KIND.standard,
     startAt,
     endsAt,
     duration,

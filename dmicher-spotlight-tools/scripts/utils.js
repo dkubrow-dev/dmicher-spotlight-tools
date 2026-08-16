@@ -1,22 +1,5 @@
 import { I18N_PREFIX, MODULE_ID } from "./config.js";
 
-const ALLOWED_STYLE_PROPERTIES = new Set([
-  "background-color",
-  "border",
-  "border-radius",
-  "color",
-  "font-family",
-  "font-size",
-  "font-style",
-  "font-weight",
-  "letter-spacing",
-  "line-height",
-  "padding",
-  "text-align",
-  "text-decoration",
-  "text-transform",
-  "white-space"
-]);
 
 export function i18nKey(key) {
   return `${I18N_PREFIX}.${key}`;
@@ -38,20 +21,6 @@ export function canUseRequest(request, user = game.user) {
   return !request.moderatorOnly || isModerator(user);
 }
 
-export function sanitizeTextStyle(rawStyle) {
-  const probe = document.createElement("span");
-  probe.style.cssText = String(rawStyle ?? "").slice(0, 1000);
-  const safeDeclarations = [];
-
-  for (const property of ALLOWED_STYLE_PROPERTIES) {
-    const value = probe.style.getPropertyValue(property).trim();
-    if (!value || /(url\s*\(|expression\s*\(|javascript\s*:)/i.test(value)) continue;
-    const priority = probe.style.getPropertyPriority(property);
-    safeDeclarations.push(`${property}: ${value}${priority ? " !important" : ""}`);
-  }
-
-  return safeDeclarations.length ? `${safeDeclarations.join("; ")};` : "";
-}
 
 export function formatDuration(milliseconds) {
   const totalSeconds = Math.max(0, Math.floor((Number(milliseconds) || 0) / 1000));
