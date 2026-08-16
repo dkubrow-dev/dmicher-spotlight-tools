@@ -204,10 +204,41 @@ test("poll template macro thumbnails keep a usable size across Foundry versions"
 test("welcome support is visually separated and uses internal master settings action", () => {
   const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
   const requestTool = fs.readFileSync(path.join(MODULE_ROOT, "scripts", "tools", "requests", "request-tool.js"), "utf8");
+  const ru = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "ru.json"), "utf8")).DMICHERSPOTLIGHTTOOLS;
   assert.match(stylesheet, /\.dmicher-request-welcome-divider\s*\{[\s\S]*?border-top:[\s\S]*?\}/);
   assert.match(stylesheet, /\.dmicher-request-welcome-support\s*\{[\s\S]*?font-size:\s*var\(--font-size-12\)/);
+  assert.match(stylesheet, /\.dmicher-request-welcome \.dmicher-inline-link-tail\s*\{[\s\S]*?white-space:\s*nowrap/);
   assert.match(requestTool, /openMasterSettings:[\s\S]*?openRequestMasterSettings/);
   assert.doesNotMatch(requestTool, /fetch\(|XMLHttpRequest/);
+  assert.equal(`${ru.Requests.Welcome.DisableBefore} ${ru.Requests.Welcome.MasterSettingsLink}${ru.Requests.Welcome.DisableAfter}`, "\u041e\u0442\u043a\u043b\u044e\u0447\u0438\u0442\u044c \u044d\u0442\u043e \u043f\u0440\u0438\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435 \u0438 \u043f\u0440\u043e\u0432\u0435\u0441\u0442\u0438 \u0434\u0440\u0443\u0433\u0438\u0435 \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u043c\u043e\u0434\u0443\u043b\u044f \u0432\u044b \u043c\u043e\u0436\u0435\u0442\u0435 \u0432 \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430\u0445 \u043c\u0430\u0441\u0442\u0435\u0440\u0430.");
+});
+
+test("window tables keep one continuous row divider", () => {
+  const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
+  const tableRule = stylesheet.match(/\.dmicher-tool-table\s*\{([^}]*)\}/)?.[1] ?? "";
+  const rowRule = stylesheet.match(/\.dmicher-tool-table tr\s*\{([^}]*)\}/)?.[1] ?? "";
+  const cellRule = stylesheet.match(/\.dmicher-tool-table th,\s*\.dmicher-tool-table td\s*\{([^}]*)\}/)?.[1] ?? "";
+  const nameCellRule = stylesheet.match(/\.dmicher-poll-template-name-cell\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.match(tableRule, /border-collapse:\s*collapse/);
+  assert.match(tableRule, /border-spacing:\s*0/);
+  assert.match(rowRule, /border-bottom:\s*1px solid/);
+  assert.match(cellRule, /border-bottom:\s*0/);
+  assert.doesNotMatch(nameCellRule, /display:\s*(?:flex|grid)/);
+  assert.match(stylesheet, /\.dmicher-spotlight-window \.dmicher-poll-template-name-button\s*\{[^}]*display:\s*block/);
+
+  const tableTemplates = walk(path.join(MODULE_ROOT, "templates"))
+    .filter((templatePath) => templatePath.endsWith(".hbs"))
+    .filter((templatePath) => fs.readFileSync(templatePath, "utf8").includes("<table"));
+  let tableCount = 0;
+  for (const templatePath of tableTemplates) {
+    const template = fs.readFileSync(templatePath, "utf8");
+    for (const match of template.matchAll(/<table\b[^>]*>/g)) {
+      tableCount += 1;
+      assert.match(match[0], /\bclass="[^"]*\bdmicher-tool-table\b[^"]*"/, path.relative(ROOT, templatePath));
+    }
+  }
+  assert.equal(tableCount, 8);
 });
 
 test("timer manager exposes the immediate repeat control", () => {

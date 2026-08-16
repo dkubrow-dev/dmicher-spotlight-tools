@@ -192,6 +192,7 @@ test("welcome actions cannot trigger browser navigation and work with every supp
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="thanks"/);
   assert.match(content, /<hr class="dmicher-request-welcome-divider">/);
   assert.match(content, /<p class="dmicher-request-welcome-support">/);
+  assert.equal((content.match(/class="dmicher-inline-link-tail"/g) ?? []).length, 2);
   assert.ok(content.indexOf("dmicher-request-welcome-divider") < content.indexOf("dmicher-request-welcome-support"));
   assert.doesNotMatch(buildWelcomeMessageContent(false), /data-request-welcome-action="master-settings"/);
 

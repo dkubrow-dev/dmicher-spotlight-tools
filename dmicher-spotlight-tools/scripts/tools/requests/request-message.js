@@ -44,10 +44,12 @@ export function buildWelcomeMessageContent(includeHelp) {
   const moduleRecord = game.modules?.get?.(MODULE_ID);
   const moduleTitle = String(moduleRecord?.title ?? localize("Title"));
   const moduleVersion = String(moduleRecord?.version ?? moduleRecord?.manifest?.version ?? "");
+  const masterSettingsLink = `<span class="dmicher-inline-link-tail"><button type="button" class="dmicher-inline-link" data-request-welcome-action="master-settings">${escapeHTML(localize("Requests.Welcome.MasterSettingsLink"))}</button>${escapeHTML(localize("Requests.Welcome.DisableAfter"))}</span>`;
   const help = includeHelp
-    ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))} ${escapeHTML(localize("Requests.Welcome.DisableBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="master-settings">${escapeHTML(localize("Requests.Welcome.MasterSettingsLink"))}</button>${escapeHTML(localize("Requests.Welcome.DisableAfter"))}</p>`
+    ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))} ${escapeHTML(localize("Requests.Welcome.DisableBefore"))} ${masterSettingsLink}</p>`
     : "";
-  const support = `<p class="dmicher-request-welcome-support">${escapeHTML(localize("Requests.Welcome.FreeBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="thanks">${escapeHTML(localize("Requests.Welcome.SupportLink"))}</button>${escapeHTML(localize("Requests.Welcome.FreeAfter"))}</p>`;
+  const supportLink = `<span class="dmicher-inline-link-tail"><button type="button" class="dmicher-inline-link" data-request-welcome-action="thanks">${escapeHTML(localize("Requests.Welcome.SupportLink"))}</button>${escapeHTML(localize("Requests.Welcome.FreeAfter"))}</span>`;
+  const support = `<p class="dmicher-request-welcome-support">${escapeHTML(localize("Requests.Welcome.FreeBefore"))} ${supportLink}</p>`;
   return `
     <section class="dmicher-technical-card dmicher-request-welcome">
       <p>${escapeHTML(format("Requests.Welcome.MainBefore", { module: moduleTitle, version: moduleVersion }))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="settings">${escapeHTML(localize("Requests.Welcome.MenuLink"))}</button>${escapeHTML(localize("Requests.Welcome.MainAfter"))}</p>

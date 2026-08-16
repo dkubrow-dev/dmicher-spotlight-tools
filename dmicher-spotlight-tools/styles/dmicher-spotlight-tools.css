@@ -483,6 +483,10 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
   width: auto;
 }
 
+.dmicher-request-welcome .dmicher-inline-link-tail {
+  white-space: nowrap;
+}
+
 .dmicher-request-welcome .dmicher-inline-link:hover,
 .dmicher-request-welcome .dmicher-inline-link:focus-visible {
   color: var(--color-text-hyperlink, #ff6400);
@@ -741,14 +745,19 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
 
 .dmicher-tool-table {
   border-collapse: collapse;
+  border-spacing: 0;
   font-size: var(--font-size-13);
   line-height: 1.25;
   width: 100%;
 }
 
+.dmicher-tool-table tr {
+  border-bottom: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ddd));
+}
+
 .dmicher-tool-table th,
 .dmicher-tool-table td {
-  border-bottom: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ddd));
+  border-bottom: 0;
   padding: 0.25rem 0.35rem;
   text-align: left;
   vertical-align: middle;
@@ -1173,9 +1182,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-poll-template-name-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
   min-width: 0;
 }
 
@@ -1190,6 +1196,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   box-shadow: none;
   color: inherit;
   cursor: pointer;
+  display: block;
   font: inherit;
   height: auto;
   margin: 0;
