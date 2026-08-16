@@ -31,6 +31,7 @@ globalThis.document = {
 
 const {
   TIMER_DISPLAY_STYLE,
+  TIMER_KIND,
   TIMER_MODE,
   TIMER_SOUND,
   TIMER_VISIBILITY,
@@ -99,6 +100,7 @@ function createTimer(overrides = {}) {
     id: "expired",
     name: "Expired",
     mode: TIMER_MODE.duration,
+    kind: TIMER_KIND.standard,
     startAt: 1,
     endsAt: 2,
     duration: 1,
@@ -290,4 +292,77 @@ test("a failed unpause does not mask the original break error", async () => {
 
   assert.deepEqual(pauseCalls, [true, false]);
   assert.deepEqual(values.get("dmicher-spotlight-tools.timers").timers, {});
+});
+test("repeating a timer preserves its launch parameters and full duration", async () => {
+  const { values } = installGame();
+  const originalNow = Date.now;
+  const now = Date.UTC(2026, 7, 17, 12, 0, 0, 250);
+  Date.now = () => now;
+  const source = createTimer({
+    id: "source",
+    name: "Source timer",
+    mode: TIMER_MODE.deadline,
+    startAt: now - 60_000,
+    endsAt: now + 62_345,
+    duration: 122_345,
+    visibility: TIMER_VISIBILITY.private,
+    style: TIMER_DISPLAY_STYLE.compact,
+    sound: TIMER_SOUND.signal2,
+    volume: 0.35,
+    createdAt: now - 60_000
+  });
+  const state = { version: 1, timers: { source } };
+  values.set("dmicher-spotlight-tools.timers", structuredClone(state));
+
+  const tool = new TimerTool();
+  tool.state = structuredClone(state);
+  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.openTimerWindow = () => null;
+
+  try {
+    const repeated = await tool.repeatTimer("source");
+    const persisted = values.get("dmicher-spotlight-tools.timers");
+    assert.equal(Object.hasOwn(persisted.timers, "source"), true);
+    assert.deepEqual(persisted.timers["timer-id"], repeated);
+    assert.equal(repeated.name, source.name);
+    assert.equal(repeated.mode, source.mode);
+    assert.equal(repeated.kind, TIMER_KIND.standard);
+    assert.equal(repeated.startAt, now);
+    assert.equal(repeated.endsAt, now + source.duration);
+    assert.equal(repeated.duration, source.duration);
+    assert.equal(repeated.visibility, source.visibility);
+    assert.equal(repeated.style, source.style);
+    assert.equal(repeated.sound, source.sound);
+    assert.equal(repeated.volume, source.volume);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("repeating a break timer pauses the world again", async () => {
+  const { values } = installGame();
+  const source = createTimer({
+    id: "break-source",
+    kind: TIMER_KIND.break,
+    duration: 300_000,
+    endsAt: 300_001
+  });
+  const state = { version: 1, timers: { "break-source": source } };
+  values.set("dmicher-spotlight-tools.timers", structuredClone(state));
+  const pauseCalls = [];
+  game.togglePause = async (paused) => {
+    pauseCalls.push(paused);
+    game.paused = Boolean(paused);
+    return game.paused;
+  };
+
+  const tool = new TimerTool();
+  tool.state = structuredClone(state);
+  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.openTimerWindow = () => null;
+
+  const repeated = await tool.repeatTimer("break-source");
+  assert.deepEqual(pauseCalls, [true]);
+  assert.equal(repeated.kind, TIMER_KIND.break);
+  assert.equal(repeated.duration, source.duration);
 });

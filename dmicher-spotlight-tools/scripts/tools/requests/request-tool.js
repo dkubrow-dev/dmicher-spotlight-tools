@@ -454,7 +454,8 @@ export class RequestTool {
       id: createRequestId(),
       urgency: normalizeRequestType(requestData.urgency),
       authorName: String(requestData.authorName ?? "").slice(0, 100),
-      characterName: String(requestData.characterName ?? "").slice(0, 100)
+      characterName: String(requestData.characterName ?? "").slice(0, 100),
+      portrait: String(requestData.portrait || DEFAULT_USER_PORTRAIT).slice(0, 2048)
     };
     this.showSpeechGranted(payload);
     game.socket.emit(SOCKET_CHANNEL, payload);
@@ -502,20 +503,30 @@ export class RequestTool {
     this.shownNotifications.add(payload.id);
     window.setTimeout(() => this.shownNotifications.delete(payload.id), 10000);
     const type = normalizeRequestType(payload.urgency);
-    const characterSuffix = payload.characterName ? ` (${payload.characterName})` : "";
+    const authorName = String(payload.authorName || localize("Requests.Active.UnknownAuthor"));
+    const characterSuffix = payload.characterName ? ` \u2014 ${payload.characterName}` : "";
     const popup = document.createElement("aside");
     popup.classList.add("dmicher-speech-popup");
     popup.setAttribute("role", "status");
     popup.setAttribute("aria-live", "polite");
-    const image = document.createElement("img");
-    image.src = getRequestImage(type);
-    image.alt = localize(REQUEST_TYPES[type].imageAltKey);
-    const text = document.createElement("p");
-    text.textContent = format("Requests.Popup.Granted", {
-      name: payload.authorName,
-      token: characterSuffix
-    });
-    popup.append(image, text);
+    const portrait = document.createElement("img");
+    portrait.classList.add("dmicher-speech-popup-portrait");
+    portrait.src = String(payload.portrait || DEFAULT_USER_PORTRAIT);
+    portrait.alt = authorName;
+    const typeImage = document.createElement("img");
+    typeImage.classList.add("dmicher-speech-popup-type");
+    typeImage.src = getRequestImage(type);
+    typeImage.alt = localize(REQUEST_TYPES[type].imageAltKey);
+    const text = document.createElement("div");
+    text.classList.add("dmicher-speech-popup-text");
+    const title = document.createElement("strong");
+    title.classList.add("dmicher-speech-popup-title");
+    title.textContent = localize("Requests.Popup.Granted");
+    const person = document.createElement("span");
+    person.classList.add("dmicher-speech-popup-person");
+    person.textContent = `${authorName}${characterSuffix}`;
+    text.append(title, person);
+    popup.append(portrait, typeImage, text);
     document.body.append(popup);
     void this.volumeController?.play(SPEECH_GRANTED_SOUND, getRequestBaseVolume(type));
     window.setTimeout(() => {

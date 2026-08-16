@@ -529,15 +529,39 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
 
 .dmicher-speech-popup img {
   border-radius: 4px;
+  flex: 0 0 62px;
   height: 62px;
-  object-fit: contain;
   width: 62px;
 }
 
-.dmicher-speech-popup p {
+.dmicher-speech-popup-portrait {
+  object-fit: cover;
+}
+
+.dmicher-speech-popup-type {
+  object-fit: contain;
+}
+
+.dmicher-speech-popup-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.dmicher-speech-popup-title,
+.dmicher-speech-popup-person {
   font-size: var(--font-size-18);
+  line-height: 1.2;
+}
+
+.dmicher-speech-popup-title {
   font-weight: bold;
-  margin: 0;
+}
+
+.dmicher-speech-popup-person {
+  font-weight: normal;
+  overflow-wrap: anywhere;
 }
 
 .dmicher-speech-popup.is-closing {

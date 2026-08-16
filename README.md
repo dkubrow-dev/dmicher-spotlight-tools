@@ -140,7 +140,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 Сообщения и окна приватных таймеров увидят только мастера и ассистенты.
 Окно таймера можно закрыть: открыть окно таймера можно будет в любой момент по кнопке в чате или из таблицы текущих таймеров.
 
-Вы можете отменить таймер из таблицы текущих таймеров.
+Из таблицы текущих таймеров таймер можно открыть, немедленно повторить со всеми исходными параметрами или отменить. При повторе таймера перерыва мир снова ставится на паузу.
 Завершённые таймеры самостоятельно не удаляются из памяти: вы можете очистить список зарегистрированных таймеров в окне "Таймеры".
 
 #### Таймер перерыва
@@ -329,7 +329,7 @@ After the timer starts, a message about its start appears in chat, and the timer
 Messages and windows of private timers are visible only to the Game Master and assistants.
 The timer window can be closed: it can be opened again at any time from the chat button or from the current timers table.
 
-You can cancel a timer from the current timers table.
+From the current timers table, a timer can be opened, immediately repeated with all original parameters, or cancelled. Repeating a break timer pauses the world again.
 Expired timers are not automatically removed from memory: you can clear the list of registered timers in the "Timers" window.
 
 #### Break timer

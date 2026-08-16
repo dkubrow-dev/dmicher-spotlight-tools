@@ -391,3 +391,59 @@ test("primary moderator reset clears cooldowns without removing active requests"
   assert.equal(activeState.revision, 3);
   assert.deepEqual(notices, [["info", "DMICHERSPOTLIGHTTOOLS.Requests.Limits.ResetSuccess"]]);
 });
+test("speech grant popup shows portrait, request type, and two text lines", () => {
+  class MockElement {
+    constructor(tagName) {
+      this.tagName = tagName;
+      this.children = [];
+      this.attributes = {};
+      this.classNames = new Set();
+      this.classList = { add: (...names) => names.forEach((name) => this.classNames.add(name)) };
+    }
+
+    append(...children) {
+      this.children.push(...children);
+    }
+
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    }
+
+    remove() {}
+  }
+
+  let popup = null;
+  let emitted = null;
+  globalThis.document = {
+    createElement: (tagName) => new MockElement(tagName),
+    body: { append: (element) => { popup = element; } }
+  };
+  globalThis.window = { setTimeout: () => 1 };
+  globalThis.game = {
+    user: { id: "gm", name: "GM", role: 4 },
+    settings: { get: () => ({}) },
+    socket: { emit: (_channel, payload) => { emitted = payload; } },
+    i18n: {
+      localize: (key) => key.endsWith("Requests.Popup.Granted") ? "The floor is granted" : key,
+      format: (key) => key
+    }
+  };
+
+  const tool = new RequestTool({ volumeController: { play: async () => undefined } });
+  tool.broadcastSpeechGranted({
+    urgency: "common",
+    authorName: "Player",
+    characterName: "Hero",
+    portrait: "token.webp"
+  });
+
+  assert.equal(emitted.portrait, "token.webp");
+  assert.equal(popup.children.length, 3);
+  const [portrait, typeImage, text] = popup.children;
+  assert.equal(portrait.src, "token.webp");
+  assert.equal(portrait.classNames.has("dmicher-speech-popup-portrait"), true);
+  assert.equal(typeImage.classNames.has("dmicher-speech-popup-type"), true);
+  assert.equal(text.children[0].textContent, "The floor is granted");
+  assert.equal(text.children[1].textContent, "Player \u2014 Hero");
+  assert.equal(text.children[1].classNames.has("dmicher-speech-popup-person"), true);
+});

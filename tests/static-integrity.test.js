@@ -200,3 +200,9 @@ test("poll template macro thumbnails keep a usable size across Foundry versions"
   assert.equal(en.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "Macro");
   assert.equal(ru.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "\u041c\u0430\u043a\u0440\u043e\u0441");
 });
+test("timer manager exposes the immediate repeat control", () => {
+  const template = fs.readFileSync(path.join(MODULE_ROOT, "templates", "timers", "timer-manager.hbs"), "utf8");
+  const manager = fs.readFileSync(path.join(MODULE_ROOT, "scripts", "tools", "timers", "timer-manager.js"), "utf8");
+  assert.match(template, /data-timer-action="repeat"[\s\S]*?fa-rotate-right/);
+  assert.match(manager, /repeatTimer\(button\.dataset\.timerId\)/);
+});

@@ -92,7 +92,7 @@
         "Type": "Type: {type}"
       },
       "Popup": {
-        "Granted": "The floor is given to {name}{token}"
+        "Granted": "The floor is granted"
       },
       "Hotbar": {
         "MacroName": "{label} ({title})",
@@ -410,7 +410,7 @@
                   },
                   "Grant": {
                     "Label": "Give the floor button",
-                    "Description": "Available to moderators for regular and urgent requests; resolves the entry and shows the granted notification."
+                    "Description": "Available to moderators for regular and urgent requests; resolves the entry and shows a two-line notification with the portrait, request type, player name, and known character name."
                   },
                   "TakeFloor": {
                     "Label": "Take the floor button",
@@ -564,7 +564,7 @@
                   },
                   "Grant": {
                     "Label": "Give the floor or Take the floor button",
-                    "Description": "Grants the floor, removes the request, and starts the corresponding notification."
+                    "Description": "Grants the floor, removes the request, and shows a two-line notification with the portrait, request type, player name, and known character name."
                   },
                   "Cancel": {
                     "Label": "Cancel request button",
@@ -1603,6 +1603,10 @@
                   "Open": {
                     "Label": "Open",
                     "Description": "Use the eye button or double-click the row."
+                  },
+                  "Repeat": {
+                    "Label": "Repeat",
+                    "Description": "The circular-arrow button immediately starts a new timer with the same name, duration, visibility, display style, signal, and volume. Repeating a break timer also pauses the world again."
                   },
                   "Delete": {
                     "Label": "Delete",
@@ -2693,6 +2697,7 @@
         "TableTitle": "Current timers",
         "Empty": "No timers yet.",
         "Open": "Open timer",
+        "Repeat": "Repeat timer",
         "Delete": "Delete timer",
         "Columns": {
           "Name": "Name",

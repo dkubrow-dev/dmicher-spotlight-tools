@@ -96,7 +96,7 @@ const timerPages = [
   ]),
   definePage("timers-manager", "TimersManager", [
     ["Form", ["Name", "Mode", "Time", "Visibility", "Style", "Sound", "CustomSound", "Volume", "Preview", "Reset", "Start"]],
-    ["Table", ["Name", "StartedBy", "StartedAt", "Deadline", "Remaining", "Open", "Delete"]],
+    ["Table", ["Name", "StartedBy", "StartedAt", "Deadline", "Remaining", "Open", "Repeat", "Delete"]],
     ["Cleanup", ["ExpiredRows", "DeleteExpired", "ConfirmActive"]]
   ]),
   definePage("timers-window", "TimersWindow", [
