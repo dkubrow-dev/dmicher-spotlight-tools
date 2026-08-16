@@ -184,6 +184,8 @@ test("help content uses module theme colors", function (){
   assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-item\s+dt\s*\{[\s\S]*?color:\s*var\(--dmicher-text-muted[\s\S]*?text-shadow:\s*none;/s);
   assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-item\s+dd\s*\{[\s\S]*?color:\s*var\(--dmicher-text/s);
   assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-page\s+h2[\s\S]*color:\s*var\(--dmicher-heading/);
+  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help \.dmicher-request-help-toc \.dmicher-help-page-link\s*\{[\s\S]*?background:\s*transparent !important;[\s\S]*?color:\s*var\(--dmicher-text\) !important;/);
+  assert.match(stylesheet, /\.dmicher-help-page-link\.active\s*\{[\s\S]*?background:\s*var\(--dmicher-surface-raised\) !important;[\s\S]*?border-left-color:\s*var\(--dmicher-accent\) !important;/);
 });
 
 test("poll template macro thumbnails keep a usable size across Foundry versions", function () {

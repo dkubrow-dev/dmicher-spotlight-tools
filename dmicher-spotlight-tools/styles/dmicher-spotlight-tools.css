@@ -2593,13 +2593,14 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   margin: 0 0 0.1rem;
 }
 
-.dmicher-request-help-toc .dmicher-help-page-link {
+.dmicher-spotlight-window.dmicher-request-help .dmicher-request-help-toc .dmicher-help-page-link {
   align-items: center;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  box-shadow: none;
-  color: inherit;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-left-width: 3px !important;
+  border-radius: 3px;
+  box-shadow: none !important;
+  color: var(--dmicher-text) !important;
   cursor: pointer;
   display: flex;
   font: inherit;
@@ -2611,18 +2612,22 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   padding: 0.22rem 0.4rem;
   text-align: left;
   text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   width: calc(100% - 0.45rem);
 }
 
-.dmicher-request-help-toc .dmicher-help-page-link:hover,
-.dmicher-request-help-toc .dmicher-help-page-link:focus {
-  background: rgba(127, 127, 127, 0.12);
-  border-color: transparent;
-  color: inherit;
+.dmicher-spotlight-window.dmicher-request-help .dmicher-request-help-toc .dmicher-help-page-link:hover,
+.dmicher-spotlight-window.dmicher-request-help .dmicher-request-help-toc .dmicher-help-page-link:focus {
+  background: var(--dmicher-surface-muted) !important;
+  border-left-color: var(--dmicher-border) !important;
+  color: var(--dmicher-text) !important;
+  outline: none;
 }
 
-.dmicher-request-help-toc .dmicher-help-page-link.active {
-  border-color: var(--color-warm-2, #c98b2e);
+.dmicher-spotlight-window.dmicher-request-help .dmicher-request-help-toc .dmicher-help-page-link.active {
+  background: var(--dmicher-surface-raised) !important;
+  border-left-color: var(--dmicher-accent) !important;
+  color: var(--dmicher-accent-strong) !important;
   font-weight: 700;
 }
 
