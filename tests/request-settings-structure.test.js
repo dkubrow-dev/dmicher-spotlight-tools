@@ -31,6 +31,9 @@ test("personal and Game Master request settings use separate templates", () => {
   assert.match(master, /Requests\.Resources\.ImagesHeading/);
   assert.match(master, /Requests\.Resources\.SoundsHeading/);
   assert.match(master, /Requests\.Welcome\.Heading/);
+  assert.match(master, /#each imageResources/);
+  assert.match(master, /#each soundResources/);
+  assert.doesNotMatch(master, /timerSoundTypes|data-custom-timer-sound|customSoundChecked|disabledText/);
 
   const feedAt = master.indexOf("Requests.Feed.SettingsHeading");
   const limitsAt = master.indexOf("dmicher-antispam-settings");
@@ -41,7 +44,8 @@ test("personal and Game Master request settings use separate templates", () => {
 
 test("sound resource sliders have a stable explicit width", () => {
   const css = read("styles/dmicher-spotlight-tools.css");
-  assert.match(css, /\.dmicher-sound-resource \.dmicher-volume-field input\[type="range"\][\s\S]*?width: 14rem;/);
+  assert.match(css, /--dmicher-sound-volume-width: 14rem;/);
+  assert.match(css, /\.dmicher-sound-resource \.dmicher-volume-field input\[type="range"\][\s\S]*?width: var\(--dmicher-sound-volume-width\);/);
   assert.doesNotMatch(css, /\.dmicher-request-settings-tabs/);
   assert.match(css, /\.dmicher-spotlight-window h4,[\s\S]*?color: var\(--dmicher-heading\) !important;[\s\S]*?text-shadow: none !important;/);
   assert.match(css, /input::placeholder,[\s\S]*?color: var\(--dmicher-text-muted\) !important;/);

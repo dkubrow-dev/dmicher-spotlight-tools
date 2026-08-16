@@ -215,14 +215,6 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window {
   padding: 0 0.35rem;
 }
 
-.dmicher-settings-urgent legend {
-  color: #b4232d;
-}
-
-.dmicher-settings-stop legend {
-  color: #6e4616;
-}
-
 .dmicher-settings-preview {
   align-items: center;
   display: flex;
@@ -2208,7 +2200,7 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 
-/* Requests 1.2 */
+/* Request management */
 .dmicher-settings-section {
   border: 1px solid var(--dmicher-border-muted, #777);
   border-radius: 6px;
@@ -2302,15 +2294,16 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-sound-resource .dmicher-volume-field {
-  grid-template-columns: auto 14rem 3.2rem;
+  --dmicher-sound-volume-width: 14rem;
+  grid-template-columns: auto var(--dmicher-sound-volume-width) 3.2rem;
   justify-content: start;
 }
 
 .dmicher-sound-resource .dmicher-volume-field input[type="range"] {
-  flex: 0 0 14rem;
-  max-width: 14rem;
-  min-width: 14rem;
-  width: 14rem;
+  flex: 0 0 var(--dmicher-sound-volume-width);
+  max-width: var(--dmicher-sound-volume-width);
+  min-width: var(--dmicher-sound-volume-width);
+  width: var(--dmicher-sound-volume-width);
 }
 
 .dmicher-request-volume {

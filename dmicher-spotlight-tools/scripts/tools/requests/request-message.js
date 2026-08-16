@@ -41,13 +41,16 @@ export function buildRequestMessageContent(type, text, style, image = getRequest
 }
 
 export function buildWelcomeMessageContent(includeHelp) {
+  const moduleRecord = game.modules?.get?.(MODULE_ID);
+  const moduleTitle = String(moduleRecord?.title ?? localize("Title"));
+  const moduleVersion = String(moduleRecord?.version ?? moduleRecord?.manifest?.version ?? "");
   const help = includeHelp
     ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))}</p>`
     : "";
   const support = `<p>${escapeHTML(localize("Requests.Welcome.FreeBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="thanks">${escapeHTML(localize("Requests.Welcome.SupportLink"))}</button>${escapeHTML(localize("Requests.Welcome.FreeAfter"))}</p>`;
   return `
     <section class="dmicher-technical-card dmicher-request-welcome">
-      <p>${escapeHTML(format("Requests.Welcome.MainBefore", { module: localize("Title") }))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="settings">${escapeHTML(localize("Requests.Welcome.MenuLink"))}</button>${escapeHTML(localize("Requests.Welcome.MainAfter"))}</p>
+      <p>${escapeHTML(format("Requests.Welcome.MainBefore", { module: moduleTitle, version: moduleVersion }))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="settings">${escapeHTML(localize("Requests.Welcome.MenuLink"))}</button>${escapeHTML(localize("Requests.Welcome.MainAfter"))}</p>
       ${help}
       ${support}
     </section>`;

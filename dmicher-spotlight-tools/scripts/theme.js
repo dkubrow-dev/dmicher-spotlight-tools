@@ -44,7 +44,6 @@ export function normalizeTheme(value) {
   return Object.values(THEME).includes(value) ? value : THEME.dark;
 }
 
-
 export function moveThemeSettingFirst(application, html) {
   const root = getRenderedElement(html) ?? application?.element;
   if (!root?.querySelector) return;

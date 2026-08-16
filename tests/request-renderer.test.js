@@ -99,9 +99,10 @@ function installFoundryGlobals() {
     user: { id: "player-1", role: 1 },
     i18n: {
       localize: (key) => key,
-      format: (key) => key,
+      format: (key, data = {}) => key + ":" + JSON.stringify(data),
       lang: "en"
     },
+    modules: new Map([[MODULE_ID, { title: "Manifest Title", version: "1.2.0" }]]),
     time: { serverTime: Date.now() }
   };
 }
@@ -182,6 +183,8 @@ test("request renderer also accepts the raw HTMLElement supplied by v13 and v14"
 test("welcome actions cannot trigger browser navigation and work with every supported chat wrapper", () => {
   installFoundryGlobals();
   const content = buildWelcomeMessageContent(true);
+  assert.match(content, /Manifest Title/);
+  assert.match(content, /1\.2\.0/);
   assert.doesNotMatch(content, /<a\b|href\s*=/i);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="settings"/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="help"/);

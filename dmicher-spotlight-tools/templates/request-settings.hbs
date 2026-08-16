@@ -3,7 +3,7 @@
     <p class="dmicher-settings-intro">{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.Intro"}}</p>
     <div class="dmicher-settings-blocks">
       {{#each requests}}
-      <fieldset class="dmicher-settings-block dmicher-settings-{{urgency}}" {{disabledText}}>
+      <fieldset class="dmicher-settings-block dmicher-settings-{{urgency}}" {{#if disabled}}disabled{{/if}}>
         <legend>{{label}}</legend>
         {{#if forbiddenHint}}<p class="notification warning">{{forbiddenHint}}</p>{{/if}}
         <div class="dmicher-settings-preview">
@@ -22,7 +22,7 @@
         </div>
         <label class="dmicher-settings-field">
           <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Settings.Text"}}</span>
-          <textarea name="{{urgency}}Text" rows="3" maxlength="500" placeholder="{{placeholder}}" {{disabledText}}>{{text}}</textarea>
+          <textarea name="{{urgency}}Text" rows="3" maxlength="500" placeholder="{{placeholder}}" {{#if disabled}}disabled{{/if}}>{{text}}</textarea>
         </label>
         <div class="dmicher-request-appearance">
           <label class="dmicher-settings-field dmicher-request-color-field">

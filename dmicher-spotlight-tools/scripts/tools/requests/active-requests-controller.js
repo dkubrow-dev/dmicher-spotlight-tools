@@ -2,12 +2,12 @@ import { DEFAULT_USER_PORTRAIT, MODULE_ID, REQUEST_TYPES, normalizeRequestType }
 import {
   confirmDialog,
   escapeHTML,
-  format,
   isModerator,
   localize,
   openSingletonApplication
 } from "../../utils.js";
 import {
+  compareActiveRequestEntries,
   getRequestConfiguration,
   getRequestImage,
   hasConfiguredRequestTimeouts,
@@ -46,49 +46,14 @@ export class ActiveRequestsController {
     if (this.window === app) this.window = null;
   }
 
-  setEntries(entries, { notify = true } = {}) {
-    this.entries = (entries ?? []).map(normalizeActiveRequestEntry).filter(Boolean);
-    this.sort();
-    if (notify) this.notifyChanged();
-  }
-
-  rebuild(_messages = game.messages, { notify = true } = {}) {
-    if (notify) this.notifyChanged();
-  }
-
-  refresh() {
-    this.sort();
-  }
-
-  register(message, requestData, { notify = true } = {}) {
-    const entry = normalizeActiveRequestEntry({
-      ...requestData,
-      id: requestData.id ?? message?.id,
-      messageId: message?.id ?? requestData.messageId
-    });
-    if (!entry) return;
-    const index = this.entries.findIndex((item) => item.id === entry.id);
-    if (index >= 0) this.entries[index] = entry;
-    else this.entries.push(entry);
-    this.sort();
-    if (notify) this.notifyChanged();
-  }
-
-  sort() {
-    this.entries.sort((left, right) => (
-      (Number(left.sequence) - Number(right.sequence))
-      || (Number(left.submittedAt) - Number(right.submittedAt))
-      || left.id.localeCompare(right.id)
-    ));
-  }
-
-  remove(requestId) {
-    const initialLength = this.entries.length;
-    this.entries = this.entries.filter((entry) => entry.id !== requestId && entry.messageId !== requestId);
-    if (initialLength === this.entries.length) return false;
+  setEntries(entries) {
+    this.entries = (entries ?? [])
+      .map(normalizeActiveRequestEntry)
+      .filter(Boolean)
+      .sort(compareActiveRequestEntries);
     this.notifyChanged();
-    return true;
   }
+
 
   notifyChanged() {
     this.window?.onActiveRequestsChanged();
@@ -99,12 +64,8 @@ export class ActiveRequestsController {
     return this.entries.length;
   }
 
-  getUrgentCount() {
-    return this.entries.filter((entry) => normalizeRequestType(entry.urgency) === "urgent").length;
-  }
 
   getRows({ showTime = true } = {}) {
-    this.sort();
     return this.entries.map((entry) => {
       const request = REQUEST_TYPES[normalizeRequestType(entry.urgency)];
       const submittedAt = Number(entry.submittedAt);

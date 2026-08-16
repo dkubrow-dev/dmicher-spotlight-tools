@@ -45,7 +45,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
       hasChatMessage: Boolean(row.messageId)
     }));
     const totalCount = requests.length;
-    const urgentCount = this.activeRequests.getUrgentCount();
+    const urgentCount = requests.filter((request) => request.urgency === "urgent").length;
     const typeFilters = Object.entries(REQUEST_TYPES).map(([type, request]) => ({
       type,
       label: localize(request.labelKey),
@@ -163,7 +163,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
 
   startTicking() {
     this.stopTicking();
-    this.tickHandle = window.setInterval(() => this.onActiveRequestsChanged({ refresh: true }), ACTIVE_REQUESTS_TICK_MS);
+    this.tickHandle = window.setInterval(() => this.onActiveRequestsChanged(), ACTIVE_REQUESTS_TICK_MS);
   }
 
   stopTicking() {
@@ -182,9 +182,8 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
     this.element?.setAttribute("aria-label", title);
   }
 
-  onActiveRequestsChanged({ refresh = false } = {}) {
+  onActiveRequestsChanged() {
     if (!this.rendered) return;
-    if (refresh) this.activeRequests.refresh();
     this.updateWindowTitle();
     void this.render({ parts: ["main"] }).then(() => this.updateWindowTitle());
   }

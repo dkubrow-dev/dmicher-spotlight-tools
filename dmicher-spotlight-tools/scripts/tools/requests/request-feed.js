@@ -19,9 +19,10 @@ import {
 import { REQUEST_TIMEOUT_TICK_MS, updateRequestTimeoutCounters } from "./request-timeout-display.js";
 
 const SIDEBAR_GENERATION = getFoundryGeneration();
-const ModernSidebarBase = SIDEBAR_GENERATION >= 13
-  ? foundry.applications.sidebar?.AbstractSidebarTab
-  : null;
+const LEGACY_SIDEBAR = SIDEBAR_GENERATION < 13;
+const ModernSidebarBase = LEGACY_SIDEBAR
+  ? null
+  : foundry.applications.sidebar?.AbstractSidebarTab;
 export function getLegacySidebarBase() {
   const configuredChat = globalThis.CONFIG?.ui?.chat;
   const configuredBase = typeof configuredChat === "function"
@@ -110,7 +111,7 @@ export class RequestFeedSidebar extends SidebarBase {
       showTime: configuration.feed.showTime,
       moderator,
       showResetTimeouts: moderator && hasConfiguredRequestTimeouts(configuration),
-      legacy: getFoundryGeneration() < 13,
+      legacy: LEGACY_SIDEBAR,
       macros
     };
   }
@@ -162,14 +163,14 @@ export class RequestFeedSidebar extends SidebarBase {
 
   onActiveRequestsChanged() {
     if (!this.rendered) return;
-    if (getFoundryGeneration() >= 13) void this.render({ force: true });
+    if (!LEGACY_SIDEBAR) void this.render({ force: true });
     else this.render(true);
   }
 
   _onActivate() {
     const result = super._onActivate?.();
     if (!this.element?.querySelector(".dmicher-request-feed-shell")) {
-      if (getFoundryGeneration() >= 13) void this.render({ force: true });
+      if (!LEGACY_SIDEBAR) void this.render({ force: true });
       else this.render(true);
     }
     return result;
@@ -240,7 +241,7 @@ export function configureRequestFeed({ activeRequests, actions }) {
 
   CONFIG.ui ??= {};
   CONFIG.ui.requests = RequestFeedSidebar;
-  if (getFoundryGeneration() >= 13) installModernSidebarDescriptor();
+  if (!LEGACY_SIDEBAR) installModernSidebarDescriptor();
   else Hooks.on("renderSidebar", injectLegacySidebarTab);
   return true;
 }
@@ -268,7 +269,7 @@ function installModernSidebarDescriptor() {
 }
 
 export function ensureLegacyRequestFeedRendered(root = document.querySelector("#sidebar")) {
-  if (getFoundryGeneration() >= 13) return ui.requests;
+  if (!LEGACY_SIDEBAR) return ui.requests;
   const application = ui.requests ?? (ui.requests = new RequestFeedSidebar());
   const mounted = root?.querySelector("#requests.dmicher-request-feed-shell");
   if (mounted && application.rendered) return application;

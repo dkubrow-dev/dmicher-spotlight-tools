@@ -20,7 +20,6 @@ import {
   isPrimaryModerator,
   localize,
   preloadImage,
-  sanitizeTextStyle,
   setGamePaused
 } from "../../utils.js";
 import { ActiveRequestsController } from "./active-requests-controller.js";
@@ -46,6 +45,7 @@ import {
   renderRequestChatMessage
 } from "./request-message.js";
 import { getRequestStyle, getRequestText } from "./request-settings.js";
+import { sanitizeRequestTextStyle } from "./request-text-style.js";
 
 export class RequestTool {
   constructor({ focusAuditTool = null, volumeController = null } = {}) {
@@ -285,7 +285,7 @@ export class RequestTool {
           content: buildRequestMessageContent(
             type,
             String(payload.text ?? getRequestText(request)).slice(0, 500),
-            sanitizeTextStyle(payload.style ?? getRequestStyle(request)),
+            sanitizeRequestTextStyle(payload.style ?? getRequestStyle(request)),
             getRequestImage(type, configuration)
           ),
           flags: { [MODULE_ID]: { [FLAGS.request]: entry } }

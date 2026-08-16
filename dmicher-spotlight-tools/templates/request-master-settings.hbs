@@ -1,146 +1,130 @@
 <form class="dmicher-request-settings-form dmicher-request-master-settings-form">
-    <fieldset class="dmicher-settings-section">
-      <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.SettingsHeading"}}</legend>
-      <label class="dmicher-checkbox-row">
-        <input type="checkbox" name="feedEnabled" {{#if feedEnabled}}checked{{/if}}>
-        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Enabled"}}</span>
-      </label>
-      <label class="dmicher-checkbox-row">
-        <input type="checkbox" name="feedShowTime" {{#if feedShowTime}}checked{{/if}}>
-        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.ShowTime"}}</span>
-      </label>
-    </fieldset>
+  <fieldset class="dmicher-settings-section">
+    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.SettingsHeading"}}</legend>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="feedEnabled" {{#if feedEnabled}}checked{{/if}}>
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.Enabled"}}</span>
+    </label>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="feedShowTime" {{#if feedShowTime}}checked{{/if}}>
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.ShowTime"}}</span>
+    </label>
+  </fieldset>
 
-    <fieldset class="dmicher-settings-section dmicher-antispam-settings">
-      <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Heading"}}</legend>
-      <label class="dmicher-checkbox-row">
-        <input type="checkbox" name="chatEnabled" {{#if chatEnabled}}checked{{/if}}>
-        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.ChatEnabled"}}</span>
-      </label>
-      <div class="dmicher-limit-grid">
-        {{#each limits}}
-        <section class="dmicher-resource-row">
-          <h4>{{label}}</h4>
-          <label>
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Mode"}}</span>
-            <select name="{{urgency}}LimitMode" data-request-limit-mode data-urgency="{{urgency}}">
-              <option value="none" {{#if isNone}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.None"}}</option>
-              <option value="count" {{#if isCount}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.ByCount"}}</option>
-              <option value="forbidden" {{#if isForbidden}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Forbidden"}}</option>
-            </select>
-          </label>
-          <label>
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Count"}}</span>
-            <input type="number" name="{{urgency}}LimitCount" value="{{count}}" min="1" max="10" step="1" {{countDisabled}}>
-          </label>
-          <label>
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Timeout"}}</span>
-            <select name="{{urgency}}TimeoutMode" data-request-timeout-mode data-urgency="{{urgency}}">
-              <option value="none" {{#if isTimeoutNone}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutNone"}}</option>
-              <option value="submission" {{#if isTimeoutSubmission}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutSubmission"}}</option>
-              <option value="grant" {{#if isTimeoutGrant}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutGrant"}}</option>
-            </select>
-          </label>
-          <label>
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutTime"}}</span>
-            <input type="text" name="{{urgency}}TimeoutTime" value="{{timeoutTime}}"
-              placeholder="{{localize 'DMICHERSPOTLIGHTTOOLS.Timers.Manager.TimePlaceholder'}}" {{timeoutTimeDisabled}}>
-          </label>
-        </section>
-        {{/each}}
+  <fieldset class="dmicher-settings-section dmicher-antispam-settings">
+    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Heading"}}</legend>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="chatEnabled" {{#if chatEnabled}}checked{{/if}}>
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.ChatEnabled"}}</span>
+    </label>
+    <div class="dmicher-limit-grid">
+      {{#each limits}}
+      <section class="dmicher-resource-row">
+        <h4>{{label}}</h4>
+        <label>
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Mode"}}</span>
+          <select name="{{urgency}}LimitMode" data-request-limit-mode data-urgency="{{urgency}}">
+            <option value="none" {{#if isNone}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.None"}}</option>
+            <option value="count" {{#if isCount}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.ByCount"}}</option>
+            <option value="forbidden" {{#if isForbidden}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Forbidden"}}</option>
+          </select>
+        </label>
+        <label>
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Count"}}</span>
+          <input type="number" name="{{urgency}}LimitCount" value="{{count}}" min="1" max="10" step="1" {{#unless isCount}}disabled{{/unless}}>
+        </label>
+        <label>
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.Timeout"}}</span>
+          <select name="{{urgency}}TimeoutMode" data-request-timeout-mode data-urgency="{{urgency}}">
+            <option value="none" {{#if isTimeoutNone}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutNone"}}</option>
+            <option value="submission" {{#if isTimeoutSubmission}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutSubmission"}}</option>
+            <option value="grant" {{#if isTimeoutGrant}}selected{{/if}}>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutGrant"}}</option>
+          </select>
+        </label>
+        <label>
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.TimeoutTime"}}</span>
+          <input type="text" name="{{urgency}}TimeoutTime" value="{{timeoutTime}}"
+            placeholder="{{localize 'DMICHERSPOTLIGHTTOOLS.Timers.Manager.TimePlaceholder'}}" {{#if isTimeoutNone}}disabled{{/if}}>
+        </label>
+      </section>
+      {{/each}}
+    </div>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="blockWhenEnvironment" {{#if blockWhenEnvironment}}checked{{/if}}>
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.BlockForEnvironment"}}</span>
+    </label>
+  </fieldset>
+
+  <fieldset class="dmicher-settings-section">
+    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.ImagesHeading"}}</legend>
+    {{#each imageResources}}
+    <section class="dmicher-resource-row">
+      <div>
+        <h4>{{label}}</h4>
+        <label class="dmicher-checkbox-row">
+          <input type="checkbox" name="{{prefix}}Custom" data-custom-resource-toggle
+            data-resource-prefix="{{prefix}}" {{#if custom}}checked{{/if}}>
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.CustomImage"}}</span>
+        </label>
+        <label class="dmicher-settings-field">
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.Url"}}</span>
+          <input type="url" name="{{prefix}}Url" value="{{url}}" maxlength="2048"
+            placeholder="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.DefaultImagePlaceholder'}}"
+            {{#unless custom}}disabled{{/unless}}>
+        </label>
       </div>
-      <label class="dmicher-checkbox-row">
-        <input type="checkbox" name="blockWhenEnvironment" {{#if blockWhenEnvironment}}checked{{/if}}>
-        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Limits.BlockForEnvironment"}}</span>
-      </label>
-    </fieldset>
+      <img class="dmicher-resource-preview" src="{{image}}" alt="{{imageAlt}}">
+    </section>
+    {{/each}}
+  </fieldset>
 
-    <fieldset class="dmicher-settings-section">
-      <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.ImagesHeading"}}</legend>
-      {{#each resourceTypes}}
-      <section class="dmicher-resource-row dmicher-image-resource">
-        <div>
-          <h4>{{label}}</h4>
-          <label class="dmicher-checkbox-row">
-            <input type="checkbox" name="{{urgency}}ImageCustom" data-custom-resource-toggle="image" data-urgency="{{urgency}}" {{customImageChecked}}>
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.CustomImage"}}</span>
-          </label>
-          <label class="dmicher-settings-field">
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.Url"}}</span>
-            <input type="url" name="{{urgency}}ImageUrl" value="{{imageUrl}}" maxlength="2048"
-              placeholder="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.DefaultImagePlaceholder'}}" {{imageUrlDisabled}}>
-          </label>
-        </div>
-        <img class="dmicher-resource-preview" src="{{image}}" alt="{{imageAlt}}">
-      </section>
-      {{/each}}
-    </fieldset>
+  <fieldset class="dmicher-settings-section">
+    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundsHeading"}}</legend>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="soundsEnabled" {{#if soundsEnabled}}checked{{/if}}>
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundsEnabled"}}</span>
+    </label>
+    {{#each soundResources}}
+    <section class="dmicher-resource-row dmicher-sound-resource">
+      <div>
+        <h4>{{label}}</h4>
+        <label class="dmicher-checkbox-row">
+          <input type="checkbox" name="{{prefix}}Custom" data-custom-resource-toggle
+            data-resource-prefix="{{prefix}}" data-disable-resource-controls="{{controlsRequireCustom}}"
+            {{#if custom}}checked{{/if}}>
+          <span>{{toggleLabel}}</span>
+        </label>
+        <label class="dmicher-settings-field">
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.Url"}}</span>
+          <input type="url" name="{{prefix}}Url" value="{{url}}" maxlength="2048"
+            placeholder="{{placeholder}}" {{#unless custom}}disabled{{/unless}}>
+        </label>
+        <label class="dmicher-volume-field">
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.BaseVolume"}}</span>
+          <input type="range" name="{{prefix}}Volume" min="0" max="100" step="1" value="{{volumePercent}}"
+            {{#unless controlsEnabled}}disabled{{/unless}}>
+          <output>{{volumePercent}}%</output>
+        </label>
+      </div>
+      <button type="button" class="dmicher-sound-preview" data-sound-preview
+        data-resource-prefix="{{prefix}}" data-default-sound="{{defaultSound}}"
+        data-volume-channel="{{volumeChannel}}" data-playing="false"
+        aria-label="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.Play'}}"
+        title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.Play'}}"
+        {{#unless controlsEnabled}}disabled{{/unless}}>
+        <i class="fa-solid fa-play" aria-hidden="true"></i>
+      </button>
+    </section>
+    {{/each}}
+  </fieldset>
 
-    <fieldset class="dmicher-settings-section">
-      <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundsHeading"}}</legend>
-      <label class="dmicher-checkbox-row">
-        <input type="checkbox" name="soundsEnabled" {{#if soundsEnabled}}checked{{/if}}>
-        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundsEnabled"}}</span>
-      </label>
-      {{#each resourceTypes}}
-      <section class="dmicher-resource-row dmicher-sound-resource">
-        <div>
-          <h4>{{label}}</h4>
-          <label class="dmicher-checkbox-row">
-            <input type="checkbox" name="{{urgency}}SoundCustom" data-custom-resource-toggle="sound" data-urgency="{{urgency}}" {{customSoundChecked}}>
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.CustomSound"}}</span>
-          </label>
-          <label class="dmicher-settings-field">
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.Url"}}</span>
-            <input type="url" name="{{urgency}}SoundUrl" value="{{soundUrl}}" maxlength="2048"
-              placeholder="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.DefaultSoundPlaceholder'}}" {{soundUrlDisabled}}>
-          </label>
-          <label class="dmicher-volume-field">
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.BaseVolume"}}</span>
-            <input type="range" name="{{urgency}}SoundVolume" min="0" max="100" step="1" value="{{volumePercent}}">
-            <output>{{volumePercent}}%</output>
-          </label>
-        </div>
-        <button type="button" class="dmicher-sound-preview" data-sound-preview data-urgency="{{urgency}}" data-playing="false"
-          title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.Play'}}">
-          <i class="fa-solid fa-play" aria-hidden="true"></i>
-        </button>
-      </section>
-      {{/each}}
-      {{#each timerSoundTypes}}
-      <section class="dmicher-resource-row dmicher-sound-resource dmicher-timer-sound-resource">
-        <div>
-          <h4>{{label}}</h4>
-          <label class="dmicher-checkbox-row">
-            <input type="checkbox" name="{{kind}}TimerSoundCustom" data-custom-timer-sound data-sound-kind="{{kind}}" {{customChecked}}>
-            <span>{{toggleLabel}}</span>
-          </label>
-          <label class="dmicher-settings-field">
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.Url"}}</span>
-            <input type="url" name="{{kind}}TimerSoundUrl" value="{{url}}" maxlength="2048"
-              placeholder="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.CustomTimerSoundPlaceholder'}}" {{urlDisabled}}>
-          </label>
-          <label class="dmicher-volume-field">
-            <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.BaseVolume"}}</span>
-            <input type="range" name="{{kind}}TimerSoundVolume" min="0" max="100" step="1" value="{{volumePercent}}" {{controlsDisabled}}>
-            <output>{{volumePercent}}%</output>
-          </label>
-        </div>
-        <button type="button" class="dmicher-sound-preview" data-sound-preview data-timer-sound-kind="{{kind}}" data-playing="false"
-          title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.Play'}}" {{controlsDisabled}}>
-          <i class="fa-solid fa-play" aria-hidden="true"></i>
-        </button>
-      </section>
-      {{/each}}
-    </fieldset>
-
-    <fieldset class="dmicher-settings-section">
-      <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.Heading"}}</legend>
-      <label class="dmicher-checkbox-row">
-        <input type="checkbox" name="showWelcome" {{#if showWelcome}}checked{{/if}}>
-        <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.Show"}}</span>
-      </label>
-    </fieldset>
+  <fieldset class="dmicher-settings-section">
+    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.Heading"}}</legend>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="showWelcome" {{#if showWelcome}}checked{{/if}}>
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.Show"}}</span>
+    </label>
+  </fieldset>
 
   <footer class="form-footer">
     <button type="submit">

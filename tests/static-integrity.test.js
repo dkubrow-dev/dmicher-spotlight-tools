@@ -44,6 +44,11 @@ test("manifest and localization files are internally consistent", () => {
   const en = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "en.json"), "utf8"));
   const ru = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "ru.json"), "utf8"));
   assert.deepEqual(flattenKeys(en), flattenKeys(ru));
+  const enWelcome = en.DMICHERSPOTLIGHTTOOLS.Requests.Welcome.MainBefore;
+  const ruWelcome = ru.DMICHERSPOTLIGHTTOOLS.Requests.Welcome.MainBefore;
+  assert.match(enWelcome, /"\{module\}" \(\{version\}\)/);
+  assert.ok(ruWelcome.includes("\u00ab{module}\u00bb ({version})"));
+  assert.doesNotMatch(enWelcome + ruWelcome, /DMICHERSPOTLIGHTTOOLS\.Title/);
 });
 
 test("installed Foundry smoke fixtures target the supported version range", () => {

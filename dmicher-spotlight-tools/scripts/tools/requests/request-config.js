@@ -7,41 +7,37 @@ import {
   normalizeRequestType
 } from "../../config.js";
 
-const LIMITED_TYPES = Object.freeze(["common", "urgent"]);
-const RESOURCE_TYPES = Object.freeze(Object.keys(REQUEST_TYPES));
-const TIMER_RESOURCE_TYPES = Object.freeze(["timer", "break"]);
+export const REQUEST_LIMIT_TYPES = Object.freeze(["common", "urgent"]);
+export const REQUEST_RESOURCE_TYPES = Object.freeze(Object.keys(REQUEST_TYPES));
+export const TIMER_SOUND_TYPES = Object.freeze(["timer", "break"]);
 export const DEFAULT_REQUEST_TIMEOUT_MS = 5 * 60 * 1000;
+export const DEFAULT_URGENT_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 export function createDefaultRequestConfiguration() {
   return {
     chatEnabled: true,
     soundsEnabled: true,
-    blockWhenEnvironment: false,
+    blockWhenEnvironment: true,
     showWelcome: true,
     feed: {
       enabled: true,
-      showTime: false
+      showTime: true
     },
-    images: Object.fromEntries(RESOURCE_TYPES.map((type) => [type, {
+    images: Object.fromEntries(REQUEST_RESOURCE_TYPES.map((type) => [type, {
       custom: false,
       url: ""
     }])),
-    sounds: Object.fromEntries(RESOURCE_TYPES.map((type) => [type, {
+    sounds: Object.fromEntries(REQUEST_RESOURCE_TYPES.map((type) => [type, {
       custom: false,
       url: "",
       volume: 1
     }])),
-    timerSounds: Object.fromEntries(TIMER_RESOURCE_TYPES.map((type) => [type, {
+    timerSounds: Object.fromEntries(TIMER_SOUND_TYPES.map((type) => [type, {
       custom: false,
       url: "",
       volume: 1
     }])),
-    limits: Object.fromEntries(LIMITED_TYPES.map((type) => [type, {
-      mode: REQUEST_LIMIT_MODES.none,
-      count: 1,
-      timeoutMode: REQUEST_TIMEOUT_MODES.none,
-      timeoutDuration: DEFAULT_REQUEST_TIMEOUT_MS
-    }]))
+    limits: Object.fromEntries(REQUEST_LIMIT_TYPES.map((type) => [type, createDefaultRequestLimit(type)]))
   };
 }
 
@@ -87,13 +83,13 @@ export function normalizeRequestConfiguration(value) {
   const defaults = createDefaultRequestConfiguration();
   const source = value && typeof value === "object" ? value : {};
   const result = {
-    chatEnabled: source.chatEnabled !== false,
-    soundsEnabled: source.soundsEnabled !== false,
-    blockWhenEnvironment: Boolean(source.blockWhenEnvironment),
-    showWelcome: source.showWelcome !== false,
+    chatEnabled: normalizeBoolean(source.chatEnabled, defaults.chatEnabled),
+    soundsEnabled: normalizeBoolean(source.soundsEnabled, defaults.soundsEnabled),
+    blockWhenEnvironment: normalizeBoolean(source.blockWhenEnvironment, defaults.blockWhenEnvironment),
+    showWelcome: normalizeBoolean(source.showWelcome, defaults.showWelcome),
     feed: {
-      enabled: source.feed?.enabled !== false,
-      showTime: Boolean(source.feed?.showTime)
+      enabled: normalizeBoolean(source.feed?.enabled, defaults.feed.enabled),
+      showTime: normalizeBoolean(source.feed?.showTime, defaults.feed.showTime)
     },
     images: {},
     sounds: {},
@@ -101,7 +97,7 @@ export function normalizeRequestConfiguration(value) {
     limits: {}
   };
 
-  for (const type of RESOURCE_TYPES) {
+  for (const type of REQUEST_RESOURCE_TYPES) {
     const image = source.images?.[type] ?? {};
     const sound = source.sounds?.[type] ?? {};
     result.images[type] = {
@@ -115,7 +111,7 @@ export function normalizeRequestConfiguration(value) {
     };
   }
 
-  for (const type of TIMER_RESOURCE_TYPES) {
+  for (const type of TIMER_SOUND_TYPES) {
     const sound = source.timerSounds?.[type] ?? {};
     result.timerSounds[type] = {
       custom: Boolean(sound.custom),
@@ -124,19 +120,20 @@ export function normalizeRequestConfiguration(value) {
     };
   }
 
-  for (const type of LIMITED_TYPES) {
-    const limit = source.limits?.[type] ?? defaults.limits[type];
+  for (const type of REQUEST_LIMIT_TYPES) {
+    const defaultLimit = defaults.limits[type];
+    const limit = source.limits?.[type] ?? defaultLimit;
     const mode = Object.values(REQUEST_LIMIT_MODES).includes(limit.mode)
       ? limit.mode
-      : REQUEST_LIMIT_MODES.none;
+      : defaultLimit.mode;
     const timeoutMode = Object.values(REQUEST_TIMEOUT_MODES).includes(limit.timeoutMode)
       ? limit.timeoutMode
-      : REQUEST_TIMEOUT_MODES.none;
+      : defaultLimit.timeoutMode;
     result.limits[type] = {
       mode,
       count: clampRequestCount(limit.count),
       timeoutMode,
-      timeoutDuration: clampRequestTimeoutDuration(limit.timeoutDuration)
+      timeoutDuration: clampRequestTimeoutDuration(limit.timeoutDuration, defaultLimit.timeoutDuration)
     };
   }
   return result;
@@ -149,7 +146,7 @@ export function normalizeActiveRequestState(value) {
     : [];
   const unique = new Map();
   for (const entry of entries) unique.set(entry.id, entry);
-  const normalizedEntries = Array.from(unique.values()).sort(compareRequestEntries);
+  const normalizedEntries = Array.from(unique.values()).sort(compareActiveRequestEntries);
   const cooldownsResetAt = normalizeHistoricalTimestamp(source.cooldownsResetAt);
   const cooldowns = normalizeRequestCooldowns(source.cooldowns, cooldownsResetAt);
   const state = {
@@ -205,12 +202,12 @@ export function getRequestBaseVolume(type, configuration = getRequestConfigurati
 }
 
 export function getCustomTimerSound(type, configuration = getRequestConfiguration()) {
-  const sound = configuration.timerSounds?.[TIMER_RESOURCE_TYPES.includes(type) ? type : "timer"];
+  const sound = configuration.timerSounds?.[TIMER_SOUND_TYPES.includes(type) ? type : "timer"];
   return sound?.custom && sound.url ? sound.url : "";
 }
 
 export function getCustomTimerSoundVolume(type, configuration = getRequestConfiguration()) {
-  const sound = configuration.timerSounds?.[TIMER_RESOURCE_TYPES.includes(type) ? type : "timer"];
+  const sound = configuration.timerSounds?.[TIMER_SOUND_TYPES.includes(type) ? type : "timer"];
   return sound?.custom && sound.url ? clampVolume(sound.volume) : 1;
 }
 
@@ -238,11 +235,12 @@ export function getRequestLimitViolation(type, authorId, stateOrEntries, configu
 
 export function getRequestTimeoutStatus(type, authorId, state, configuration = getRequestConfiguration(), now = Date.now()) {
   type = normalizeRequestType(type);
+  const defaultLimit = createDefaultRequestLimit(type);
   const limit = configuration.limits?.[type];
   const mode = Object.values(REQUEST_TIMEOUT_MODES).includes(limit?.timeoutMode)
     ? limit.timeoutMode
-    : REQUEST_TIMEOUT_MODES.none;
-  const duration = clampRequestTimeoutDuration(limit?.timeoutDuration);
+    : defaultLimit.timeoutMode;
+  const duration = clampRequestTimeoutDuration(limit?.timeoutDuration, defaultLimit.timeoutDuration);
   const event = state?.cooldowns?.[String(authorId ?? "")]?.[type] ?? {};
   const startedAt = mode === REQUEST_TIMEOUT_MODES.submission
     ? Number(event.submittedAt) || 0
@@ -262,7 +260,7 @@ export function getRequestTimeoutStatus(type, authorId, state, configuration = g
 }
 
 export function hasConfiguredRequestTimeouts(configuration = getRequestConfiguration()) {
-  return LIMITED_TYPES.some((type) => {
+  return REQUEST_LIMIT_TYPES.some((type) => {
     const mode = configuration.limits?.[type]?.timeoutMode;
     return mode === REQUEST_TIMEOUT_MODES.submission || mode === REQUEST_TIMEOUT_MODES.grant;
   });
@@ -270,7 +268,7 @@ export function hasConfiguredRequestTimeouts(configuration = getRequestConfigura
 
 export function recordRequestTimeoutEvent(state, type, authorId, event, timestamp = Date.now()) {
   type = normalizeRequestType(type);
-  if (!LIMITED_TYPES.includes(type) || !authorId) return false;
+  if (!REQUEST_LIMIT_TYPES.includes(type) || !authorId) return false;
   const key = event === "grant" ? "grantedAt" : event === "submission" ? "submittedAt" : "";
   const value = normalizeHistoricalTimestamp(timestamp);
   if (!key || !value) return false;
@@ -285,9 +283,9 @@ export function recordRequestTimeoutEvent(state, type, authorId, event, timestam
   return true;
 }
 
-export function clampRequestTimeoutDuration(value) {
+export function clampRequestTimeoutDuration(value, fallback = DEFAULT_REQUEST_TIMEOUT_MS) {
   const number = Number(value);
-  if (!Number.isFinite(number) || number <= 0) return DEFAULT_REQUEST_TIMEOUT_MS;
+  if (!Number.isFinite(number) || number <= 0) return fallback;
   return Math.max(1000, Math.round(number / 1000) * 1000);
 }
 
@@ -301,6 +299,20 @@ export function clampRequestCount(value) {
   return Math.min(10, Math.max(1, number));
 }
 
+function createDefaultRequestLimit(type) {
+  const urgent = type === "urgent";
+  return {
+    mode: urgent ? REQUEST_LIMIT_MODES.count : REQUEST_LIMIT_MODES.none,
+    count: 1,
+    timeoutMode: urgent ? REQUEST_TIMEOUT_MODES.grant : REQUEST_TIMEOUT_MODES.none,
+    timeoutDuration: urgent ? DEFAULT_URGENT_REQUEST_TIMEOUT_MS : DEFAULT_REQUEST_TIMEOUT_MS
+  };
+}
+
+function normalizeBoolean(value, fallback) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
 function normalizeRequestCooldowns(value, resetAt = 0) {
   const source = value && typeof value === "object" ? value : {};
   const records = [];
@@ -308,7 +320,7 @@ function normalizeRequestCooldowns(value, resetAt = 0) {
     const userId = String(rawUserId).slice(0, 100);
     if (!userId || !rawTypes || typeof rawTypes !== "object") continue;
     const types = {};
-    for (const type of LIMITED_TYPES) {
+    for (const type of REQUEST_LIMIT_TYPES) {
       const rawEvent = rawTypes[type];
       if (!rawEvent || typeof rawEvent !== "object") continue;
       const event = {};
@@ -328,7 +340,7 @@ function normalizeHistoricalTimestamp(value) {
   return Number.isFinite(number) && number > 0 ? number : 0;
 }
 
-function compareRequestEntries(left, right) {
+export function compareActiveRequestEntries(left, right) {
   return (Number(left.sequence) - Number(right.sequence))
     || (Number(left.submittedAt) - Number(right.submittedAt))
     || left.id.localeCompare(right.id);

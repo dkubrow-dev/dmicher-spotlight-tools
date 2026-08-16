@@ -207,7 +207,7 @@
       "Welcome": {
         "Heading": "Welcome message",
         "Show": "Show welcome message",
-        "MainBefore": "The {module} module is active. Use the",
+        "MainBefore": "The module \"{module}\" ({version}) is active. Use the",
         "MenuLink": "game menu",
         "MainAfter": " to configure request macros and drag them to the hotbar.",
         "HelpBefore": "Use the",
@@ -471,23 +471,23 @@
                 "Items": {
                   "Feed": {
                     "Label": "Request Feed",
-                    "Description": "The first block enables Request Feed for the world and controls whether submission times are shown."
+                    "Description": "The first block enables Request Feed for the world and controls submission time; both switches are enabled on first activation."
                   },
                   "Limits": {
                     "Label": "Request Anti-Spam Limits",
-                    "Description": "The second block controls chat output, count limits, forbidden types, timeouts, and blocking while an environment request is active."
+                    "Description": "The second block controls chat output, count limits, prohibitions, timeouts, and blocking during an active Environment request; initial values are detailed on the anti-spam page."
                   },
                   "Images": {
                     "Label": "Images",
-                    "Description": "The third block configures regular, urgent, and environment request images."
+                    "Description": "The third block configures Regular, Urgent, and Environment images; module defaults are used initially."
                   },
                   "Sounds": {
                     "Label": "Sounds",
-                    "Description": "The fourth block controls request, timer, and break sounds, including URLs, volume, and preview."
+                    "Description": "The fourth block controls request, timer, and break sounds, URLs, volume, and previews. Request sounds start enabled and no custom sounds are configured."
                   },
                   "Welcome": {
                     "Label": "Welcome Message",
-                    "Description": "Appears after Sounds and enables or disables the private startup message."
+                    "Description": "The final block controls the private startup message; Welcome is enabled by default."
                   },
                   "Save": {
                     "Label": "Save button",
@@ -612,7 +612,7 @@
                   },
                   "CustomToggle": {
                     "Label": "Custom image toggle",
-                    "Description": "Enables the external URL field; turning it off restores the module default."
+                    "Description": "Enables the required external URL field for the selected type; it starts off and uses the module image."
                   },
                   "Url": {
                     "Label": "URL field",
@@ -637,11 +637,11 @@
                 "Items": {
                   "GlobalToggle": {
                     "Label": "Enable request sounds",
-                    "Description": "Allows or prevents all request sound playback in the world."
+                    "Description": "Enables or disables all request sound playback in the world; it is enabled by default."
                   },
                   "CustomToggle": {
                     "Label": "Custom sound toggle",
-                    "Description": "Enables an external sound for one type; turning it off restores the default."
+                    "Description": "Enables an external URL for one type; it starts off and uses the standard sound."
                   },
                   "Url": {
                     "Label": "URL field",
@@ -661,11 +661,11 @@
                   },
                   "TimerCustom": {
                     "Label": "Custom timer sound",
-                    "Description": "The switch enables a required URL, base volume, and preview for normal timers."
+                    "Description": "Enables a required URL, base volume, and preview for the custom ordinary-timer signal; it is off by default."
                   },
                   "BreakCustom": {
                     "Label": "Custom break signal",
-                    "Description": "Independently enables a URL, base volume, and preview for quick breaks."
+                    "Description": "Independently enables a URL, base volume, and preview for the quick-break signal; it is off by default."
                   },
                   "TimerVolume": {
                     "Label": "Personal timer volume",
@@ -682,19 +682,19 @@
                 "Items": {
                   "Toggle": {
                     "Label": "Show welcome message",
-                    "Description": "Enables a private startup message for each user who enters the world."
+                    "Description": "Enables a private startup message for each joining user; it is enabled by default."
                   },
                   "PlayerMessage": {
                     "Label": "Player text",
-                    "Description": "Reports that the module is active and provides a game menu button to open settings."
+                    "Description": "Reports that the module is active, shows its exact manifest title and installed version, and opens Request Settings from the game menu link."
                   },
                   "ModeratorMessage": {
                     "Label": "Moderator addition",
-                    "Description": "A Game Master or Assistant also receives a Help button that opens this window."
+                    "Description": "Game Masters and Assistants also receive a Help link that opens the Help window."
                   },
                   "InternalButtons": {
                     "Label": "Message buttons",
-                    "Description": "Open windows inside the Foundry client and never launch an external browser."
+                    "Description": "The game menu and Help links open windows inside Foundry; only the support link is intended for an external page."
                   },
                   "Free": {
                     "Label": "Free module",
@@ -717,7 +717,7 @@
                 "Items": {
                   "ChatToggle": {
                     "Label": "Post requests to chat",
-                    "Description": "Creates a card for every accepted request and a technical message after resolution."
+                    "Description": "Creates a card for each accepted request and a technical message after resolution; it is enabled by default."
                   },
                   "QueueWithoutChat": {
                     "Label": "Toggle off",
@@ -730,11 +730,11 @@
                 "Items": {
                   "RegularSection": {
                     "Label": "Regular request section",
-                    "Description": "Configures the limit only for each player's regular requests."
+                    "Description": "Configures Regular request limits. By default there is no count limit and no timeout."
                   },
                   "UrgentSection": {
                     "Label": "Urgent request section",
-                    "Description": "Configures the limit only for each player's urgent requests."
+                    "Description": "Configures Urgent request limits. By default each player may have one active request and a 10-minute timeout starts when the floor is granted."
                   },
                   "Unlimited": {
                     "Label": "Unlimited",
@@ -770,7 +770,7 @@
                   },
                   "TimeoutTime": {
                     "Label": "Time",
-                    "Description": "Duration uses the timer HH:MM:SS format. It defaults to 00:05:00 and is enabled only for the two timeout modes."
+                    "Description": "A duration in HH:MM:SS timer format; active only for the two timeout modes. The initial Urgent duration is 00:10:00."
                   }
                 }
               },
@@ -779,7 +779,7 @@
                 "Items": {
                   "Toggle": {
                     "Label": "Block new requests while an environment request is active",
-                    "Description": "Enables a special limit for as long as an active environment entry remains in the queue."
+                    "Description": "Enables a special restriction while Environment is active; it is enabled by default."
                   },
                   "AllTypes": {
                     "Label": "Every type",
@@ -843,7 +843,7 @@
                 "Items": {
                   "Enable": {
                     "Label": "Enable toggle",
-                    "Description": "Adds or removes the Request Feed sidebar tab for the world."
+                    "Description": "Adds or removes the Request Feed sidebar tab for the world; it is enabled by default."
                   },
                   "ReloadPrompt": {
                     "Label": "Reload prompt",
@@ -859,7 +859,7 @@
                   },
                   "ShowTime": {
                     "Label": "Show time toggle",
-                    "Description": "Adds relative submission time to each Request Feed row."
+                    "Description": "Adds relative submission time to every Request Feed row; it is enabled by default."
                   }
                 }
               },

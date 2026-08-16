@@ -1,3 +1,11 @@
+const ALLOWED_STYLE_PROPERTIES = Object.freeze([
+  "color",
+  "font-size",
+  "font-style",
+  "font-weight",
+  "text-align",
+  "text-decoration"
+]);
 const DEFAULT_COLOR = "#000000";
 const DEFAULT_FONT_SIZE = "1.2em";
 const ALIGNMENTS = new Set(["center", "left", "right"]);
@@ -14,6 +22,19 @@ export function parseRequestTextStyle(rawStyle) {
     bold: /^(bold|bolder|[6-9]00)$/i.test(fontWeight.trim()),
     alignment: normalizeRequestAlignment(declarations.get("text-align"))
   };
+}
+
+export function sanitizeRequestTextStyle(rawStyle) {
+  const probe = document.createElement("span");
+  probe.style.cssText = String(rawStyle ?? "").slice(0, 1000);
+  const safeDeclarations = [];
+  for (const property of ALLOWED_STYLE_PROPERTIES) {
+    const value = probe.style.getPropertyValue(property).trim();
+    if (!value || /(url\s*\(|expression\s*\(|javascript\s*:)/i.test(value)) continue;
+    const priority = probe.style.getPropertyPriority(property);
+    safeDeclarations.push(`${property}: ${value}${priority ? " !important" : ""}`);
+  }
+  return safeDeclarations.length ? `${safeDeclarations.join("; ")};` : "";
 }
 
 export function normalizeRequestColor(value) {

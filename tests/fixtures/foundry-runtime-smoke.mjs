@@ -404,8 +404,16 @@ assert.equal(hooks.count("renderSettingsConfig"), 1);
 assert.equal(hooks.count("renderSettingsConfigHTML"), 1);
 const requestConfiguration = registeredSettings.get("dmicher-spotlight-tools.requestConfiguration");
 assert.equal(requestConfiguration.default.feed.enabled, true);
+assert.equal(requestConfiguration.default.feed.showTime, true);
 assert.equal(requestConfiguration.default.showWelcome, true);
 assert.equal(requestConfiguration.default.soundsEnabled, true);
+assert.equal(requestConfiguration.default.blockWhenEnvironment, true);
+assert.equal(requestConfiguration.default.limits.common.mode, "none");
+assert.equal(requestConfiguration.default.limits.common.timeoutMode, "none");
+assert.equal(requestConfiguration.default.limits.urgent.mode, "count");
+assert.equal(requestConfiguration.default.limits.urgent.count, 1);
+assert.equal(requestConfiguration.default.limits.urgent.timeoutMode, "grant");
+assert.equal(requestConfiguration.default.limits.urgent.timeoutDuration, 10 * 60 * 1000);
 
 const feedApplication = new CONFIG.ui.requests();
 if (generation === 12) assert.ok(feedApplication instanceof MockLegacySidebarTab);
