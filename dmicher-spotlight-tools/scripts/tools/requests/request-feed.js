@@ -38,6 +38,7 @@ const SidebarBase = ModernSidebarBase
   ? foundry.applications.api.HandlebarsApplicationMixin(ModernSidebarBase)
   : getLegacySidebarBase();
 const FEED_TICK_MS = 15000;
+const LEGACY_FEED_LAYOUT_CLASS = "dmicher-request-feed-enabled";
 let feedActions = {};
 let activeRequestsController = null;
 
@@ -237,7 +238,11 @@ export function dispatchRequestFeedDragStart(event, { actions = feedActions } = 
 export function configureRequestFeed({ activeRequests, actions }) {
   activeRequestsController = activeRequests;
   feedActions = actions;
-  if (!getRequestConfiguration().feed.enabled) return false;
+  const feedEnabled = getRequestConfiguration().feed.enabled;
+  if (LEGACY_SIDEBAR) {
+    applyLegacyRequestFeedLayout(globalThis.document?.querySelector?.("#sidebar"), feedEnabled);
+  }
+  if (!feedEnabled) return false;
 
   CONFIG.ui ??= {};
   CONFIG.ui.requests = RequestFeedSidebar;
@@ -294,9 +299,16 @@ export function handleLegacyRequestFeedTabClick(event, root = document.querySele
   return "embedded";
 }
 
+export function applyLegacyRequestFeedLayout(root, enabled = true) {
+  if (!LEGACY_SIDEBAR || !root?.classList) return false;
+  root.classList.toggle(LEGACY_FEED_LAYOUT_CLASS, Boolean(enabled));
+  return Boolean(enabled);
+}
+
 function injectLegacySidebarTab(application, html) {
   const root = getRenderedElement(html) ?? application?.element;
   if (!root) return;
+  applyLegacyRequestFeedLayout(root);
   const nav = root.querySelector("#sidebar-tabs");
   if (!nav) return;
 

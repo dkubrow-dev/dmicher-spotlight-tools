@@ -20,6 +20,7 @@ globalThis.foundry = {
 
 const {
   RequestFeedSidebar,
+  applyLegacyRequestFeedLayout,
   dispatchRequestFeedClick,
   ensureLegacyRequestFeedRendered,
   getLegacySidebarBase,
@@ -47,6 +48,29 @@ test("v12 request feed uses SidebarTab and remounts missing content", () => {
 
   assert.equal(ui.requests._element, null);
   assert.deepEqual(renders, [[true]]);
+});
+
+test("v12 expands one sidebar tab slot only while request feed is enabled", () => {
+  const classes = new Set();
+  const root = {
+    classList: {
+      toggle(name, enabled) {
+        if (enabled) classes.add(name);
+        else classes.delete(name);
+      }
+    }
+  };
+
+  assert.equal(applyLegacyRequestFeedLayout(root, true), true);
+  assert.equal(classes.has("dmicher-request-feed-enabled"), true);
+  assert.equal(applyLegacyRequestFeedLayout(root, false), false);
+  assert.equal(classes.has("dmicher-request-feed-enabled"), false);
+
+  const css = fs.readFileSync(
+    new URL("../dmicher-spotlight-tools/styles/dmicher-spotlight-tools.css", import.meta.url),
+    "utf8"
+  );
+  assert.match(css, /#sidebar\.dmicher-request-feed-enabled:not\(\.collapsed\)[\s\S]*?width: calc\(var\(--sidebar-width\) \+ 24px\);/);
 });
 
 test("v12 collapsed request feed opens as a popout and stays hidden in the sidebar", () => {

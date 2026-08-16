@@ -2394,6 +2394,10 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   min-height: 0;
 }
 
+#sidebar.dmicher-request-feed-enabled:not(.collapsed) {
+  width: calc(var(--sidebar-width) + 24px);
+}
+
 .dmicher-request-feed-shell {
   display: flex;
   flex-direction: column;
