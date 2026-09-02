@@ -1880,9 +1880,10 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-break-time-input {
-  flex: 0 0 6ch;
-  min-width: 6ch;
-  width: 6ch;
+  flex: 0 0 8ch;
+  font-variant-numeric: tabular-nums;
+  min-width: 8ch;
+  width: 8ch;
 }
 
 .dmicher-break-deadline {
