@@ -27,6 +27,8 @@ export const TIMER_SOUND = Object.freeze({
   breakCustom: "breakCustom"
 });
 
+export const TIMER_STATE_VERSION = 2;
+export const BUILTIN_BREAK_TEMPLATE_ID = "builtin-break";
 export const TIMER_TICK_MS = 1000;
 export const MINUTE_MS = 60 * 1000;
 export const DEFAULT_TIMER_DURATION_MS = 10 * 60 * 1000;
@@ -38,7 +40,7 @@ export function calculateRoundedDeadline(minutes, now = Date.now()) {
 
 export function createEmptyTimerState() {
   return {
-    version: 1,
+    version: TIMER_STATE_VERSION,
     timers: {}
   };
 }
@@ -65,15 +67,24 @@ export function normalizeTimer(timer) {
   if (!id || !name || !Number.isFinite(startAt) || !Number.isFinite(endsAt) || !Number.isFinite(duration)) return null;
   if (duration <= 0 || endsAt <= startAt) return null;
 
-  const visibility = timer.visibility === TIMER_VISIBILITY.private ? TIMER_VISIBILITY.private : TIMER_VISIBILITY.public;
+  const kind = timer.kind === TIMER_KIND.break ? TIMER_KIND.break : TIMER_KIND.standard;
+  const visibility = kind === TIMER_KIND.break
+    ? TIMER_VISIBILITY.public
+    : timer.visibility === TIMER_VISIBILITY.private
+      ? TIMER_VISIBILITY.private
+      : TIMER_VISIBILITY.public;
   const style = timer.style === TIMER_DISPLAY_STYLE.compact ? TIMER_DISPLAY_STYLE.compact : TIMER_DISPLAY_STYLE.prominent;
   const sound = Object.values(TIMER_SOUND).includes(timer.sound) ? timer.sound : TIMER_SOUND.none;
+  const templateId = kind === TIMER_KIND.break
+    ? BUILTIN_BREAK_TEMPLATE_ID
+    : String(timer.templateId ?? "").trim().slice(0, 80);
 
   return {
     id,
     name,
     mode: timer.mode === TIMER_MODE.deadline ? TIMER_MODE.deadline : TIMER_MODE.duration,
-    kind: timer.kind === TIMER_KIND.break ? TIMER_KIND.break : TIMER_KIND.standard,
+    kind,
+    templateId,
     startAt,
     endsAt,
     duration,
@@ -135,6 +146,38 @@ export function formatClockInput(timestamp) {
   return [date.getHours(), date.getMinutes(), date.getSeconds()]
     .map((part) => String(part).padStart(2, "0"))
     .join(":");
+}
+
+export function formatHourMinuteInput(timestamp) {
+  const date = new Date(Number(timestamp) || Date.now());
+  return [date.getHours(), date.getMinutes()]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":");
+}
+
+export function parseHourMinuteDuration(value) {
+  const match = /^(\d{2}):(\d{2})$/.exec(String(value ?? "").trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || minutes > 59) return null;
+  const totalMinutes = (hours * 60) + minutes;
+  return totalMinutes > 0 ? totalMinutes * MINUTE_MS : null;
+}
+
+export function parseHourMinuteDeadline(value, now = Date.now()) {
+  const match = /^(\d{2}):(\d{2})$/.exec(String(value ?? "").trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours > 23 || minutes > 59) return null;
+
+  const timestamp = Number(now);
+  if (!Number.isFinite(timestamp)) return null;
+  const target = new Date(timestamp);
+  target.setHours(hours, minutes, 0, 0);
+  if (target.getTime() <= timestamp) target.setDate(target.getDate() + 1);
+  return target.getTime();
 }
 
 export function buildTimerDefaults(timerCount, now = Date.now()) {

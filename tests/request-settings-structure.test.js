@@ -28,6 +28,7 @@ test("personal and Game Master request settings use separate templates", () => {
   assert.doesNotMatch(master, /data-request-settings-tab|data-request-settings-panel/);
   assert.match(master, /dmicher-antispam-settings/);
   assert.match(master, /Requests\.Feed\.SettingsHeading/);
+  assert.match(master, /name="feedShowToPlayers"[^>]*feedShowToPlayers/);
   assert.match(master, /Requests\.Resources\.ImagesHeading/);
   assert.match(master, /Requests\.Resources\.SoundsHeading/);
   assert.match(master, /Requests\.Welcome\.Heading/);

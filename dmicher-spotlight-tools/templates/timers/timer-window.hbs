@@ -21,6 +21,12 @@
 
   <footer class="dmicher-timer-window-actions">
     {{#if expired}}
+      {{#if canRepeat}}
+      <button type="button" data-timer-action="repeat">
+        <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+        {{localize keys.repeat}}
+      </button>
+      {{/if}}
       {{#if canDelete}}
       <button type="button" data-timer-action="delete">
         <i class="fa-solid fa-trash" aria-hidden="true"></i>

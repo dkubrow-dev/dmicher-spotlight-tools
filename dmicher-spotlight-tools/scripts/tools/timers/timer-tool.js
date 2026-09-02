@@ -31,6 +31,16 @@ import { BreakTimerApplication } from "./break-timer.js";
 import { TimerManagerApplication } from "./timer-manager.js";
 import { TimerWindowApplication } from "./timer-window.js";
 import {
+  BUILTIN_BREAK_TEMPLATE_ID,
+  cloneTimerTemplateState,
+  createBuiltInBreakTimerTemplate,
+  createEmptyTimerTemplateState,
+  createStandardTimerTemplate,
+  listTimerTemplates,
+  normalizeTimerTemplateState,
+  timerToTemplateInput
+} from "./timer-template-utils.js";
+import {
   TIMER_DISPLAY_STYLE,
   TIMER_KIND,
   TIMER_MODE,
@@ -52,12 +62,14 @@ export class TimerTool {
   constructor({ volumeController = null } = {}) {
     this.volumeController = volumeController;
     this.state = createEmptyTimerState();
+    this.templateState = createEmptyTimerTemplateState();
     this.managerWindow = null;
     this.breakWindow = null;
     this.timerWindows = new Map();
     this.pendingForcedOpens = new Map();
     this.pendingForcedOpenRetry = null;
     this.runStateTask = createSerialTaskQueue();
+    this.runTemplateStateTask = createSerialTaskQueue();
     this.runAlertPersistenceTask = createSerialTaskQueue();
     this.alertedExpirations = {};
     this.tickHandle = null;
@@ -75,6 +87,14 @@ export class TimerTool {
       onChange: (value) => this.onTimersSettingChanged(value)
     });
 
+    game.settings.register(MODULE_ID, SETTINGS.timerTemplates, {
+      scope: "world",
+      config: false,
+      type: Object,
+      default: createEmptyTimerTemplateState(),
+      onChange: (value) => this.onTimerTemplatesSettingChanged(value)
+    });
+
     game.settings.register(MODULE_ID, SETTINGS.timerAlertedExpirations, {
       scope: "client",
       config: false,
@@ -89,6 +109,9 @@ export class TimerTool {
 
   activate() {
     this.state = normalizeTimerState(game.settings.get(MODULE_ID, SETTINGS.timers));
+    this.templateState = normalizeTimerTemplateState(
+      game.settings.get(MODULE_ID, SETTINGS.timerTemplates)
+    );
     this.alertedExpirations = this.readAlertedExpirations();
     game.socket.on(SOCKET_CHANNEL, this.receiveSocketMessage);
     this.tickHandle = window.setInterval(this.tick, TIMER_TICK_MS);
@@ -135,6 +158,152 @@ export class TimerTool {
 
   getTimer(timerId) {
     return this.state.timers[String(timerId)] ?? null;
+  }
+
+  getTimerTemplate(templateId) {
+    const template = this.templateState.templates[String(templateId)] ?? null;
+    return template ? this.prepareTimerTemplate(template) : null;
+  }
+
+  getTimerTemplates() {
+    return listTimerTemplates(this.templateState).map((template) => {
+      return this.prepareTimerTemplate(template);
+    });
+  }
+
+  prepareTimerTemplate(template) {
+    return {
+      ...template,
+      name: template.id === BUILTIN_BREAK_TEMPLATE_ID
+        ? localize("Timers.Break.TimerName")
+        : template.name
+    };
+  }
+
+  async saveTimerTemplate(input, templateId = "") {
+    if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
+
+    const source = input && (typeof input === "object") ? input : {};
+    const requestedId = String(templateId ?? "").trim();
+    const now = Date.now();
+    let savedTemplate = null;
+
+    if (requestedId !== BUILTIN_BREAK_TEMPLATE_ID) {
+      const name = String(source.name ?? "").trim();
+      if (!name) throw new Error(localize("Timers.Templates.NameRequired"));
+      const mode = source.mode === TIMER_MODE.deadline ? TIMER_MODE.deadline : TIMER_MODE.duration;
+      const validTime = mode === TIMER_MODE.deadline
+        ? parseDeadlineInput(source.time, now)
+        : parseDurationInput(source.time);
+      if (!validTime) throw new Error(localize("Timers.Templates.BadTime"));
+    }
+
+    await this.updateTemplateState((state) => {
+      if (requestedId === BUILTIN_BREAK_TEMPLATE_ID) {
+        const existing = state.templates[BUILTIN_BREAK_TEMPLATE_ID] ?? {};
+        const changes = {};
+        for (const field of ["style", "sound", "volume"]) {
+          if (Object.hasOwn(source, field)) changes[field] = source[field];
+        }
+        savedTemplate = createBuiltInBreakTimerTemplate({
+          ...existing,
+          ...changes,
+          updatedAt: now
+        }, now);
+        state.templates[BUILTIN_BREAK_TEMPLATE_ID] = savedTemplate;
+        return;
+      }
+
+      const existing = requestedId ? state.templates[requestedId] : null;
+      if (requestedId && !existing) {
+        throw new Error(localize("Timers.Templates.NotFound"));
+      }
+      const id = requestedId || foundry.utils.randomID();
+      savedTemplate = createStandardTimerTemplate(source, {
+        id,
+        now,
+        createdAt: existing?.createdAt ?? now
+      });
+      if (!savedTemplate) throw new Error(localize("Timers.Templates.Invalid"));
+      state.templates[id] = savedTemplate;
+    });
+
+    return savedTemplate ? this.prepareTimerTemplate(savedTemplate) : null;
+  }
+
+  async saveTimerAsTemplate(timerId) {
+    if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
+    const timer = this.getTimer(timerId);
+    if (!timer) throw new Error(localize("Timers.Errors.NotFound"));
+    if (timer.templateId) return this.getTimerTemplate(timer.templateId);
+
+    const template = await this.saveTimerTemplate(timerToTemplateInput(timer));
+    if (!template) return null;
+    await this.updateState((state) => {
+      const current = state.timers[timer.id];
+      if (current && !current.templateId) current.templateId = template.id;
+    });
+    return template;
+  }
+
+  async startTimerTemplate(templateId) {
+    if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
+    const id = String(templateId ?? "");
+    const template = this.templateState.templates[id];
+    if (!template) throw new Error(localize("Timers.Templates.NotFound"));
+    if (id === BUILTIN_BREAK_TEMPLATE_ID) return this.openBreakTimer();
+
+    return this.startTimer({
+      name: template.name,
+      mode: template.mode,
+      time: template.time,
+      visibility: template.visibility,
+      style: template.style,
+      sound: template.sound,
+      volume: template.volume,
+      templateId: template.id
+    });
+  }
+
+  async confirmDeleteTimerTemplate(templateId) {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Timers.Errors.Forbidden"));
+      return false;
+    }
+
+    const template = this.getTimerTemplate(templateId);
+    if (!template) {
+      ui.notifications.warn(localize("Timers.Templates.NotFound"));
+      return false;
+    }
+    if (template.id === BUILTIN_BREAK_TEMPLATE_ID) {
+      ui.notifications.warn(localize("Timers.Templates.BuiltInDeleteForbidden"));
+      return false;
+    }
+
+    const confirmed = await confirmDialog({
+      title: localize("Timers.Templates.DeleteTitle"),
+      content: `<p>${escapeHTML(format("Timers.Templates.DeleteConfirm", { name: template.name }))}</p>`,
+      yes: localize("Timers.Templates.DeleteYes"),
+      no: localize("Timers.Templates.DeleteNo"),
+      icon: "fa-solid fa-trash"
+    });
+    if (!confirmed) return false;
+    await this.deleteTimerTemplate(template.id);
+    return true;
+  }
+
+  async deleteTimerTemplate(templateId) {
+    if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
+    const id = String(templateId ?? "");
+    if (id === BUILTIN_BREAK_TEMPLATE_ID) {
+      throw new Error(localize("Timers.Templates.BuiltInDeleteForbidden"));
+    }
+
+    await this.updateTemplateState((state) => {
+      if (!state.templates[id]) throw new Error(localize("Timers.Templates.NotFound"));
+      delete state.templates[id];
+    });
   }
 
   getTimerCount() {
@@ -187,9 +356,22 @@ export class TimerTool {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
 
     const now = Date.now();
+    const kind = input.kind === TIMER_KIND.break ? TIMER_KIND.break : TIMER_KIND.standard;
+    if (kind === TIMER_KIND.break && this.getActiveBreakTimer(now)) {
+      throw new Error(localize("Timers.Break.AlreadyActive"));
+    }
     const mode = input.mode === TIMER_MODE.deadline ? TIMER_MODE.deadline : TIMER_MODE.duration;
-    const name = String(input.name ?? "").trim().slice(0, 120) || format("Timers.DefaultName", { number: this.getTimerCount() + 1 });
-    const visibility = input.visibility === TIMER_VISIBILITY.private ? TIMER_VISIBILITY.private : TIMER_VISIBILITY.public;
+    const name = kind === TIMER_KIND.break
+      ? localize("Timers.Break.TimerName")
+      : String(input.name ?? "").trim().slice(0, 120) || format("Timers.DefaultName", { number: this.getTimerCount() + 1 });
+    const visibility = kind === TIMER_KIND.break
+      ? TIMER_VISIBILITY.public
+      : input.visibility === TIMER_VISIBILITY.private
+        ? TIMER_VISIBILITY.private
+        : TIMER_VISIBILITY.public;
+    const templateId = kind === TIMER_KIND.break
+      ? BUILTIN_BREAK_TEMPLATE_ID
+      : String(input.templateId ?? "").trim().slice(0, 80);
     const style = input.style === TIMER_DISPLAY_STYLE.compact ? TIMER_DISPLAY_STYLE.compact : TIMER_DISPLAY_STYLE.prominent;
     const sound = this.getSoundSource(input.sound) ? input.sound : TIMER_SOUND.none;
     const volume = clampTimerVolume(input.volume);
@@ -218,7 +400,8 @@ export class TimerTool {
       id: foundry.utils.randomID(),
       name,
       mode,
-      kind: input.kind === TIMER_KIND.break ? TIMER_KIND.break : TIMER_KIND.standard,
+      kind,
+      templateId,
       startAt: now,
       endsAt,
       duration: totalDuration,
@@ -232,6 +415,12 @@ export class TimerTool {
     };
 
     await this.updateState((state) => {
+      if (kind === TIMER_KIND.break) {
+        const activeBreak = listTimers(state).find((candidate) => {
+          return candidate.kind === TIMER_KIND.break && !isTimerExpired(candidate, now);
+        });
+        if (activeBreak) throw new Error(localize("Timers.Break.AlreadyActive"));
+      }
       state.timers[timer.id] = timer;
     });
     try {
@@ -261,29 +450,64 @@ export class TimerTool {
     return timer;
   }
 
-  async startBreakTimer(minutes, { onDeadlineCalculated } = {}) {
+  async startBreakTimer(descriptor, { onDeadlineCalculated } = {}) {
+    if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
+    if (this.getActiveBreakTimer()) {
+      throw new Error(localize("Timers.Break.AlreadyActive"));
+    }
+
+    const source = Number.isFinite(Number(descriptor))
+      ? { roundedDurationMinutes: Number(descriptor) }
+      : descriptor && (typeof descriptor === "object")
+        ? descriptor
+        : {};
+    const template = this.templateState.templates[BUILTIN_BREAK_TEMPLATE_ID]
+      ?? createBuiltInBreakTimerTemplate();
+    let sound = template.sound;
+    if (sound !== TIMER_SOUND.none && !this.getSoundSource(sound)) sound = TIMER_SOUND.signal1;
+    const mode = source.mode === TIMER_MODE.deadline
+      ? TIMER_MODE.deadline
+      : source.mode === TIMER_MODE.duration
+        ? TIMER_MODE.duration
+        : Object.hasOwn(source, "durationMilliseconds")
+          ? TIMER_MODE.duration
+          : TIMER_MODE.deadline;
+
     return this.startPausedTimer({
       name: localize("Timers.Break.TimerName"),
-      mode: TIMER_MODE.deadline,
+      mode,
       kind: TIMER_KIND.break,
-      roundedDurationMinutes: minutes,
+      templateId: BUILTIN_BREAK_TEMPLATE_ID,
+      roundedDurationMinutes: source.roundedDurationMinutes,
+      durationMilliseconds: source.durationMilliseconds,
+      deadlineTimestamp: source.deadlineTimestamp,
       visibility: TIMER_VISIBILITY.public,
-      style: TIMER_DISPLAY_STYLE.prominent,
-      sound: this.getSoundSource(TIMER_SOUND.breakCustom) ? TIMER_SOUND.breakCustom : TIMER_SOUND.signal1,
-      volume: 1,
-      onDeadlineCalculated
+      style: template.style,
+      sound,
+      volume: template.volume,
+      onDeadlineCalculated: source.onDeadlineCalculated ?? onDeadlineCalculated
     });
+  }
+
+  getActiveBreakTimer(now = Date.now()) {
+    return listTimers(this.state).find((timer) => {
+      return timer.kind === TIMER_KIND.break && !isTimerExpired(timer, now);
+    }) ?? null;
   }
 
   async repeatTimer(timerId) {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
     const timer = this.getTimer(timerId);
     if (!timer) throw new Error(localize("Timers.Errors.NotFound"));
+    if (timer.kind === TIMER_KIND.break && this.getActiveBreakTimer()) {
+      throw new Error(localize("Timers.Break.AlreadyActive"));
+    }
 
     const input = {
       name: timer.name,
       mode: timer.mode,
       kind: timer.kind,
+      templateId: timer.templateId,
       durationMilliseconds: timer.duration,
       visibility: timer.visibility,
       style: timer.style,
@@ -291,8 +515,81 @@ export class TimerTool {
       volume: timer.volume
     };
     return timer.kind === TIMER_KIND.break
-      ? this.startPausedTimer(input)
+      ? this.startPausedTimer({
+        ...input,
+        name: localize("Timers.Break.TimerName"),
+        templateId: BUILTIN_BREAK_TEMPLATE_ID,
+        visibility: TIMER_VISIBILITY.public
+      })
       : this.startTimer(input);
+  }
+
+  async confirmRepeatTimer(timerId) {
+    if (!isModerator()) {
+      ui.notifications.warn(localize("Timers.Errors.Forbidden"));
+      return null;
+    }
+
+    const timer = this.getTimer(timerId);
+    if (!timer) {
+      ui.notifications.warn(localize("Timers.Errors.NotFound"));
+      return null;
+    }
+    if (timer.kind === TIMER_KIND.break && this.getActiveBreakTimer()) {
+      ui.notifications.warn(localize("Timers.Break.AlreadyActive"));
+      return null;
+    }
+
+    const defaultAction = isTimerExpired(timer) ? "delete" : "keep";
+    const content = `
+      <div class="dmicher-timer-repeat-form">
+        <p>${escapeHTML(format("Timers.Repeat.Prompt", { name: timer.name }))}</p>
+        <label>
+          <input type="radio" name="repeatDisposition" value="delete" ${defaultAction === "delete" ? "checked" : ""}>
+          ${escapeHTML(localize("Timers.Repeat.Delete"))}
+        </label>
+        <label>
+          <input type="radio" name="repeatDisposition" value="keep" ${defaultAction === "keep" ? "checked" : ""}>
+          ${escapeHTML(localize("Timers.Repeat.Keep"))}
+        </label>
+      </div>`;
+    const DialogV2 = globalThis.foundry?.applications?.api?.DialogV2;
+    let action = null;
+
+    if (DialogV2?.prompt) {
+      action = await DialogV2.prompt({
+        window: { title: localize("Timers.Repeat.Title") },
+        content,
+        modal: true,
+        rejectClose: false,
+        buttons: [{
+          action: "cancel",
+          label: localize("Timers.Repeat.Cancel"),
+          icon: "fa-solid fa-xmark"
+        }],
+        ok: {
+          label: localize("Timers.Repeat.Confirm"),
+          icon: "fa-solid fa-rotate-right",
+          callback: (_event, button) => {
+            return button?.form?.elements?.repeatDisposition?.value ?? defaultAction;
+          }
+        }
+      });
+    } else {
+      const confirmed = await confirmDialog({
+        title: localize("Timers.Repeat.Title"),
+        content,
+        yes: localize("Timers.Repeat.Confirm"),
+        no: localize("Timers.Repeat.Cancel"),
+        icon: "fa-solid fa-rotate-right"
+      });
+      action = confirmed ? defaultAction : null;
+    }
+
+    if (action !== "delete" && action !== "keep") return null;
+    const repeatedTimer = await this.repeatTimer(timer.id);
+    if (action === "delete") await this.deleteTimer(timer.id);
+    return repeatedTimer;
   }
 
   async startPausedTimer(input) {
@@ -302,7 +599,13 @@ export class TimerTool {
       await setGamePaused(true);
       return await this.startTimer(input);
     } catch (error) {
-      if (!wasPaused) {
+      const persistedState = normalizeTimerState(
+        game.settings.get(MODULE_ID, SETTINGS.timers)
+      );
+      const activeBreakExists = listTimers(persistedState).some((timer) => {
+        return timer.kind === TIMER_KIND.break && !isTimerExpired(timer);
+      });
+      if (!wasPaused && !activeBreakExists) {
         try {
           await setGamePaused(false);
         } catch (rollbackError) {
@@ -537,6 +840,11 @@ export class TimerTool {
     }
   }
 
+  onTimerTemplatesSettingChanged(rawState) {
+    this.templateState = normalizeTimerTemplateState(rawState);
+    this.managerWindow?.onTimerTemplateStateChanged?.();
+  }
+
   receiveSocketMessage(payload) {
     if (payload?.action === "timerStarted") {
       this.queueForcedOpen(payload.timerId);
@@ -639,6 +947,16 @@ export class TimerTool {
       const state = cloneTimerState(game.settings.get(MODULE_ID, SETTINGS.timers));
       mutator(state);
       await game.settings.set(MODULE_ID, SETTINGS.timers, state);
+    });
+  }
+
+  updateTemplateState(mutator) {
+    return this.runTemplateStateTask(async () => {
+      const state = cloneTimerTemplateState(
+        game.settings.get(MODULE_ID, SETTINGS.timerTemplates)
+      );
+      mutator(state);
+      await game.settings.set(MODULE_ID, SETTINGS.timerTemplates, state);
     });
   }
 

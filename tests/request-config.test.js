@@ -16,13 +16,14 @@ import {
   recordRequestTimeoutEvent
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-config.js";
 
-test("fresh-world request configuration matches the 1.2.0 policy", () => {
+test("fresh-world request configuration matches the 1.2.1 policy", () => {
   const configuration = createDefaultRequestConfiguration();
   const activeState = createDefaultActiveRequestState();
   assert.equal(activeState.cooldownsResetAt, 0);
   assert.equal(configuration.chatEnabled, true);
   assert.equal(configuration.soundsEnabled, true);
   assert.equal(configuration.feed.enabled, true);
+  assert.equal(configuration.feed.showToPlayers, true);
   assert.equal(configuration.feed.showTime, true);
   assert.equal(configuration.showWelcome, true);
   assert.equal(configuration.blockWhenEnvironment, true);
@@ -42,6 +43,11 @@ test("fresh-world request configuration matches the 1.2.0 policy", () => {
     assert.equal(configuration.timerSounds[type].url, "");
     assert.equal(configuration.timerSounds[type].volume, 1);
   }
+});
+
+test("request feed player visibility preserves legacy worlds and explicit restrictions", () => {
+  assert.equal(normalizeRequestConfiguration({ feed: { enabled: true } }).feed.showToPlayers, true);
+  assert.equal(normalizeRequestConfiguration({ feed: { showToPlayers: false } }).feed.showToPlayers, false);
 });
 
 test("request configuration clamps volumes and counts", () => {

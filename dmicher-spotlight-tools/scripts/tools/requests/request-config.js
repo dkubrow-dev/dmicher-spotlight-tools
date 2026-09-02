@@ -21,6 +21,7 @@ export function createDefaultRequestConfiguration() {
     showWelcome: true,
     feed: {
       enabled: true,
+      showToPlayers: true,
       showTime: true
     },
     images: Object.fromEntries(REQUEST_RESOURCE_TYPES.map((type) => [type, {
@@ -89,6 +90,7 @@ export function normalizeRequestConfiguration(value) {
     showWelcome: normalizeBoolean(source.showWelcome, defaults.showWelcome),
     feed: {
       enabled: normalizeBoolean(source.feed?.enabled, defaults.feed.enabled),
+      showToPlayers: normalizeBoolean(source.feed?.showToPlayers, defaults.feed.showToPlayers),
       showTime: normalizeBoolean(source.feed?.showTime, defaults.feed.showTime)
     },
     images: {},

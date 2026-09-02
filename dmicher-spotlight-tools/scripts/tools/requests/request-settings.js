@@ -302,7 +302,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
         }
       }
 
-      let feedEnabledChanged = false;
+      let feedVisibilityChanged = false;
       if (this.isMasterSettings) {
         if (!isModerator()) throw new Error(localize("Requests.MasterSettings.Forbidden"));
         const previous = getRequestConfiguration();
@@ -313,6 +313,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
           showWelcome: formData.has("showWelcome"),
           feed: {
             enabled: formData.has("feedEnabled"),
+            showToPlayers: formData.has("feedShowToPlayers"),
             showTime: formData.has("feedShowTime")
           },
           images: {},
@@ -360,14 +361,15 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
             timeoutDuration: timeoutDuration ?? previous.limits[type].timeoutDuration
           };
         }
-        feedEnabledChanged = previous.feed.enabled !== next.feed.enabled;
+        feedVisibilityChanged = previous.feed.enabled !== next.feed.enabled
+          || previous.feed.showToPlayers !== next.feed.showToPlayers;
         settingUpdates.unshift([SETTINGS.requestConfiguration, normalizeRequestConfiguration(next)]);
       }
 
       for (const [key, value] of settingUpdates) await game.settings.set(MODULE_ID, key, value);
       ui.notifications.info(localize("Requests.Settings.Saved"));
       await this.render({ force: true });
-      if (feedEnabledChanged) await this.offerReload();
+      if (feedVisibilityChanged) await this.offerReload();
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to save request settings`, error);
       ui.notifications.error(error?.message || localize("Requests.Settings.SaveError"));
@@ -636,6 +638,7 @@ function prepareMasterSettingsContext(configuration) {
     blockWhenEnvironment: configuration.blockWhenEnvironment,
     showWelcome: configuration.showWelcome,
     feedEnabled: configuration.feed.enabled,
+    feedShowToPlayers: configuration.feed.showToPlayers,
     feedShowTime: configuration.feed.showTime
   };
 }

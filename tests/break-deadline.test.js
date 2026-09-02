@@ -3,7 +3,10 @@ import test from "node:test";
 
 import {
   MINUTE_MS,
-  calculateRoundedDeadline
+  calculateRoundedDeadline,
+  formatHourMinuteInput,
+  parseHourMinuteDeadline,
+  parseHourMinuteDuration
 } from "../dmicher-spotlight-tools/scripts/tools/timers/timer-utils.js";
 
 const BREAK_OPTIONS = [5, 10, 15, 20, 30];
@@ -53,4 +56,28 @@ test("rounding handles hour and day rollover", () => {
     calculateRoundedDeadline(5, now),
     Date.UTC(2026, 7, 12, 0, 5, 0, 0)
   );
+});
+
+test("break duration accepts strict HH:MM values only", () => {
+  assert.equal(parseHourMinuteDuration("00:15"), 15 * MINUTE_MS);
+  assert.equal(parseHourMinuteDuration("01:05"), 65 * MINUTE_MS);
+  assert.equal(parseHourMinuteDuration("99:59"), ((99 * 60) + 59) * MINUTE_MS);
+
+  for (const value of ["00:00", "24:60", "9:05", "09:5", "01:02:03", "noon", ""]) {
+    assert.equal(parseHourMinuteDuration(value), null, value);
+  }
+});
+
+test("break deadline accepts a local HH:MM and rolls a past time to tomorrow", () => {
+  const now = new Date(2026, 7, 11, 23, 59, 30, 0).getTime();
+  const expected = new Date(now);
+  expected.setDate(expected.getDate() + 1);
+  expected.setHours(0, 5, 0, 0);
+
+  assert.equal(parseHourMinuteDeadline("00:05", now), expected.getTime());
+  assert.equal(formatHourMinuteInput(expected.getTime()), "00:05");
+
+  for (const value of ["24:00", "12:60", "9:05", "09:5", "noon", ""]) {
+    assert.equal(parseHourMinuteDeadline(value, now), null, value);
+  }
 });

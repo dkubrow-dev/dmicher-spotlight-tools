@@ -25,8 +25,12 @@ globalThis.CONST = { USER_ROLES: { ASSISTANT: 3 } };
 
 const { REQUEST_TYPES } = await import("../dmicher-spotlight-tools/scripts/config.js");
 const {
-  migrateLegacyClientRequestSettings
+  migrateLegacyClientRequestSettings,
+  registerRequestSettings
 } = await import("../dmicher-spotlight-tools/scripts/tools/requests/request-settings.js");
+const {
+  createDefaultRequestConfiguration
+} = await import("../dmicher-spotlight-tools/scripts/tools/requests/request-config.js");
 
 function installSettings(generation, legacyValues, existingKeys = []) {
   const writes = [];
@@ -78,4 +82,94 @@ test("v13+ migrates legacy client values only when a user value is absent", asyn
       ["dmicher-spotlight-tools", first.styleSetting, "legacy unquoted style"]
     ]);
   }
+});
+
+test("master settings save player feed visibility and offer a reload", async () => {
+  const previous = createDefaultRequestConfiguration();
+  const writes = [];
+  const menus = new Map();
+  const errors = [];
+  globalThis.game = {
+    release: { generation: 14 },
+    user: { role: 4 },
+    i18n: { localize: (key) => key },
+    settings: {
+      register() {},
+      registerMenu(_namespace, key, configuration) {
+        menus.set(key, configuration);
+      },
+      get(_namespace, key) {
+        return key === "requestConfiguration" ? previous : "";
+      },
+      async set(namespace, key, value) {
+        writes.push([namespace, key, value]);
+      }
+    }
+  };
+  globalThis.ui = {
+    notifications: {
+      info() {},
+      error: (message) => errors.push(message)
+    }
+  };
+  registerRequestSettings({});
+  const MasterSettings = menus.get("requestMasterSettings").type;
+  const application = new MasterSettings();
+  let reloadOffers = 0;
+  application.render = async () => application;
+  application.offerReload = async () => { reloadOffers += 1; };
+
+  const values = new Map([
+    ["chatEnabled", "on"],
+    ["soundsEnabled", "on"],
+    ["blockWhenEnvironment", "on"],
+    ["showWelcome", "on"],
+    ["feedEnabled", "on"],
+    ["feedShowTime", "on"],
+    ["commonLimitMode", "none"],
+    ["commonLimitCount", "1"],
+    ["urgentLimitMode", "count"],
+    ["urgentLimitCount", "1"]
+  ]);
+  const form = {
+    formData: values,
+    elements: {
+      commonTimeoutMode: { value: "none" },
+      commonTimeoutTime: { value: "00:05:00" },
+      urgentTimeoutMode: { value: "grant" },
+      urgentTimeoutTime: { value: "00:10:00" }
+    },
+    querySelector: () => ({ disabled: false })
+  };
+  const NativeFormData = globalThis.FormData;
+  globalThis.FormData = class {
+    constructor(source) {
+      this.values = source.formData;
+    }
+
+    get(key) {
+      return this.values.get(key) ?? null;
+    }
+
+    has(key) {
+      return this.values.has(key);
+    }
+  };
+  try {
+    await application._saveSettings({ preventDefault() {}, currentTarget: form });
+  } finally {
+    globalThis.FormData = NativeFormData;
+  }
+
+  assert.deepEqual(errors, []);
+  assert.equal(writes.length, 1);
+  assert.deepEqual(writes[0], [
+    "dmicher-spotlight-tools",
+    "requestConfiguration",
+    {
+      ...previous,
+      feed: { ...previous.feed, showToPlayers: false }
+    }
+  ]);
+  assert.equal(reloadOffers, 1);
 });

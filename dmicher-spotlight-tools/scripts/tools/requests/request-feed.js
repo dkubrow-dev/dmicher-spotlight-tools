@@ -236,15 +236,20 @@ export function dispatchRequestFeedDragStart(event, { actions = feedActions } = 
 export function configureRequestFeed({ activeRequests, actions }) {
   activeRequestsController = activeRequests;
   feedActions = actions;
-  const feedEnabled = getRequestConfiguration().feed.enabled;
-  applyLegacyRequestFeedLayout(globalThis.document?.querySelector?.("#sidebar"), feedEnabled);
-  if (!feedEnabled) return false;
+  const feedVisible = canViewRequestFeed();
+  applyLegacyRequestFeedLayout(globalThis.document?.querySelector?.("#sidebar"), feedVisible);
+  if (!feedVisible) return false;
 
   CONFIG.ui ??= {};
   CONFIG.ui.requests = RequestFeedSidebar;
   if (!LEGACY_SIDEBAR) installModernSidebarDescriptor();
   else Hooks.on("renderSidebar", injectLegacySidebarTab);
   return true;
+}
+
+export function canViewRequestFeed(configuration = getRequestConfiguration(), user = globalThis.game?.user) {
+  if (!configuration.feed?.enabled) return false;
+  return configuration.feed.showToPlayers !== false || isModerator(user);
 }
 
 function installModernSidebarDescriptor() {

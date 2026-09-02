@@ -1,13 +1,24 @@
 import { MODULE_ID } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import { format, i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
-import { calculateRoundedDeadline } from "./timer-utils.js";
+import {
+  TIMER_MODE,
+  calculateRoundedDeadline,
+  formatHourMinuteInput,
+  parseHourMinuteDeadline,
+  parseHourMinuteDuration
+} from "./timer-utils.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 const BREAK_OPTIONS = Object.freeze([5, 10, 15, 20, 30]);
 const DEFAULT_BREAK_MINUTES = 15;
 const BREAK_REFRESH_MS = 5000;
+const BREAK_CHOICE = Object.freeze({
+  deadline: "deadline",
+  duration: "duration"
+});
+const DEFAULT_BREAK_DURATION_INPUT = "00:15";
 
 export class BreakTimerApplication extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -33,8 +44,11 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
   constructor(timerTool, options = {}) {
     super(options);
     this.timerTool = timerTool;
-    this.selectedMinutes = DEFAULT_BREAK_MINUTES;
-    this.deadlineTimestamp = this.calculateDeadline();
+    const now = Date.now();
+    this.selectedChoice = String(DEFAULT_BREAK_MINUTES);
+    this.deadlineInputValue = formatHourMinuteInput(calculateRoundedDeadline(DEFAULT_BREAK_MINUTES, now));
+    this.durationInputValue = DEFAULT_BREAK_DURATION_INPUT;
+    this.deadlineTimestamp = this.calculateDeadline(now);
     this.refreshHandle = null;
   }
 
@@ -49,13 +63,23 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
       ...context,
       options: BREAK_OPTIONS.map((minutes) => ({
         minutes,
-        checked: minutes === this.selectedMinutes,
+        checked: String(minutes) === this.selectedChoice,
         label: format("Timers.Break.Option", { count: minutes })
       })),
+      deadlineChoice: {
+        checked: this.selectedChoice === BREAK_CHOICE.deadline,
+        value: this.deadlineInputValue
+      },
+      durationChoice: {
+        checked: this.selectedChoice === BREAK_CHOICE.duration,
+        value: this.durationInputValue
+      },
       deadlineText: this.getDeadlineText(),
       keys: {
         heading: i18nKey("Timers.Break.Heading"),
         description: i18nKey("Timers.Break.Description"),
+        deadlineChoice: i18nKey("Timers.Break.DeadlineChoice"),
+        durationChoice: i18nKey("Timers.Break.DurationChoice"),
         cancel: i18nKey("Timers.Break.Cancel"),
         announce: i18nKey("Timers.Break.Announce")
       }
@@ -77,16 +101,43 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
   }
 
   activateListeners() {
-    for (const radio of this.element.querySelectorAll("input[name='breakMinutes']")) {
+    for (const radio of this.element.querySelectorAll("input[name='breakChoice']")) {
       radio.addEventListener("change", () => {
         if (!radio.checked) return;
-        this.selectedMinutes = Number(radio.value) || DEFAULT_BREAK_MINUTES;
+        this.selectedChoice = radio.value;
+        this.syncCustomInputAvailability();
         this.refreshDeadline();
       });
     }
 
+    for (const input of this.element.querySelectorAll("[data-break-time-input]")) {
+      input.addEventListener("input", () => {
+        this.storeCustomInput(input);
+        if (this.selectedChoice === input.dataset.breakTimeInput) this.refreshDeadline();
+      });
+    }
+
+    this.syncCustomInputAvailability();
+
     this.element.querySelector("[data-break-action='cancel']")?.addEventListener("click", () => void this.close());
     this.element.querySelector("[data-break-action='announce']")?.addEventListener("click", () => void this.announceBreak());
+  }
+
+  storeCustomInput(input) {
+    if (input.dataset.breakTimeInput === BREAK_CHOICE.deadline) this.deadlineInputValue = input.value;
+    if (input.dataset.breakTimeInput === BREAK_CHOICE.duration) this.durationInputValue = input.value;
+  }
+
+  syncCustomInputAvailability() {
+    for (const input of this.element.querySelectorAll("[data-break-time-input]")) {
+      input.disabled = input.dataset.breakTimeInput !== this.selectedChoice;
+    }
+  }
+
+  readFormState() {
+    const checkedChoice = this.element.querySelector("input[name='breakChoice']:checked");
+    if (checkedChoice) this.selectedChoice = checkedChoice.value;
+    for (const input of this.element.querySelectorAll("[data-break-time-input]")) this.storeCustomInput(input);
   }
 
   startRefreshing() {
@@ -100,8 +151,8 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
     this.refreshHandle = null;
   }
 
-  refreshDeadline() {
-    this.deadlineTimestamp = this.calculateDeadline();
+  refreshDeadline(now = Date.now()) {
+    this.deadlineTimestamp = this.calculateDeadline(now);
     this.renderDeadline();
   }
 
@@ -111,20 +162,56 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
   }
 
   calculateDeadline(now = Date.now()) {
-    return calculateRoundedDeadline(this.selectedMinutes, now);
+    if (this.selectedChoice === BREAK_CHOICE.deadline) {
+      return parseHourMinuteDeadline(this.deadlineInputValue, now);
+    }
+    if (this.selectedChoice === BREAK_CHOICE.duration) {
+      const duration = parseHourMinuteDuration(this.durationInputValue);
+      return duration ? Number(now) + duration : null;
+    }
+
+    const minutes = Number(this.selectedChoice);
+    return BREAK_OPTIONS.includes(minutes)
+      ? calculateRoundedDeadline(minutes, now)
+      : null;
   }
 
   getDeadlineText() {
+    if (!Number.isFinite(this.deadlineTimestamp)) {
+      return localize(this.selectedChoice === BREAK_CHOICE.duration
+        ? "Timers.Break.BadDuration"
+        : "Timers.Break.BadDeadline");
+    }
     return format("Timers.Break.Until", {
-      time: this.formatHourMinute(this.deadlineTimestamp)
+      time: formatHourMinuteInput(this.deadlineTimestamp)
     });
   }
 
-  formatHourMinute(timestamp) {
-    const date = new Date(Number(timestamp) || Date.now());
-    return [date.getHours(), date.getMinutes()]
-      .map((part) => String(part).padStart(2, "0"))
-      .join(":");
+  getLaunchDescriptor(now = Date.now()) {
+    if (this.selectedChoice === BREAK_CHOICE.deadline) {
+      const deadlineTimestamp = parseHourMinuteDeadline(this.deadlineInputValue, now);
+      if (!Number.isFinite(deadlineTimestamp)) throw new Error(localize("Timers.Break.BadDeadline"));
+      return {
+        mode: TIMER_MODE.deadline,
+        deadlineTimestamp
+      };
+    }
+
+    if (this.selectedChoice === BREAK_CHOICE.duration) {
+      const durationMilliseconds = parseHourMinuteDuration(this.durationInputValue);
+      if (!Number.isFinite(durationMilliseconds)) throw new Error(localize("Timers.Break.BadDuration"));
+      return {
+        mode: TIMER_MODE.duration,
+        durationMilliseconds
+      };
+    }
+
+    const roundedDurationMinutes = Number(this.selectedChoice);
+    if (!BREAK_OPTIONS.includes(roundedDurationMinutes)) throw new Error(localize("Timers.Break.BadDuration"));
+    return {
+      mode: TIMER_MODE.deadline,
+      roundedDurationMinutes
+    };
   }
 
   async announceBreak() {
@@ -132,7 +219,9 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
     if (announceButton) announceButton.disabled = true;
 
     try {
-      await this.timerTool.startBreakTimer(this.selectedMinutes, {
+      this.readFormState();
+      const descriptor = this.getLaunchDescriptor();
+      await this.timerTool.startBreakTimer(descriptor, {
         onDeadlineCalculated: (deadlineTimestamp) => {
           this.deadlineTimestamp = deadlineTimestamp;
           this.renderDeadline();
@@ -141,7 +230,7 @@ export class BreakTimerApplication extends HandlebarsApplicationMixin(Applicatio
       await this.close();
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to announce break`, error);
-      ui.notifications.error(localize("Timers.Break.Error"));
+      ui.notifications.error(error?.message || localize("Timers.Break.Error"));
       if (announceButton) announceButton.disabled = false;
     }
   }

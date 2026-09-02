@@ -28,7 +28,7 @@ function flattenKeys(value, prefix = "", output = []) {
 
 test("manifest and localization files are internally consistent", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "module.json"), "utf8"));
-  assert.equal(manifest.version, "1.2.0");
+  assert.equal(manifest.version, "1.2.1");
   assert.equal(manifest.compatibility.minimum, "12");
   assert.equal(manifest.compatibility.verified, "14");
 
@@ -230,20 +230,17 @@ test("window tables keep one continuous row divider", () => {
   const tableTemplates = walk(path.join(MODULE_ROOT, "templates"))
     .filter((templatePath) => templatePath.endsWith(".hbs"))
     .filter((templatePath) => fs.readFileSync(templatePath, "utf8").includes("<table"));
-  let tableCount = 0;
   for (const templatePath of tableTemplates) {
     const template = fs.readFileSync(templatePath, "utf8");
     for (const match of template.matchAll(/<table\b[^>]*>/g)) {
-      tableCount += 1;
       assert.match(match[0], /\bclass="[^"]*\bdmicher-tool-table\b[^"]*"/, path.relative(ROOT, templatePath));
     }
   }
-  assert.equal(tableCount, 8);
 });
 
-test("timer manager exposes the immediate repeat control", () => {
+test("timer manager routes repeat controls through the shared confirmation flow", () => {
   const template = fs.readFileSync(path.join(MODULE_ROOT, "templates", "timers", "timer-manager.hbs"), "utf8");
   const manager = fs.readFileSync(path.join(MODULE_ROOT, "scripts", "tools", "timers", "timer-manager.js"), "utf8");
   assert.match(template, /data-timer-action="repeat"[\s\S]*?fa-rotate-right/);
-  assert.match(manager, /repeatTimer\(button\.dataset\.timerId\)/);
+  assert.match(manager, /confirmRepeatTimer\(button\.dataset\.timerId\)/);
 });

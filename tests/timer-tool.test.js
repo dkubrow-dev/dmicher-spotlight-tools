@@ -30,6 +30,7 @@ globalThis.document = {
 };
 
 const {
+  BUILTIN_BREAK_TEMPLATE_ID,
   TIMER_DISPLAY_STYLE,
   TIMER_KIND,
   TIMER_MODE,
@@ -37,6 +38,7 @@ const {
   TIMER_VISIBILITY,
   calculateRoundedDeadline
 } = await import("../dmicher-spotlight-tools/scripts/tools/timers/timer-utils.js");
+const { normalizeTimerTemplateState } = await import("../dmicher-spotlight-tools/scripts/tools/timers/timer-template-utils.js");
 const { TimerTool } = await import("../dmicher-spotlight-tools/scripts/tools/timers/timer-tool.js");
 
 function installGame() {
@@ -56,6 +58,7 @@ function installGame() {
     setInterval: () => 1,
     clearInterval() {}
   };
+  delete foundry.applications.api.DialogV2;
   globalThis.ui = {
     notifications: { warn() {}, error() {} }
   };
@@ -85,6 +88,7 @@ function installGame() {
   };
 
   values.set("dmicher-spotlight-tools.timers", { version: 1, timers: {} });
+  values.set("dmicher-spotlight-tools.timerTemplates", { version: 1, templates: {} });
   values.set("dmicher-spotlight-tools.timerAlertedExpirations", {});
   values.set("dmicher-spotlight-tools.requestConfiguration", {
     timerSounds: {
@@ -309,6 +313,7 @@ test("repeating a timer preserves its launch parameters and full duration", asyn
     style: TIMER_DISPLAY_STYLE.compact,
     sound: TIMER_SOUND.signal2,
     volume: 0.35,
+    templateId: "template-1",
     createdAt: now - 60_000
   });
   const state = { version: 1, timers: { source } };
@@ -334,6 +339,7 @@ test("repeating a timer preserves its launch parameters and full duration", asyn
     assert.equal(repeated.style, source.style);
     assert.equal(repeated.sound, source.sound);
     assert.equal(repeated.volume, source.volume);
+    assert.equal(repeated.templateId, source.templateId);
   } finally {
     Date.now = originalNow;
   }
@@ -364,5 +370,366 @@ test("repeating a break timer pauses the world again", async () => {
   const repeated = await tool.repeatTimer("break-source");
   assert.deepEqual(pauseCalls, [true]);
   assert.equal(repeated.kind, TIMER_KIND.break);
+  assert.equal(repeated.templateId, BUILTIN_BREAK_TEMPLATE_ID);
   assert.equal(repeated.duration, source.duration);
+});
+
+test("an active break cannot be repeated and does not touch the pause state", async () => {
+  installGame();
+  const now = Date.now();
+  const source = createTimer({
+    id: "active-break",
+    kind: TIMER_KIND.break,
+    startAt: now - 1_000,
+    endsAt: now + 60_000,
+    duration: 61_000
+  });
+  const tool = new TimerTool();
+  tool.state = { version: 2, timers: { "active-break": source } };
+  const pauseCalls = [];
+  game.togglePause = async (paused) => {
+    pauseCalls.push(paused);
+    return paused;
+  };
+
+  await assert.rejects(tool.repeatTimer(source.id), /Timers\.Break\.AlreadyActive/);
+  assert.deepEqual(pauseCalls, []);
+});
+
+test("saving a one-off timer creates a canonical template and links the running instance", async () => {
+  const { values } = installGame();
+  const deadline = new Date(2026, 8, 2, 21, 7, 8).getTime();
+  const source = createTimer({
+    id: "source",
+    name: "Deadline source",
+    mode: TIMER_MODE.deadline,
+    startAt: deadline - 90_000,
+    endsAt: deadline,
+    duration: 90_000,
+    templateId: ""
+  });
+  values.set("dmicher-spotlight-tools.timers", {
+    version: 2,
+    timers: { source }
+  });
+
+  const tool = new TimerTool();
+  tool.state = { version: 2, timers: { source: structuredClone(source) } };
+  const saved = await tool.saveTimerAsTemplate("source");
+  const templateState = values.get("dmicher-spotlight-tools.timerTemplates");
+  const timerState = values.get("dmicher-spotlight-tools.timers");
+
+  assert.equal(saved.id, "timer-id");
+  assert.equal(templateState.templates["timer-id"].time, "21:07:08");
+  assert.equal(templateState.templates["timer-id"].mode, TIMER_MODE.deadline);
+  assert.equal(timerState.timers.source.templateId, "timer-id");
+  assert.ok(templateState.templates[BUILTIN_BREAK_TEMPLATE_ID]);
+});
+
+test("built-in break template updates only configurable launch fields and cannot be deleted", async () => {
+  const { values } = installGame();
+  const tool = new TimerTool();
+
+  const saved = await tool.saveTimerTemplate({
+    name: "Ignored",
+    mode: TIMER_MODE.deadline,
+    time: "23:59:59",
+    visibility: TIMER_VISIBILITY.private,
+    style: TIMER_DISPLAY_STYLE.compact,
+    sound: TIMER_SOUND.signal3,
+    volume: 0.35
+  }, BUILTIN_BREAK_TEMPLATE_ID);
+  const persisted = values.get("dmicher-spotlight-tools.timerTemplates")
+    .templates[BUILTIN_BREAK_TEMPLATE_ID];
+
+  assert.equal(saved.name, "DMICHERSPOTLIGHTTOOLS.Timers.Break.TimerName");
+  assert.equal(persisted.name, "");
+  assert.equal(persisted.kind, TIMER_KIND.break);
+  assert.equal(persisted.mode, TIMER_MODE.duration);
+  assert.equal(persisted.time, "00:15:00");
+  assert.equal(persisted.visibility, TIMER_VISIBILITY.public);
+  assert.equal(persisted.style, TIMER_DISPLAY_STYLE.compact);
+  assert.equal(persisted.sound, TIMER_SOUND.signal3);
+  assert.equal(persisted.volume, 0.35);
+  await assert.rejects(
+    tool.deleteTimerTemplate(BUILTIN_BREAK_TEMPLATE_ID),
+    /Timers\.Templates\.BuiltInDeleteForbidden/
+  );
+});
+
+test("starting a standard template creates a linked timer while break template opens its launcher", async () => {
+  const { values } = installGame();
+  const templateState = normalizeTimerTemplateState({
+    templates: {
+      standard: {
+        id: "standard",
+        name: "Saved timer",
+        mode: TIMER_MODE.duration,
+        time: "00:02:00",
+        visibility: TIMER_VISIBILITY.private,
+        style: TIMER_DISPLAY_STYLE.compact,
+        sound: TIMER_SOUND.signal2,
+        volume: 0.2,
+        createdAt: 1,
+        updatedAt: 1
+      }
+    }
+  });
+  values.set("dmicher-spotlight-tools.timerTemplates", structuredClone(templateState));
+  const tool = new TimerTool();
+  tool.templateState = structuredClone(templateState);
+  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.openTimerWindow = () => null;
+
+  const timer = await tool.startTimerTemplate("standard");
+  assert.equal(timer.templateId, "standard");
+  assert.equal(timer.name, "Saved timer");
+  assert.equal(timer.duration, 120_000);
+  assert.equal(timer.visibility, TIMER_VISIBILITY.private);
+
+  const launcher = { id: "break-launcher" };
+  tool.openBreakTimer = () => launcher;
+  assert.equal(await tool.startTimerTemplate(BUILTIN_BREAK_TEMPLATE_ID), launcher);
+});
+
+test("break descriptors use built-in template appearance and enforce one active break", async () => {
+  const { values } = installGame();
+  const templateState = normalizeTimerTemplateState({
+    templates: {
+      [BUILTIN_BREAK_TEMPLATE_ID]: {
+        id: BUILTIN_BREAK_TEMPLATE_ID,
+        style: TIMER_DISPLAY_STYLE.compact,
+        sound: TIMER_SOUND.signal2,
+        volume: 0.45
+      }
+    }
+  });
+  values.set("dmicher-spotlight-tools.timerTemplates", structuredClone(templateState));
+  const tool = new TimerTool();
+  tool.templateState = structuredClone(templateState);
+  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.openTimerWindow = () => null;
+
+  const timer = await tool.startBreakTimer({
+    durationMilliseconds: 90_000,
+    mode: TIMER_MODE.duration
+  });
+  assert.equal(timer.kind, TIMER_KIND.break);
+  assert.equal(timer.templateId, BUILTIN_BREAK_TEMPLATE_ID);
+  assert.equal(timer.visibility, TIMER_VISIBILITY.public);
+  assert.equal(timer.style, TIMER_DISPLAY_STYLE.compact);
+  assert.equal(timer.sound, TIMER_SOUND.signal2);
+  assert.equal(timer.volume, 0.45);
+
+  tool.state = {
+    version: 2,
+    timers: {
+      active: createTimer({
+        id: "active",
+        kind: TIMER_KIND.break,
+        startAt: Date.now() - 1,
+        endsAt: Date.now() + 60_000,
+        duration: 60_001
+      })
+    }
+  };
+  const pauseCalls = [];
+  game.togglePause = async (paused) => {
+    pauseCalls.push(paused);
+    return paused;
+  };
+  await assert.rejects(
+    tool.startBreakTimer({ durationMilliseconds: 60_000, mode: TIMER_MODE.duration }),
+    /Timers\.Break\.AlreadyActive/
+  );
+  assert.deepEqual(pauseCalls, []);
+});
+
+test("repeat confirmation defaults by expiration, starts first, and optionally deletes the source", async () => {
+  installGame();
+  const tool = new TimerTool();
+  tool.state = { version: 2, timers: { expired: createTimer() } };
+  const order = [];
+  let options = null;
+  foundry.applications.api.DialogV2 = {
+    async prompt(value) {
+      options = value;
+      return "delete";
+    }
+  };
+  tool.repeatTimer = async (timerId) => {
+    order.push(`repeat:${timerId}`);
+    return { id: "repeated" };
+  };
+  tool.deleteTimer = async (timerId) => {
+    order.push(`delete:${timerId}`);
+  };
+
+  const repeated = await tool.confirmRepeatTimer("expired");
+  assert.deepEqual(repeated, { id: "repeated" });
+  assert.match(options.content, /value="delete" checked/);
+  assert.doesNotMatch(options.content, /value="keep" checked/);
+  assert.deepEqual(order, ["repeat:expired", "delete:expired"]);
+});
+
+test("repeat confirmation keeps an active source by default and cancellation is a no-op", async () => {
+  installGame();
+  const tool = new TimerTool();
+  tool.state = {
+    version: 2,
+    timers: {
+      active: createTimer({
+        id: "active",
+        startAt: Date.now(),
+        endsAt: Date.now() + 60_000,
+        duration: 60_000
+      })
+    }
+  };
+  let options = null;
+  foundry.applications.api.DialogV2 = {
+    async prompt(value) {
+      options = value;
+      return null;
+    }
+  };
+  let repeatCalls = 0;
+  tool.repeatTimer = async () => {
+    repeatCalls += 1;
+  };
+
+  assert.equal(await tool.confirmRepeatTimer("active"), null);
+  assert.match(options.content, /value="keep" checked/);
+  assert.doesNotMatch(options.content, /value="delete" checked/);
+  assert.equal(repeatCalls, 0);
+});
+
+test("repeat prompt exposes cancel separately and reads the selected radio from the dialog form", async () => {
+  installGame();
+  const now = Date.now();
+  const tool = new TimerTool();
+  tool.state = {
+    version: 2,
+    timers: {
+      active: createTimer({
+        id: "active",
+        startAt: now,
+        endsAt: now + 60_000,
+        duration: 60_000
+      })
+    }
+  };
+  let options = null;
+  foundry.applications.api.DialogV2 = {
+    async prompt(value) {
+      options = value;
+      return value.ok.callback(null, {
+        form: {
+          elements: {
+            repeatDisposition: { value: "delete" }
+          }
+        }
+      });
+    }
+  };
+  const order = [];
+  tool.repeatTimer = async (timerId) => {
+    order.push(`repeat:${timerId}`);
+    return { id: "repeated" };
+  };
+  tool.deleteTimer = async (timerId) => {
+    order.push(`delete:${timerId}`);
+  };
+
+  const repeated = await tool.confirmRepeatTimer("active");
+  assert.deepEqual(repeated, { id: "repeated" });
+  assert.doesNotMatch(options.content, /<form\b/i);
+  assert.match(options.content, /class="dmicher-timer-repeat-form"/);
+  assert.match(options.content, /value="keep" checked/);
+  assert.deepEqual(options.buttons, [{
+    action: "cancel",
+    label: "DMICHERSPOTLIGHTTOOLS.Timers.Repeat.Cancel",
+    icon: "fa-solid fa-xmark"
+  }]);
+  assert.deepEqual(order, ["repeat:active", "delete:active"]);
+});
+
+test("repeat preflight blocks an expired break when another break is active", async () => {
+  installGame();
+  const now = Date.now();
+  const tool = new TimerTool();
+  tool.state = {
+    version: 2,
+    timers: {
+      expired: createTimer({
+        id: "expired",
+        kind: TIMER_KIND.break,
+        startAt: now - 120_000,
+        endsAt: now - 60_000,
+        duration: 60_000
+      }),
+      active: createTimer({
+        id: "active",
+        kind: TIMER_KIND.break,
+        startAt: now - 1_000,
+        endsAt: now + 60_000,
+        duration: 61_000
+      })
+    }
+  };
+  let dialogCalls = 0;
+  foundry.applications.api.DialogV2 = {
+    async prompt() {
+      dialogCalls += 1;
+      return "keep";
+    }
+  };
+  const warnings = [];
+  ui.notifications.warn = (message) => warnings.push(message);
+  let repeatCalls = 0;
+  tool.repeatTimer = async () => {
+    repeatCalls += 1;
+  };
+
+  assert.equal(await tool.confirmRepeatTimer("expired"), null);
+  assert.equal(dialogCalls, 0);
+  assert.equal(repeatCalls, 0);
+  assert.deepEqual(warnings, [
+    "DMICHERSPOTLIGHTTOOLS.Timers.Break.AlreadyActive"
+  ]);
+});
+
+test("pause rollback keeps the world paused when persisted state gained an active break", async () => {
+  const { values } = installGame();
+  const now = Date.now();
+  values.set("dmicher-spotlight-tools.timers", {
+    version: 2,
+    timers: {
+      competing: createTimer({
+        id: "competing",
+        kind: TIMER_KIND.break,
+        startAt: now - 1_000,
+        endsAt: now + 60_000,
+        duration: 61_000
+      })
+    }
+  });
+  const pauseCalls = [];
+  game.togglePause = async (paused) => {
+    pauseCalls.push(paused);
+    game.paused = Boolean(paused);
+    return game.paused;
+  };
+  const tool = new TimerTool();
+  tool.state = { version: 2, timers: {} };
+
+  await assert.rejects(
+    tool.startBreakTimer({
+      durationMilliseconds: 60_000,
+      mode: TIMER_MODE.duration
+    }),
+    /Timers\.Break\.AlreadyActive/
+  );
+  assert.deepEqual(pauseCalls, [true]);
+  assert.equal(game.paused, true);
 });
