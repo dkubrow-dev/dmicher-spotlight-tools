@@ -426,6 +426,7 @@ assert.equal(hooks.count("renderSettingsConfig"), 1);
 assert.equal(hooks.count("renderSettingsConfigHTML"), 1);
 const requestConfiguration = registeredSettings.get("dmicher-spotlight-tools.requestConfiguration");
 assert.equal(requestConfiguration.default.feed.enabled, true);
+assert.equal(requestConfiguration.default.feed.showToPlayers, true);
 assert.equal(requestConfiguration.default.feed.showTime, true);
 assert.equal(requestConfiguration.default.showWelcome, true);
 assert.equal(requestConfiguration.default.soundsEnabled, true);

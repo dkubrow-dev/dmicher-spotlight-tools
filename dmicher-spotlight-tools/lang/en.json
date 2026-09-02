@@ -193,6 +193,7 @@
       "Feed": {
         "SettingsHeading": "Request Feed",
         "Enabled": "Enable",
+        "ShowToPlayers": "Show Request Feed to players",
         "ShowTime": "Show time",
         "Tab": "Request Feed",
         "Heading": "Request Feed",
@@ -200,7 +201,7 @@
         "Settings": "Request Settings",
         "Management": "Active Requests",
         "ReloadTitle": "Rebuild sidebar",
-        "ReloadHint": "Reload the world so the Request Feed tab appears or disappears for every user. Reload now?",
+        "ReloadHint": "Reload the client so Request Feed tab visibility matches the new world settings. Reload now?",
         "ReloadNow": "Reload",
         "ReloadLater": "Later"
       },
@@ -474,7 +475,7 @@
                 "Items": {
                   "Feed": {
                     "Label": "Request Feed",
-                    "Description": "The first block enables Request Feed for the world and controls submission time; both switches are enabled on first activation."
+                    "Description": "The first block enables Request Feed for the world, controls whether regular players can see it, and controls submission time; all three switches are enabled on first activation."
                   },
                   "Limits": {
                     "Label": "Request Anti-Spam Limits",
@@ -494,7 +495,7 @@
                   },
                   "Save": {
                     "Label": "Save button",
-                    "Description": "Saves shared world controls; changing whether Request Feed is enabled prompts the user to reload the client."
+                    "Description": "Saves shared world controls; changing whether Request Feed is enabled or shown to players prompts the user to reload the client."
                   }
                 }
               }
@@ -839,18 +840,22 @@
           },
           "Feed": {
             "Title": "Request Feed",
-            "Intro": "Request Feed is the Foundry sidebar tab that gives every user a compact queue view, quick request controls, and actions permitted to their role.",
+            "Intro": "Request Feed is a Foundry sidebar tab that gives moderators—and players when allowed—a compact queue view, quick request controls, and actions permitted to their role.",
             "Sections": {
               "Settings": {
                 "Title": "Request Feed block in Game Master Settings",
                 "Items": {
                   "Enable": {
                     "Label": "Enable toggle",
-                    "Description": "Adds or removes the Request Feed sidebar tab for the world; it is enabled by default."
+                    "Description": "Turns the Request Feed sidebar tab on or off for the world. When disabled, it is hidden from everyone; it is enabled by default."
+                  },
+                  "ShowToPlayers": {
+                    "Label": "Show Request Feed to players",
+                    "Description": "When enabled, regular players receive the tab; when disabled, it remains available only to Game Masters and Assistants. It is enabled by default, including for existing worlds without this setting."
                   },
                   "ReloadPrompt": {
                     "Label": "Reload prompt",
-                    "Description": "Appears after the changed toggle is saved because Foundry must rebuild the sidebar."
+                    "Description": "Appears after Enable or Show Request Feed to players is changed and saved because Foundry must rebuild the sidebar tabs."
                   },
                   "ReloadNow": {
                     "Label": "Reload button",
@@ -871,7 +876,7 @@
                 "Items": {
                   "Tab": {
                     "Label": "Request Feed tab button",
-                    "Description": "Appears after Combat and before Scenes and opens Request Feed."
+                    "Description": "When available to the current role, appears after Combat and before Scenes and opens Request Feed."
                   },
                   "Images": {
                     "Label": "Two images",
@@ -1443,14 +1448,14 @@
           },
           "TimersOverview": {
             "Title": "Overview",
-            "Intro": "Timers share a deadline with the world, support public and private visibility, and use configurable signals.",
+            "Intro": "Timers share a deadline with the world, support reusable templates, public and private visibility, and configurable signals.",
             "Sections": {
               "Access": {
                 "Title": "Access and storage",
                 "Items": {
                   "Manager": {
                     "Label": "Timers window",
-                    "Description": "Contains the new timer form and every timer visible to the moderator."
+                    "Description": "Contains the new timer form, reusable templates, and every timer visible to the moderator."
                   },
                   "ModeratorOnly": {
                     "Label": "Permissions",
@@ -1458,7 +1463,7 @@
                   },
                   "WorldState": {
                     "Label": "World state",
-                    "Description": "Active and expired timers are stored in the world and synchronized."
+                    "Description": "Timer templates and active or expired timers are stored separately in the world and synchronized."
                   }
                 }
               },
@@ -1529,7 +1534,7 @@
           },
           "TimersManager": {
             "Title": "Management",
-            "Intro": "The upper form creates a timer; the lower table manages existing timers.",
+            "Intro": "The upper form creates or edits timer settings, followed by saved templates and current timers.",
             "Sections": {
               "Form": {
                 "Title": "New timer",
@@ -1570,19 +1575,52 @@
                     "Label": "Preview",
                     "Description": "Plays the selected signal with launch, custom base, and personal volumes."
                   },
+                  "SaveTemplate": {
+                    "Label": "Save template",
+                    "Description": "The floppy-disk button saves the configured timer as a new template or applies changes to the template being edited."
+                  },
                   "Reset": {
                     "Label": "Reset",
                     "Description": "Restores new-timer defaults and refreshes the suggested deadline."
                   },
                   "Start": {
                     "Label": "Start",
-                    "Description": "Validates, creates the timer and chat message, then opens the window."
+                    "Description": "Validates and starts the configured timer; while editing the built-in Break template it opens the separate timing window."
+                  }
+                }
+              },
+              "Templates": {
+                "Title": "Timer templates",
+                "Items": {
+                  "Purpose": {
+                    "Label": "Reusable settings",
+                    "Description": "The table after the divider stores configured timers for repeated use without a separate heading."
+                  },
+                  "Start": {
+                    "Label": "Start",
+                    "Description": "The play button starts a standard template immediately; the Break template opens the Break (timer) window for its timing."
+                  },
+                  "Edit": {
+                    "Label": "Edit",
+                    "Description": "The pencil loads a template into the upper form and changes its heading until the template is saved or the form is reset."
+                  },
+                  "Delete": {
+                    "Label": "Delete",
+                    "Description": "The trash button deletes a user-created template after confirmation."
+                  },
+                  "BuiltInBreak": {
+                    "Label": "Built-in Break",
+                    "Description": "This localized template cannot be deleted. Name, mode, time, and visibility are disabled; only sound, volume, and style are editable. Timing is selected at launch and visibility is always public."
                   }
                 }
               },
               "Table": {
                 "Title": "Current timers",
                 "Items": {
+                  "TemplateMarker": {
+                    "Label": "Template marker",
+                    "Description": "A non-interactive gold star marks a template instance; a gray star marks a one-off timer."
+                  },
                   "Name": {
                     "Label": "Name",
                     "Description": "The button opens the timer window."
@@ -1609,7 +1647,11 @@
                   },
                   "Repeat": {
                     "Label": "Repeat",
-                    "Description": "The circular-arrow button immediately starts a new timer with the same name, duration, visibility, display style, signal, and volume. Repeating a break timer also pauses the world again."
+                    "Description": "The circular-arrow button opens a choice to delete or keep the original after a copy starts. Delete is the default for expired timers; keep is the default for active timers."
+                  },
+                  "SaveCurrent": {
+                    "Label": "Save current timer",
+                    "Description": "A floppy-disk button on a one-off timer saves its launch settings as a template and marks the current timer as that template's instance."
                   },
                   "Delete": {
                     "Label": "Delete",
@@ -1693,6 +1735,10 @@
                     "Label": "Signal",
                     "Description": "Plays the selected source with all volume levels multiplied."
                   },
+                  "Repeat": {
+                    "Label": "Repeat",
+                    "Description": "Moderators can repeat an expired timer and choose whether to delete or keep the original."
+                  },
                   "Delete": {
                     "Label": "Delete",
                     "Description": "A moderator can remove the expired timer from world state."
@@ -1723,11 +1769,11 @@
             }
           },
           "TimersBreak": {
-            "Title": "Break",
-            "Intro": "A quick break pauses the game and starts a public prominent timer.",
+            "Title": "Break (timer)",
+            "Intro": "Break is a built-in timer template for quick launches. It pauses the game and always creates a public timer.",
             "Sections": {
               "Selection": {
-                "Title": "Duration selection",
+                "Title": "Break time",
                 "Items": {
                   "Options": {
                     "Label": "Options",
@@ -1735,15 +1781,23 @@
                   },
                   "Default": {
                     "Label": "Default",
-                    "Description": "15 minutes is selected when the window opens."
+                    "Description": "The 15-minute preset is selected; custom defaults are the current time plus 15 minutes rounded up and a duration of 00:15."
+                  },
+                  "DeadlineInput": {
+                    "Label": "Until",
+                    "Description": "Select until and enter an end time in strict HH:MM format. A time already passed today means the next day; only the selected custom field is enabled."
+                  },
+                  "DurationInput": {
+                    "Label": "For",
+                    "Description": "Select for and enter a non-zero duration in strict HH:MM format."
                   },
                   "RoundedDeadline": {
                     "Label": "Rounding",
-                    "Description": "The deadline rounds upward to the next full minute."
+                    "Description": "Preset durations round their deadline upward to the next full minute."
                   },
                   "LiveDeadline": {
                     "Label": "Until line",
-                    "Description": "The proposed end time refreshes every five seconds."
+                    "Description": "The proposed end time refreshes while preserving both custom input values."
                   }
                 }
               },
@@ -1771,17 +1825,25 @@
                     "Label": "Public",
                     "Description": "The timer opens for all connected users."
                   },
-                  "Prominent": {
-                    "Label": "Prominent",
-                    "Description": "Break timers always start in the large style."
+                  "TemplateStyle": {
+                    "Label": "Configured style",
+                    "Description": "The timer uses the prominent or compact style saved in the built-in Break template."
                   },
                   "Signal": {
-                    "Label": "Standard signal",
-                    "Description": "Signal 1 is used when no custom break signal is enabled."
+                    "Label": "Configured signal",
+                    "Description": "The timer uses the sound and launch volume saved in the built-in Break template."
                   },
                   "CustomSignal": {
                     "Label": "Custom signal",
-                    "Description": "When enabled and saved, its URL and base volume are used."
+                    "Description": "When the template selects the enabled custom break sound, its URL and base volume are used; an unavailable custom source falls back to Signal 1."
+                  },
+                  "Unique": {
+                    "Label": "Only one break",
+                    "Description": "A new break cannot start while another break timer is still active."
+                  },
+                  "Repeat": {
+                    "Label": "Repeat",
+                    "Description": "An expired break can be repeated only when no other break is active; repeating it pauses the game again."
                   },
                   "Chat": {
                     "Label": "Message",
@@ -1798,7 +1860,7 @@
                 "Items": {
                   "RollbackPause": {
                     "Label": "Pause rollback",
-                    "Description": "If timer creation fails, a newly applied pause is reverted."
+                    "Description": "If timer creation fails, a newly applied pause is reverted unless another active break still requires the game to remain paused."
                   }
                 }
               }

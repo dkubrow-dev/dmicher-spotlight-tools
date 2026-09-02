@@ -47,7 +47,7 @@ const requestPages = [
     ["Enforcement", ["LocalCheck", "AuthoritativeCheck", "Warnings", "TimeoutDisplay", "TimeoutWarning", "TimeoutDrag", "TimeoutReset", "TimeoutExpiry"]]
   ]),
   definePage("feed", "Feed", [
-    ["Settings", ["Enable", "ReloadPrompt", "ReloadNow", "ReloadLater", "ShowTime"]],
+    ["Settings", ["Enable", "ShowToPlayers", "ReloadPrompt", "ReloadNow", "ReloadLater", "ShowTime"]],
     ["Rows", ["Tab", "Images", "Names", "Time", "Empty"]],
     ["Controls", ["PlayerCancel", "ModeratorGrant", "ModeratorCancel"]],
     ["Footer", ["MacroClick", "MacroDrag", "Settings", "ResetTimeouts", "Management", "TimeoutOverlay"]]
@@ -95,20 +95,21 @@ const timerPages = [
     ["Volume", ["Personal", "Formula", "Mute", "FoundryMute"]]
   ]),
   definePage("timers-manager", "TimersManager", [
-    ["Form", ["Name", "Mode", "Time", "Visibility", "Style", "Sound", "CustomSound", "Volume", "Preview", "Reset", "Start"]],
-    ["Table", ["Name", "StartedBy", "StartedAt", "Deadline", "Remaining", "Open", "Repeat", "Delete"]],
+    ["Form", ["Name", "Mode", "Time", "Visibility", "Style", "Sound", "CustomSound", "Volume", "Preview", "SaveTemplate", "Reset", "Start"]],
+    ["Templates", ["Purpose", "Start", "Edit", "Delete", "BuiltInBreak"]],
+    ["Table", ["TemplateMarker", "Name", "StartedBy", "StartedAt", "Deadline", "Remaining", "Open", "Repeat", "SaveCurrent", "Delete"]],
     ["Cleanup", ["ExpiredRows", "DeleteExpired", "ConfirmActive"]]
   ]),
   definePage("timers-window", "TimersWindow", [
     ["Display", ["Prominent", "Compact", "Toggle", "Drag", "Close"]],
     ["Active", ["Remaining", "Deadline", "Cancel"]],
-    ["Expired", ["ForceProminent", "Sound", "Delete", "OncePerClient"]],
+    ["Expired", ["ForceProminent", "Sound", "Repeat", "Delete", "OncePerClient"]],
     ["Chat", ["Watch", "PublicCard", "PrivateCard"]]
   ]),
   definePage("timers-break", "TimersBreak", [
-    ["Selection", ["Options", "Default", "RoundedDeadline", "LiveDeadline"]],
+    ["Selection", ["Options", "Default", "DeadlineInput", "DurationInput", "RoundedDeadline", "LiveDeadline"]],
     ["Actions", ["Cancel", "Announce"]],
-    ["Result", ["Pause", "PublicTimer", "Prominent", "Signal", "CustomSignal", "Chat", "NoAutoResume"]],
+    ["Result", ["Pause", "PublicTimer", "TemplateStyle", "Signal", "CustomSignal", "Unique", "Repeat", "Chat", "NoAutoResume"]],
     ["Failure", ["RollbackPause"]]
   ])
 ];

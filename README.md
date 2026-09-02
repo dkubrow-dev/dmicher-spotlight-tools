@@ -63,7 +63,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 При первой активации модуля в новом мире действуют следующие значения:
 
-- «Лента заявок» включена, время подачи показывается;
+- «Лента заявок» включена и доступна игрокам; время подачи показывается;
 - заявки выводятся в чат;
 - обычные заявки не ограничены по количеству и таймауту;
 - для срочных заявок разрешена одна активная заявка на игрока, а после предоставления слова действует таймаут 10 минут;
@@ -71,7 +71,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 - используются стандартные изображения и звуки, звуки заявок включены;
 - приветствие включено.
 
-«Лента заявок» — отдельная вкладка правой боковой панели после боя и перед сценами. Она показывает очередь, портреты, типы, игроков, персонажей и время; позволяет автору отменить свою заявку, а модератору — отменить любую или предоставить слово. Внизу находятся кнопки подачи и перетаскивания макросов, «Настройки заявок», «Активные заявки» и, когда настроен хотя бы один таймаут, мастерская кнопка «Сброс таймеров». Изменение переключателя ленты требует перестройки боковой панели, поэтому модуль предлагает перезагрузить клиент.
+«Лента заявок» — отдельная вкладка правой боковой панели после боя и перед сценами. Она показывает очередь, портреты, типы, игроков, персонажей и время; позволяет автору отменить свою заявку, а модератору — отменить любую или предоставить слово. Внизу находятся кнопки подачи и перетаскивания макросов, «Настройки заявок», «Активные заявки» и, когда настроен хотя бы один таймаут, мастерская кнопка «Сброс таймеров». Если лента включена, мастер и ассистенты видят её всегда; переключатель «Показывать ленту заявок игрокам» отдельно управляет доступом обычных игроков и по умолчанию включён. Скрытие вкладки от игроков не отключает очередь или подачу заявок через «Настройки заявок» и макросы. Изменение общего включения ленты или её показа игрокам требует перестройки боковой панели, поэтому модуль предлагает перезагрузить клиент.
 
 Блок антиспама независимо настраивает количество и таймаут обычных и срочных заявок. Таймаут может считаться с подачи или с предоставления слова; предупреждение сообщает оставшееся время. Сброс таймеров не удаляет активные заявки. Вывод карточек в чат можно отключить без отключения очереди, ленты и окна управления.
 
@@ -257,7 +257,7 @@ World-wide options live in the separate Game Master Settings window, available t
 
 A newly configured world starts with these defaults:
 
-- Request Feed is enabled and submission time is shown;
+- Request Feed is enabled and visible to players, and submission time is shown;
 - request cards are posted to chat;
 - Regular requests have no count limit or timeout;
 - Urgent requests allow one active request per player and start a 10-minute timeout when the floor is granted;
@@ -265,7 +265,7 @@ A newly configured world starts with these defaults:
 - standard images and sounds are used, and request sounds are enabled;
 - the welcome message is enabled.
 
-Request Feed is a right-sidebar tab placed after Combat and before Scenes. It shows the queue, portraits, types, players, characters, and time. Authors can cancel their own requests; moderators can cancel any request or grant the floor. Its footer contains submit-or-drag request controls, Request Settings, Active Requests, and—when at least one timeout is configured—a moderator-only Reset Timers button. Changing whether the feed is enabled requires rebuilding the sidebar, so the module offers to reload the client.
+Request Feed is a right-sidebar tab placed after Combat and before Scenes. It shows the queue, portraits, types, players, characters, and time. Authors can cancel their own requests; moderators can cancel any request or grant the floor. Its footer contains submit-or-drag request controls, Request Settings, Active Requests, and—when at least one timeout is configured—a moderator-only Reset Timers button. When Request Feed is enabled, Game Masters and Assistants always see it; Show Request Feed to players separately controls access for regular players and is enabled by default. Hiding the tab from players does not disable the queue or submission through Request Settings and macros. Changing global feed enablement or player visibility requires rebuilding the sidebar, so the module offers to reload the client.
 
 Anti-spam settings independently control the count and timeout of Regular and Urgent requests. A timeout can start on submission or when the floor is granted, and rejection feedback includes the remaining time. Reset Timers preserves active requests. Chat cards can be disabled without disabling the queue, Request Feed, or management window.
 

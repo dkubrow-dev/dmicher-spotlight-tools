@@ -8,6 +8,7 @@ class MockConfiguredChat extends MockLegacySidebarTab {}
 
 globalThis.HTMLElement = MockHTMLElement;
 globalThis.game = { release: { generation: 12 }, version: "12.999" };
+globalThis.CONST = { USER_ROLES: { ASSISTANT: 3 } };
 globalThis.SidebarTab = undefined;
 globalThis.CONFIG = { ui: { chat: MockConfiguredChat } };
 globalThis.foundry = {
@@ -21,12 +22,26 @@ globalThis.foundry = {
 const {
   RequestFeedSidebar,
   applyLegacyRequestFeedLayout,
+  canViewRequestFeed,
   dispatchRequestFeedClick,
   ensureLegacyRequestFeedRendered,
   getLegacySidebarBase,
   handleLegacyRequestFeedTabClick,
   dispatchRequestFeedDragStart
 } = await import("../dmicher-spotlight-tools/scripts/tools/requests/request-feed.js");
+
+test("request feed is public by default and moderator-only when configured", () => {
+  const player = { role: 1 };
+  const assistant = { role: 3 };
+  const gamemaster = { role: 4 };
+
+  assert.equal(canViewRequestFeed({ feed: { enabled: true, showToPlayers: true } }, player), true);
+  assert.equal(canViewRequestFeed({ feed: { enabled: true } }, player), true);
+  assert.equal(canViewRequestFeed({ feed: { enabled: true, showToPlayers: false } }, player), false);
+  assert.equal(canViewRequestFeed({ feed: { enabled: true, showToPlayers: false } }, assistant), true);
+  assert.equal(canViewRequestFeed({ feed: { enabled: true, showToPlayers: false } }, gamemaster), true);
+  assert.equal(canViewRequestFeed({ feed: { enabled: false, showToPlayers: true } }, gamemaster), false);
+});
 
 test("v12 request feed uses SidebarTab and remounts missing content", () => {
   assert.equal(getLegacySidebarBase(), MockLegacySidebarTab);
