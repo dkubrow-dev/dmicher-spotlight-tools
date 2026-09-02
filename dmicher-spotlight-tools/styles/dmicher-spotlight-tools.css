@@ -1628,11 +1628,9 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-timer-manager-form {
-  border-bottom: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ccc));
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  padding-bottom: 0.75rem;
 }
 
 .dmicher-timer-create-grid {
@@ -1716,6 +1714,25 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   text-align: right;
 }
 
+.dmicher-timer-manager-divider {
+  border: 0;
+  border-top: 1px solid var(--dmicher-border-muted, var(--color-border-light-tertiary, #ccc));
+  margin: 0;
+  width: 100%;
+}
+
+.dmicher-timer-template-section {
+  min-width: 0;
+}
+
+.dmicher-timer-template-table-scroll {
+  overflow-y: hidden;
+}
+
+.dmicher-timer-template-table {
+  min-width: 620px;
+}
+
 .dmicher-timer-table-section {
   display: flex;
   flex-direction: column;
@@ -1728,7 +1745,39 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 }
 
 .dmicher-timer-table {
-  min-width: 760px;
+  min-width: 800px;
+}
+
+.dmicher-timer-template-marker-heading,
+.dmicher-timer-template-marker-cell {
+  text-align: center;
+  width: 2.4rem;
+}
+
+.dmicher-timer-template-marker {
+  align-items: center;
+  cursor: default;
+  display: inline-flex;
+  justify-content: center;
+  position: relative;
+}
+
+.dmicher-timer-template-marker input {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.dmicher-timer-template-marker i {
+  color: #858585;
+  font-size: 1rem;
+}
+
+.dmicher-timer-template-marker input:checked + i {
+  color: #d4af37;
+  filter: drop-shadow(0 0 1px rgba(107, 75, 0, 0.5));
 }
 
 .dmicher-timer-table tbody tr.is-expired {
@@ -1814,6 +1863,28 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
   white-space: nowrap;
 }
 
+.dmicher-break-custom-row {
+  align-items: center;
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.dmicher-break-custom-choice {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.dmicher-break-time-input {
+  flex: 0 0 6ch;
+  min-width: 6ch;
+  width: 6ch;
+}
+
 .dmicher-break-deadline {
   color: var(--dmicher-accent);
   font-size: var(--font-size-36);
@@ -1832,6 +1903,22 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
 .dmicher-break-actions button {
   flex: 0 0 auto;
   width: auto;
+}
+
+.dmicher-timer-repeat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.dmicher-timer-repeat-form p {
+  margin: 0 0 0.15rem;
+}
+
+.dmicher-timer-repeat-form label {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
 }
 
 .dmicher-stopwatch {

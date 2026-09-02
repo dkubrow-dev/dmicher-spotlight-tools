@@ -4,10 +4,53 @@
   <fieldset class="dmicher-break-options">
     {{#each options}}
     <label>
-      <input type="radio" name="breakMinutes" value="{{minutes}}" {{#if checked}}checked{{/if}}>
+      <input type="radio" name="breakChoice" value="{{minutes}}" {{#if checked}}checked{{/if}}>
       {{label}}
     </label>
     {{/each}}
+
+    <div class="dmicher-break-custom-row">
+      <div class="dmicher-break-custom-choice">
+        <label for="dmicher-break-choice-deadline">
+          <input id="dmicher-break-choice-deadline" type="radio" name="breakChoice" value="deadline" {{#if deadlineChoice.checked}}checked{{/if}}>
+          <span>{{localize keys.deadlineChoice}}</span>
+        </label>
+        <input
+          id="dmicher-break-input-deadline"
+          type="text"
+          name="breakDeadline"
+          class="dmicher-break-time-input"
+          value="{{deadlineChoice.value}}"
+          maxlength="5"
+          inputmode="numeric"
+          autocomplete="off"
+          spellcheck="false"
+          data-break-time-input="deadline"
+          aria-label="{{localize keys.deadlineChoice}}"
+          {{#unless deadlineChoice.checked}}disabled{{/unless}}
+        >
+      </div>
+      <div class="dmicher-break-custom-choice">
+        <label for="dmicher-break-choice-duration">
+          <input id="dmicher-break-choice-duration" type="radio" name="breakChoice" value="duration" {{#if durationChoice.checked}}checked{{/if}}>
+          <span>{{localize keys.durationChoice}}</span>
+        </label>
+        <input
+          id="dmicher-break-input-duration"
+          type="text"
+          name="breakDuration"
+          class="dmicher-break-time-input"
+          value="{{durationChoice.value}}"
+          maxlength="5"
+          inputmode="numeric"
+          autocomplete="off"
+          spellcheck="false"
+          data-break-time-input="duration"
+          aria-label="{{localize keys.durationChoice}}"
+          {{#unless durationChoice.checked}}disabled{{/unless}}
+        >
+      </div>
+    </div>
   </fieldset>
 
   <p class="dmicher-break-deadline" data-break-deadline>{{deadlineText}}</p>

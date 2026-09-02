@@ -124,7 +124,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 Для того чтобы засекать время, оставшееся до конкретных событий, мастер может запустить один или несколько таймеров и гибко настроить их.
 Перейдите в левом меню сцены в раздел "Приспособы фокуса", затем нажмите кнопку "Таймеры".
-Окно "Таймеры" разделено на две части: сверху указаны настройки нового таймера, снизу - все зарегистрированные таймеры.
+Окно "Таймеры" содержит форму нового таймера, таблицу сохранённых шаблонов и таблицу текущих таймеров.
 
 Новому таймеру вы можете:
 - назначить отображаемое имя;
@@ -136,20 +136,23 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 Для собственного сигнала итоговая громкость равна уровню нового таймера, умноженному на базовую громкость «Настраиваемого звука таймера» из «Настроек мастера» и личный ползунок «Таймеры» в Playlists → User Volume Controls. Для стандартного сигнала базовый уровень мастера считается равным 100%. Кнопка предпрослушивания использует те же уровни, а штатное отключение звука Foundry блокирует воспроизведение.
 
+Кнопка с дискетой сохраняет настройки формы как повторно используемый шаблон. Сохранённый шаблон можно запустить, загрузить в форму для изменения или удалить. Встроенный локализованный шаблон «Перерыв» удалить нельзя; в нём настраиваются только сигнал, громкость и стиль, а видимость всегда остаётся публичной.
+
 После запуска таймера сообщение о его запуске появится в чате, а окно таймера появится на экране.
 Сообщения и окна приватных таймеров увидят только мастера и ассистенты.
 Окно таймера можно закрыть: открыть окно таймера можно будет в любой момент по кнопке в чате или из таблицы текущих таймеров.
 
-Из таблицы текущих таймеров таймер можно открыть, немедленно повторить со всеми исходными параметрами или отменить. При повторе таймера перерыва мир снова ставится на паузу.
+Золотая звезда в первом столбце отмечает экземпляры шаблонов; серой звездой отмечены разовые таймеры, которые можно сохранить как шаблон кнопкой с дискетой.
+Из таблицы текущих таймеров таймер можно открыть, повторить со всеми исходными параметрами или отменить. Перед повтором можно удалить исходный таймер или оставить его; для завершённого таймера по умолчанию выбрано удаление, для действующего — сохранение. Повтор доступен и в окне завершённого таймера.
 Завершённые таймеры самостоятельно не удаляются из памяти: вы можете очистить список зарегистрированных таймеров в окне "Таймеры".
 
 #### Таймер перерыва
 
 Мастер и ассистент игры могут быстро объявить перерыв в игре.
-"Перерыв" - это особый таймер, в котором можно быстро выбрать примерное время перерыва и запустить его в пару кликов.
+«Перерыв» — встроенный шаблон таймера, в котором можно выбрать время и запустить таймер в пару кликов. Одновременно может действовать только один перерыв.
 Перейдите в левом меню сцены в раздел "Приспособы фокуса", затем нажмите кнопку "Перерыв".
 
-В открывшемся окне выберите примерную длительность перерыва и нажмите "Объявить перерыв".
+В открывшемся окне выберите готовую длительность, укажите время окончания в поле «до» или точную длительность в поле «на», затем нажмите "Объявить перерыв". Поля используют формат ЧЧ:ММ; по умолчанию предложены текущее время + 15 минут с округлением вверх и длительность 00:15.
 
 > **Обратите внимание**: к текущему времени прибавляется выбранная длительность, после чего результат всегда округляется вверх до ближайшей полной минуты. Например, при запуске таймера в 16:00:03 на 15 минут таймер перерыва предложит перерыв "до 16:16". Так выбранная длительность гарантированно сохраняется, а игрокам удобно ориентироваться по обычным часам.
 
@@ -158,6 +161,8 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 - игроки увидят таймер;
 - игра будет поставлена на паузу;
 - при истечении времени прозвучит стандартный или включённый мастером «Свой сигнал перерыва» с учётом его базовой громкости и личного ползунка «Таймеры».
+
+Завершённый перерыв можно повторить только тогда, когда нет другого действующего перерыва; повтор снова ставит игру на паузу.
 
 ### Секундомер
 
@@ -313,7 +318,7 @@ To demonstrate the module's capabilities and ease of use, the module initially o
 
 To track time remaining until specific events, the Game Master can start one or more timers and configure them flexibly.
 Go to the "Spotlight Tools" section in the left canvas controls, then click "Timers".
-The "Timers" window is split into two parts: new timer settings at the top, and all registered timers below.
+The "Timers" window contains a new-timer form, a saved-template table, and a current-timers table.
 
 For a new timer, you can:
 - set the displayed name;
@@ -325,20 +330,23 @@ For a new timer, you can:
 
 For a custom signal, final volume is the New Timer level multiplied by the Game Master Settings base volume for Custom Timer Sound and the user's Timers slider in Playlists → User Volume Controls. A standard signal uses a 100% Game Master base level. Preview uses the same levels, and Foundry's global mute blocks playback.
 
+The floppy-disk button saves the form settings as a reusable template. A saved template can be started, loaded into the form for editing, or deleted. The localized built-in Break template cannot be deleted; only its sound, volume, and style are configurable, and its visibility is always public.
+
 After the timer starts, a message about its start appears in chat, and the timer window appears on screen.
 Messages and windows of private timers are visible only to the Game Master and assistants.
 The timer window can be closed: it can be opened again at any time from the chat button or from the current timers table.
 
-From the current timers table, a timer can be opened, immediately repeated with all original parameters, or cancelled. Repeating a break timer pauses the world again.
+A gold star in the first column marks template instances; a gray star marks one-off timers, which can be saved as templates with their floppy-disk button.
+From the current timers table, a timer can be opened, repeated with all original parameters, or cancelled. Before repeating, you can delete or keep the original; deletion is selected by default for an expired timer, while keeping is selected for an active timer. Repeat is also available in an expired timer's own window.
 Expired timers are not automatically removed from memory: you can clear the list of registered timers in the "Timers" window.
 
 #### Break timer
 
 The Game Master and assistant can quickly announce a break in the game.
-"Break" is a special timer where you can quickly choose an approximate break time and start it in a couple of clicks.
+Break is a built-in timer template where you can choose a time and launch the timer in a couple of clicks. Only one break can be active at a time.
 Go to the "Spotlight Tools" section in the left canvas controls, then click "Break".
 
-In the window that opens, choose the approximate break duration and click "Announce break".
+In the window that opens, choose a preset duration, enter an end time in the "until" field, or enter an exact duration in the "for" field, then click "Announce break". Both fields use HH:MM; their defaults are the current time plus 15 minutes rounded up and a duration of 00:15.
 
 > **Please note**: the selected duration is added to the current time, then the result always rounds up to the next full minute. For example, starting a 15-minute break at 16:00:03 produces "until 16:16". This guarantees the selected duration while keeping the return time easy to read on a regular clock.
 
@@ -347,6 +355,8 @@ When a break is announced:
 - players see the timer;
 - the game is paused;
 - the standard or Game Master-enabled Custom Break Signal plays at expiry, using its base volume and the user's Timers slider.
+
+An expired break can be repeated only when no other break is active; repeating it pauses the game again.
 
 ### Stopwatch
 

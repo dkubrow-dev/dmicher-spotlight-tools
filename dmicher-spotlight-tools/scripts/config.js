@@ -20,6 +20,7 @@ export const STOPWATCH_EVENTS = Object.freeze({
 export const SETTINGS = Object.freeze({
   theme: "theme",
   timers: "timers",
+  timerTemplates: "timerTemplates",
   timerAlertedExpirations: "timerAlertedExpirations",
   focusAuditState: "focusAuditState",
   focusAuditThresholds: "focusAuditThresholds",

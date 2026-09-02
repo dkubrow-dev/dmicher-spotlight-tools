@@ -2647,18 +2647,24 @@
         "Signal1": "Signal 1",
         "Signal2": "Signal 2",
         "Signal3": "Signal 3",
-        "Custom": "Custom sound"
+        "Custom": "Custom sound",
+        "BreakCustom": "Custom break sound"
       },
       "Break": {
-        "WindowTitle": "Break",
+        "WindowTitle": "Break (timer)",
         "Heading": "Announce a break",
-        "Description": "Every break duration rounds up to the next full minute.",
+        "Description": "A break is a built-in timer template for quick launches. Configure the template in the \"Timers\" window.",
         "Option": "{count} min.",
         "Until": "until {time}",
+        "DeadlineChoice": "until:",
+        "DurationChoice": "for:",
         "Cancel": "Cancel",
         "Announce": "Announce break",
         "TimerName": "Break",
-        "Error": "Could not announce the break."
+        "Error": "Could not announce the break.",
+        "BadDeadline": "Enter the break deadline in HH:MM format.",
+        "BadDuration": "Enter a non-zero break duration in HH:MM format.",
+        "AlreadyActive": "A break cannot be started or repeated until the current break has ended."
       },
       "Stopwatch": {
         "Title": "Stopwatch",
@@ -2685,6 +2691,7 @@
       "Manager": {
         "WindowTitle": "Timers",
         "CreateTitle": "New timer",
+        "EditTitle": "Editing timer \"{name}\"",
         "Name": "Name",
         "Mode": "Mode",
         "Time": "Time",
@@ -2695,14 +2702,30 @@
         "Reset": "Reset",
         "DeleteExpired": "Delete expired",
         "PreviewSound": "Preview sound",
+        "SaveTemplate": "Save as template",
         "NoSoundSelected": "The \"No sound\" signal is selected: the timer will expire without a sound signal.",
         "Start": "Start",
+        "TemplateEmpty": "No timer templates yet.",
+        "TemplateStart": "Start timer from template",
+        "TemplateEdit": "Edit timer template",
+        "TemplateDelete": "Delete timer template",
+        "TemplateConfiguredAtLaunch": "Selected when launched",
+        "TemplateInstance": "Started from a timer template",
+        "OneOffInstance": "One-off timer",
+        "SaveCurrentTemplate": "Save current timer as template",
+        "TemplateColumns": {
+          "Name": "Name",
+          "Mode": "Mode",
+          "Time": "Time",
+          "Visibility": "Visibility"
+        },
         "TableTitle": "Current timers",
         "Empty": "No timers yet.",
         "Open": "Open timer",
         "Repeat": "Repeat timer",
         "Delete": "Delete timer",
         "Columns": {
+          "Template": "#",
           "Name": "Name",
           "StartedBy": "Started by",
           "StartedAt": "Started at",
@@ -2725,6 +2748,7 @@
         "Compact": "Compact",
         "Prominent": "Prominent",
         "Close": "Close",
+        "Repeat": "Repeat",
         "Cancel": "Cancel",
         "CancelTooltip": "Disable the timer and remove it from the current timers list",
         "Delete": "Delete timer",
@@ -2748,6 +2772,28 @@
         "Yes": "Delete",
         "No": "Cancel",
         "None": "There are no expired timers to delete."
+      },
+      "Repeat": {
+        "Title": "Repeat timer",
+        "Prompt": "What should happen to timer \"{name}\" after the repeated timer starts?",
+        "Delete": "Delete the original timer",
+        "Keep": "Keep the original timer",
+        "Confirm": "Repeat",
+        "Cancel": "Cancel"
+      },
+      "Templates": {
+        "NameRequired": "Enter a name for the timer template.",
+        "BadTime": "Enter a valid template time in HH:MM:SS format.",
+        "NotFound": "The timer template is no longer available.",
+        "Invalid": "The timer template settings are invalid.",
+        "BuiltInDeleteForbidden": "The built-in Break template cannot be deleted.",
+        "DeleteTitle": "Delete timer template",
+        "DeleteConfirm": "Delete timer template \"{name}\"?",
+        "DeleteYes": "Delete",
+        "DeleteNo": "Cancel",
+        "Saved": "Timer template saved.",
+        "Updated": "Timer template updated.",
+        "SaveFailed": "Could not save the timer template."
       },
       "Errors": {
         "Forbidden": "You do not have permission for this action.",
