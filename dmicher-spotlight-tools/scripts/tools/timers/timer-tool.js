@@ -6,6 +6,7 @@ import {
   TIMER_SOUND_SOURCES
 } from "../../config.js";
 import {
+  buildChatSpeaker,
   confirmDialog,
   createSerialTaskQueue,
   escapeHTML,
@@ -645,7 +646,7 @@ export class TimerTool {
     };
     return ChatMessageClass.create({
       user: game.user.id,
-      speaker: ChatMessageClass.getSpeaker(),
+      speaker: buildChatSpeaker({ alias: game.user.name }),
       content: this.buildTimerChatMessageContent(timer),
       whisper: timer.visibility === TIMER_VISIBILITY.private ? getModeratorUserIds() : undefined,
       flags: {

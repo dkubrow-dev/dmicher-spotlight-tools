@@ -1,4 +1,10 @@
-import { FLAGS, MODULE_ID, REQUEST_TYPES, normalizeRequestType } from "../../config.js";
+import {
+  DEFAULT_USER_PORTRAIT,
+  FLAGS,
+  MODULE_ID,
+  REQUEST_TYPES,
+  normalizeRequestType
+} from "../../config.js";
 import {
   escapeHTML,
   format,
@@ -9,6 +15,87 @@ import {
   localize
 } from "../../utils.js";
 import { getRequestImage } from "./request-config.js";
+
+const REQUEST_PORTRAIT_SELECTOR = ".message-sender .avatar img, .message-sender .avatar video";
+const VIDEO_PORTRAIT_PATTERN = /\.(?:m4v|mp4|ogg|ogv|webm)(?:[?#].*)?$/i;
+
+function getMessageRequestData(message) {
+  const requestData = message?.getFlag?.(MODULE_ID, FLAGS.request);
+  if (requestData && typeof requestData === "object") return requestData;
+  const resolutionData = message?.getFlag?.(MODULE_ID, FLAGS.resolution);
+  return resolutionData?.requestData && typeof resolutionData.requestData === "object"
+    ? resolutionData.requestData
+    : null;
+}
+
+function getRequestFallbackPortrait(requestData) {
+  const userPortrait = globalThis.game?.users?.get?.(String(requestData?.authorId ?? ""))?.avatar;
+  return firstNonEmptyString(userPortrait, DEFAULT_USER_PORTRAIT);
+}
+
+export function getRequestDisplayPortrait(requestData) {
+  return firstNonEmptyString(requestData?.portrait, getRequestFallbackPortrait(requestData));
+}
+
+export function applyRequestChatPortrait(customData, message) {
+  const requestData = getMessageRequestData(message);
+  if (!requestData || !customData || typeof customData !== "object") return customData;
+  customData.customIconPortraitImage = getRequestDisplayPortrait(requestData);
+  return customData;
+}
+
+function applyPortraitSource(portrait, sources, alt, index = 0) {
+  if (!portrait || index >= sources.length) return portrait;
+  const source = sources[index];
+  const tagName = VIDEO_PORTRAIT_PATTERN.test(source) ? "video" : "img";
+  let media = portrait;
+  if (String(portrait.tagName ?? "").toLowerCase() !== tagName && portrait.replaceWith) {
+    media = document.createElement(tagName);
+    portrait.replaceWith(media);
+  }
+  if (tagName === "video") {
+    for (const attribute of ["autoplay", "muted", "disablepictureinpicture", "loop", "playsinline"]) {
+      media.toggleAttribute?.(attribute, true);
+    }
+  }
+  media.alt = alt;
+  if (media.dataset) media.dataset.dmicherRequestPortraitSources = JSON.stringify(sources);
+  if (index + 1 < sources.length) {
+    media.addEventListener?.("error", () => {
+      applyPortraitSource(media, sources, alt, index + 1);
+    }, { once: true });
+  }
+  media.src = source;
+  return media;
+}
+
+export function renderRequestChatPortrait(message, html) {
+  const requestData = getMessageRequestData(message);
+  if (!requestData) return;
+  const root = getRenderedElement(html);
+  const portrait = root?.querySelector?.(REQUEST_PORTRAIT_SELECTOR);
+  if (!portrait) return;
+  const sources = Array.from(new Set([
+    getRequestDisplayPortrait(requestData),
+    getRequestFallbackPortrait(requestData),
+    DEFAULT_USER_PORTRAIT
+  ].filter(Boolean)));
+  const sourceSignature = JSON.stringify(sources);
+  if (portrait.dataset?.dmicherRequestPortraitSources === sourceSignature) return;
+  applyPortraitSource(
+    portrait,
+    sources,
+    String(requestData.characterName || requestData.authorName || "")
+  );
+}
+
+function firstNonEmptyString(...values) {
+  for (const value of values) {
+    const text = String(value ?? "").trim();
+    if (text) return text;
+  }
+  return "";
+}
 
 export function getGrantActionKey(type) {
   return normalizeRequestType(type) === "stop" ? "Requests.Chat.TakeFloor" : "Requests.Chat.GiveFloor";
@@ -88,6 +175,8 @@ export function renderRequestChatMessage(message, html, {
     activateWelcomeAction(welcome, "help", openHelp);
     activateWelcomeAction(welcome, "thanks", openThankAuthor);
   }
+
+  renderRequestChatPortrait(message, root);
 }
 
 function activateWelcomeAction(welcome, action, callback) {

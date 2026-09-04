@@ -3,10 +3,13 @@ import test from "node:test";
 
 import { FLAGS, MODULE_ID } from "../dmicher-spotlight-tools/scripts/config.js";
 import {
+  applyRequestChatPortrait,
   buildRequestMessageContent,
   buildWelcomeMessageContent,
+  getRequestDisplayPortrait,
   getRequestAnchorId,
-  renderRequestChatMessage
+  renderRequestChatMessage,
+  renderRequestChatPortrait
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-message.js";
 
 class MockClassList {
@@ -270,4 +273,96 @@ test("saved legacy welcome anchors are replaced before interaction", () => {
   assert.equal(replacement.classList.contains("dmicher-inline-link"), true);
   replacement.listeners.get("click")({ preventDefault() {}, stopPropagation() {} });
   assert.equal(opened, true);
+});
+
+test("request portrait integrations use the saved snapshot and player fallback", () => {
+  installFoundryGlobals();
+  game.users = {
+    get: (id) => id === "player-1" ? { id, avatar: "player-avatar.webp" } : undefined
+  };
+  const requestData = {
+    authorId: "player-1",
+    portrait: "original-token.webp"
+  };
+  const message = {
+    getFlag(_namespace, key) {
+      return key === FLAGS.resolution ? { requestData } : null;
+    }
+  };
+  const customData = { customIconPortraitImage: "gm-token.webp" };
+
+  assert.equal(applyRequestChatPortrait(customData, message), customData);
+  assert.equal(customData.customIconPortraitImage, "original-token.webp");
+  assert.equal(getRequestDisplayPortrait({ authorId: "player-1", portrait: "  " }), "player-avatar.webp");
+
+  game.users.get = () => ({ avatar: "" });
+  assert.equal(getRequestDisplayPortrait({ authorId: "player-1", portrait: "" }), "icons/svg/mystery-man.svg");
+});
+
+test("dnd5e portrait rendering switches media type and follows a finite fallback chain", () => {
+  installFoundryGlobals();
+  game.users = {
+    get: (id) => id === "player-1" ? { id, avatar: "player-avatar.webp" } : undefined
+  };
+  let currentPortrait;
+  const createMedia = (tagName) => {
+    const media = {
+      tagName: tagName.toUpperCase(),
+      dataset: {},
+      listeners: new Map(),
+      attributes: new Set(),
+      addEventListener(type, listener, options = {}) {
+        const registered = options.once
+          ? (...args) => {
+              this.listeners.delete(type);
+              listener(...args);
+            }
+          : listener;
+        this.listeners.set(type, registered);
+      },
+      toggleAttribute(name, enabled) {
+        if (enabled) this.attributes.add(name);
+        else this.attributes.delete(name);
+      },
+      replaceWith(replacement) {
+        currentPortrait = replacement;
+      }
+    };
+    return media;
+  };
+  currentPortrait = createMedia("img");
+  globalThis.document = { createElement: createMedia };
+  const root = new MockElement();
+  root.querySelector = (selector) => selector === ".message-sender .avatar img, .message-sender .avatar video"
+    ? currentPortrait
+    : null;
+  const requestData = {
+    authorId: "player-1",
+    authorName: "Player",
+    characterName: "Hero",
+    portrait: "original-token.webm"
+  };
+  const message = {
+    getFlag(_namespace, key) {
+      return key === FLAGS.resolution ? { requestData } : null;
+    }
+  };
+
+  renderRequestChatPortrait(message, root);
+  assert.equal(currentPortrait.tagName, "VIDEO");
+  assert.equal(currentPortrait.src, "original-token.webm");
+  assert.equal(currentPortrait.alt, "Hero");
+  assert.equal(currentPortrait.attributes.has("autoplay"), true);
+
+  const firstPortrait = currentPortrait;
+  renderRequestChatPortrait(message, root);
+  assert.equal(currentPortrait, firstPortrait);
+  assert.equal(currentPortrait.listeners.size, 1);
+
+  currentPortrait.listeners.get("error")();
+  assert.equal(currentPortrait.tagName, "IMG");
+  assert.equal(currentPortrait.src, "player-avatar.webp");
+  currentPortrait.listeners.get("error")();
+  assert.equal(currentPortrait.src, "icons/svg/mystery-man.svg");
+  assert.equal(currentPortrait.listeners.size, 0);
 });

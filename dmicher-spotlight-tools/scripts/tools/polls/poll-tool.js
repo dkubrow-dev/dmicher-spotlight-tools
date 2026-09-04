@@ -1,6 +1,7 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
 import {
   applyChatMessageMode,
+  buildChatSpeaker,
   confirmDialog,
   createSerialTaskQueue,
   escapeHTML,
@@ -638,7 +639,7 @@ export class PollTool {
 
     return ChatMessageClass.create({
       user: game.user.id,
-      speaker: ChatMessageClass.getSpeaker(),
+      speaker: buildChatSpeaker({ alias: game.user.name }),
       content: this.buildRequestContent(requestData),
       whisper: Array.from(new Set([user.id, ...getModeratorUserIds()])),
       flags: {
@@ -1017,7 +1018,7 @@ export class PollTool {
     const ChatMessageClass = getChatMessageClass();
     const message = await ChatMessageClass.create({
       user: game.user.id,
-      speaker: ChatMessageClass.getSpeaker(),
+      speaker: buildChatSpeaker({ alias: game.user.name }),
       whisper: getModeratorUserIds(),
       content: `
         <section class="dmicher-technical-card dmicher-poll-technical">
@@ -1169,7 +1170,7 @@ export class PollTool {
     const ChatMessageClass = getChatMessageClass();
     const messageData = {
       user: game.user.id,
-      speaker: ChatMessageClass.getSpeaker(),
+      speaker: buildChatSpeaker({ alias: game.user.name }),
       content
     };
     applyChatMessageMode(messageData, ChatMessageClass);

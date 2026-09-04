@@ -447,3 +447,137 @@ test("speech grant popup shows portrait, request type, and two text lines", () =
   assert.equal(text.children[1].textContent, "Player \u2014 Hero");
   assert.equal(text.children[1].classNames.has("dmicher-speech-popup-person"), true);
 });
+
+test("submission payload snapshots the original token and otherwise uses the player avatar", () => {
+  const player = {
+    id: "player",
+    name: "Player",
+    role: 1,
+    avatar: "player-avatar.webp",
+    character: { id: "assigned-actor", name: "Assigned Hero", img: "actor.webp" }
+  };
+  const actor = {
+    id: "actor-1",
+    name: "Hero",
+    img: "actor.webp",
+    prototypeToken: { texture: { src: "prototype.webp" } }
+  };
+  const token = {
+    id: "token-1",
+    name: "Hero Token",
+    actor,
+    texture: { src: "" },
+    document: {
+      id: "token-1",
+      parent: { id: "scene-original" },
+      texture: { src: "original-token.webm" }
+    }
+  };
+  globalThis.game = {
+    user: player,
+    time: { serverTime: 1234 },
+    settings: { get: () => "" },
+    i18n: { localize: (key) => key, format: (key) => key }
+  };
+  globalThis.document = {
+    createElement: () => ({
+      style: {
+        cssText: "",
+        getPropertyPriority: () => "",
+        getPropertyValue: () => ""
+      }
+    })
+  };
+  globalThis.canvas = {
+    scene: { id: "scene-original" },
+    tokens: { controlled: [token] }
+  };
+  const tool = new RequestTool();
+
+  const withToken = tool.createSubmissionPayload("common");
+  assert.equal(withToken.characterName, "Hero");
+  assert.equal(withToken.actorId, "actor-1");
+  assert.equal(withToken.tokenId, "token-1");
+  assert.equal(withToken.sceneId, "scene-original");
+  assert.equal(withToken.portrait, "original-token.webm");
+
+  canvas.tokens.controlled = [];
+  const withoutToken = tool.createSubmissionPayload("common");
+  assert.equal(withoutToken.characterName, "Assigned Hero");
+  assert.equal(withoutToken.actorId, "assigned-actor");
+  assert.equal(withoutToken.tokenId, "");
+  assert.equal(withoutToken.portrait, "player-avatar.webp");
+});
+
+test("grant and cancellation messages keep the request speaker after the GM changes scene", async () => {
+  const gm = { id: "gm", name: "GM", role: 4, active: true, avatar: "gm-avatar.webp" };
+  const player = { id: "player", name: "Player", role: 1, active: true, avatar: "player-avatar.webp" };
+  const allUsers = [gm, player];
+  const users = {
+    get: (id) => allUsers.find((user) => user.id === id),
+    filter: (predicate) => allUsers.filter(predicate)
+  };
+  const created = [];
+  globalThis.CONFIG = {
+    ChatMessage: {
+      documentClass: {
+        getSpeaker() {
+          assert.fail("technical messages must not inspect the GM controlled token");
+        },
+        async create(data) {
+          created.push(data);
+          return { id: `technical-${created.length}` };
+        }
+      }
+    },
+    Macro: {}
+  };
+  globalThis.game = {
+    user: gm,
+    users,
+    time: { serverTime: 2000 },
+    i18n: {
+      lang: "en",
+      localize: (key) => key,
+      format: (key, data = {}) => `${key}:${JSON.stringify(data)}`
+    }
+  };
+  globalThis.canvas = {
+    scene: { id: "scene-secret" },
+    tokens: {
+      controlled: [{
+        id: "token-secret",
+        actor: { id: "actor-secret", name: "Secret Villain" }
+      }]
+    }
+  };
+  const requestData = {
+    id: "request-original",
+    urgency: "common",
+    authorId: player.id,
+    authorName: player.name,
+    characterName: "Hero",
+    actorId: "actor-original",
+    tokenId: "token-original",
+    sceneId: "scene-original",
+    portrait: "original-token.webp",
+    submittedAt: 1000
+  };
+  const tool = new RequestTool();
+
+  await tool.createTechnicalMessage(requestData, true, 1000, gm);
+  await tool.createTechnicalMessage(requestData, false, 2000, gm);
+
+  assert.equal(created.length, 2);
+  for (const message of created) {
+    assert.equal(message.user, gm.id);
+    assert.deepEqual(message.speaker, {
+      scene: "scene-original",
+      actor: "actor-original",
+      token: "token-original",
+      alias: "Hero"
+    });
+    assert.equal(message.flags["dmicher-spotlight-tools"].resolution.requestData, requestData);
+    assert.deepEqual(new Set(message.whisper), new Set([gm.id, player.id]));
+  }
+});

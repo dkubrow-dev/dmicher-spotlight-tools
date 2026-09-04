@@ -9,6 +9,7 @@ import {
   normalizeRequestType
 } from "../../config.js";
 import {
+  buildChatSpeaker,
   canUseRequest,
   createSerialTaskQueue,
   format,
@@ -39,10 +40,12 @@ import {
   registerRequestWorldSettings
 } from "./request-config.js";
 import {
+  applyRequestChatPortrait,
   buildRequestMessageContent,
   buildTechnicalMessageLines,
   buildWelcomeMessageContent,
-  renderRequestChatMessage
+  renderRequestChatMessage,
+  renderRequestChatPortrait
 } from "./request-message.js";
 import { getRequestStyle, getRequestText } from "./request-settings.js";
 import { sanitizeRequestTextStyle } from "./request-text-style.js";
@@ -82,6 +85,8 @@ export class RequestTool {
 
   registerHooks() {
     Hooks.on(getChatMessageRenderHook(), this.renderChatMessage);
+    Hooks.on("ChatPortraitReplaceData", applyRequestChatPortrait);
+    Hooks.on("dnd5e.renderChatMessage", renderRequestChatPortrait);
     Hooks.on("deleteChatMessage", this.handleChatMessageDeleted);
     Hooks.on("userConnected", this.handleUserConnected);
   }
@@ -209,19 +214,17 @@ export class RequestTool {
       urgency: type,
       authorId: game.user.id,
       authorName: String(game.user.name ?? "").slice(0, 100),
-      characterName: String(actor?.name ?? token?.name ?? "").slice(0, 100),
+      characterName: firstNonEmptyString(actor?.name, token?.name).slice(0, 100),
       actorId: String(actor?.id ?? "").slice(0, 100),
       tokenId: String(tokenDocument?.id ?? token?.id ?? "").slice(0, 100),
       sceneId: String(tokenDocument?.parent?.id ?? canvas?.scene?.id ?? "").slice(0, 100),
       text: getRequestText(REQUEST_TYPES[type]).slice(0, 500),
       style: getRequestStyle(REQUEST_TYPES[type]),
-      portrait: String(
-        tokenDocument?.texture?.src
-        ?? token?.texture?.src
-        ?? actor?.prototypeToken?.texture?.src
-        ?? actor?.img
-        ?? game.user.avatar
-        ?? DEFAULT_USER_PORTRAIT
+      portrait: firstNonEmptyString(
+        tokenDocument?.texture?.src,
+        token?.texture?.src,
+        game.user.avatar,
+        DEFAULT_USER_PORTRAIT
       ).slice(0, 2048),
       submittedAt: Date.now(),
       createdAt: Number(game.time.serverTime) || Date.now()
@@ -264,7 +267,7 @@ export class RequestTool {
         actorId: payload.actorId,
         tokenId: payload.tokenId,
         sceneId: payload.sceneId,
-        portrait: payload.portrait,
+        portrait: firstNonEmptyString(payload.portrait, user.avatar, DEFAULT_USER_PORTRAIT),
         submittedAt: acceptedAt,
         createdAt: Number(game.time.serverTime) || acceptedAt,
         sequence,
@@ -276,12 +279,7 @@ export class RequestTool {
         const ChatMessageClass = getChatMessageClass();
         const message = await ChatMessageClass.create({
           user: user.id,
-          speaker: {
-            alias: entry.characterName || entry.authorName,
-            actor: entry.actorId || null,
-            token: entry.tokenId || null,
-            scene: entry.sceneId || null
-          },
+          speaker: buildRequestSpeaker(entry),
           content: buildRequestMessageContent(
             type,
             String(payload.text ?? getRequestText(request)).slice(0, 500),
@@ -430,7 +428,7 @@ export class RequestTool {
     };
     await ChatMessageClass.create({
       user: game.user.id,
-      speaker: ChatMessageClass.getSpeaker(),
+      speaker: buildRequestSpeaker(requestData),
       content: `<section class="dmicher-request-technical">${buildTechnicalMessageLines(resolutionData)}</section>`,
       whisper: getWhisperRecipientsWithModerators(requestData.authorId),
       flags: { [MODULE_ID]: { [FLAGS.resolution]: resolutionData } }
@@ -599,7 +597,7 @@ export class RequestTool {
       const ChatMessageClass = getChatMessageClass();
       await ChatMessageClass.create({
         user: game.user.id,
-        speaker: ChatMessageClass.getSpeaker(),
+        speaker: buildChatSpeaker({ alias: game.user.name }),
         content: buildWelcomeMessageContent(isModerator(user)),
         whisper: [user.id],
         flags: { [MODULE_ID]: { [FLAGS.requestWelcome]: { userId, createdAt: Date.now() } } }
@@ -648,6 +646,25 @@ export class RequestTool {
     }
     await Promise.allSettled(work);
   }
+}
+
+function buildRequestSpeaker(requestData) {
+  const scene = String(requestData?.sceneId ?? "");
+  const token = scene ? String(requestData?.tokenId ?? "") : "";
+  return buildChatSpeaker({
+    alias: requestData?.characterName || requestData?.authorName,
+    actor: requestData?.actorId,
+    token,
+    scene: token ? scene : null
+  });
+}
+
+function firstNonEmptyString(...values) {
+  for (const value of values) {
+    const text = String(value ?? "").trim();
+    if (text) return text;
+  }
+  return "";
 }
 
 function createRequestId() {
