@@ -596,8 +596,8 @@ export class RequestTool {
     try {
       const ChatMessageClass = getChatMessageClass();
       await ChatMessageClass.create({
-        user: game.user.id,
-        speaker: buildChatSpeaker({ alias: game.user.name }),
+        user: user.id,
+        speaker: buildChatSpeaker({ alias: user.name }),
         content: buildWelcomeMessageContent(isModerator(user)),
         whisper: [user.id],
         flags: { [MODULE_ID]: { [FLAGS.requestWelcome]: { userId, createdAt: Date.now() } } }
