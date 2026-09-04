@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   applyChatMessageMode,
+  buildChatSpeaker,
   createSerialTaskQueue,
   getChatMessageRenderHook,
   getFoundryGeneration,
@@ -13,6 +14,26 @@ import {
   runAfterApplicationLifecycle,
   setGamePaused
 } from "../dmicher-spotlight-tools/scripts/utils.js";
+
+test("chat speakers are explicit and never inherit a controlled token", () => {
+  assert.deepEqual(buildChatSpeaker({ alias: "GM" }), {
+    scene: null,
+    actor: null,
+    token: null,
+    alias: "GM"
+  });
+  assert.deepEqual(buildChatSpeaker({
+    alias: "Hero",
+    actor: "actor-1",
+    token: "token-1",
+    scene: "scene-1"
+  }), {
+    scene: "scene-1",
+    actor: "actor-1",
+    token: "token-1",
+    alias: "Hero"
+  });
+});
 
 test("Foundry global mute blocks module audio in v13 and v14 and stays neutral in v12", async () => {
   let calls = 0;

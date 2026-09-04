@@ -154,6 +154,18 @@ export function getChatMessageClass() {
   return CONFIG.ChatMessage.documentClass ?? foundry.documents.ChatMessage;
 }
 
+export function buildChatSpeaker({ alias = "", actor = null, token = null, scene = null } = {}) {
+  const normalizeId = (value) => value === null || value === undefined || value === ""
+    ? null
+    : String(value);
+  return {
+    scene: normalizeId(scene),
+    actor: normalizeId(actor),
+    token: normalizeId(token),
+    alias: String(alias ?? "")
+  };
+}
+
 export function applyChatMessageMode(messageData, ChatMessageClass = getChatMessageClass()) {
   if (typeof ChatMessageClass.applyMode === "function") {
     return ChatMessageClass.applyMode(messageData);

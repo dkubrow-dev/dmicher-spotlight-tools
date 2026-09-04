@@ -28,7 +28,9 @@ function flattenKeys(value, prefix = "", output = []) {
 
 test("manifest and localization files are internally consistent", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "module.json"), "utf8"));
-  assert.equal(manifest.version, "1.2.1");
+  assert.equal(manifest.version, "1.2.2");
+  assert.match(manifest.download, /\/1\.2\.2\/dmicher-spotlight-tools-1\.2\.2\.zip$/);
+  assert.match(manifest.changelog, /\/tag\/1\.2\.2$/);
   assert.equal(manifest.compatibility.minimum, "12");
   assert.equal(manifest.compatibility.verified, "14");
 
@@ -89,6 +91,14 @@ test("all relative module imports, templates, and assets resolve", () => {
     for (const match of source.matchAll(/modules\/\$\{MODULE_ID\}\/(assets\/[^`"]+)/g)) {
       assert.ok(fs.existsSync(path.join(MODULE_ROOT, match[1])), match[1]);
     }
+  }
+});
+
+test("module chat messages never derive a speaker from the current selection", () => {
+  const scripts = walk(path.join(MODULE_ROOT, "scripts")).filter((file) => file.endsWith(".js"));
+  for (const script of scripts) {
+    const source = fs.readFileSync(script, "utf8");
+    assert.doesNotMatch(source, /\.getSpeaker\s*\(\s*\)/, path.relative(ROOT, script));
   }
 });
 

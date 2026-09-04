@@ -5,6 +5,7 @@ import {
 } from "../../config.js";
 import {
   applyChatMessageMode,
+  buildChatSpeaker,
   escapeHTML,
   getChatMessageClass,
   isModerator,
@@ -134,7 +135,7 @@ export class StopwatchTool {
     const ChatMessageClass = getChatMessageClass();
     const messageData = {
       user: game.user.id,
-      speaker: ChatMessageClass.getSpeaker(),
+      speaker: buildChatSpeaker({ alias: game.user.name }),
       content: this.buildChatContent()
     };
     applyChatMessageMode(messageData, ChatMessageClass);

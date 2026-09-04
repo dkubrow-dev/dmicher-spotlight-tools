@@ -1,5 +1,6 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
 import {
+  buildChatSpeaker,
   confirmDialog,
   createSerialTaskQueue,
   escapeHTML,
@@ -240,7 +241,7 @@ export class FocusAuditTool {
     const ChatMessageClass = getChatMessageClass();
     await ChatMessageClass.create({
       user: game.user.id,
-      speaker: ChatMessageClass.getSpeaker(),
+      speaker: buildChatSpeaker({ alias: game.user.name }),
       content: this.buildStatusChangeContent(user, oldStatus, newStatus),
       whisper: getWhisperRecipientsWithModerators(userId),
       flags: {
