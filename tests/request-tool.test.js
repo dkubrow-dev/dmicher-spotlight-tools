@@ -581,3 +581,55 @@ test("grant and cancellation messages keep the request speaker after the GM chan
     assert.deepEqual(new Set(message.whisper), new Set([gm.id, player.id]));
   }
 });
+
+test("welcome message is authored by the joining user and whispered only to them", async () => {
+  const gm = { id: "gm", name: "GM", role: 4, active: true, avatar: "gm-avatar.webp" };
+  const player = { id: "player", name: "Player", role: 1, active: true, avatar: "player-avatar.webp" };
+  const allUsers = [gm, player];
+  const users = {
+    get: (id) => allUsers.find((user) => user.id === id),
+    filter: (predicate) => allUsers.filter(predicate),
+    find: (predicate) => allUsers.find(predicate),
+    some: (predicate) => allUsers.some(predicate)
+  };
+  let created;
+  globalThis.CONFIG = {
+    ChatMessage: {
+      documentClass: {
+        getSpeaker() {
+          assert.fail("welcome messages must not inspect a controlled token");
+        },
+        async create(data) {
+          created = data;
+          return { id: "welcome-message" };
+        }
+      }
+    },
+    Macro: {}
+  };
+  globalThis.game = {
+    user: gm,
+    users,
+    modules: new Map(),
+    settings: {
+      get: (_namespace, key) => key === "requestConfiguration" ? { showWelcome: true } : ""
+    },
+    i18n: {
+      localize: (key) => key,
+      format: (key) => key
+    }
+  };
+  const tool = new RequestTool();
+
+  await tool.createWelcomeMessage(player.id);
+
+  assert.equal(created.user, player.id);
+  assert.deepEqual(created.speaker, {
+    scene: null,
+    actor: null,
+    token: null,
+    alias: player.name
+  });
+  assert.deepEqual(created.whisper, [player.id]);
+  assert.equal(created.flags["dmicher-spotlight-tools"].requestWelcome.userId, player.id);
+});
