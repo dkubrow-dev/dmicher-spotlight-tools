@@ -24,9 +24,8 @@
       "Informer": "Informer",
       "Heading": "Chat",
       "Enabled": "Post messages to chat",
-      "IdentityWarning": "This switch controls request cards and all module service messages. When enabled, the module creates a technical user and a hidden NPC in a module folder where supported. The user has the password infobot and is not intended for login. Disabling chat deletes only this user; the NPC and folder are retained. Missing identities are restored when enabled settings are saved and before sending a message. Identification uses saved IDs, so you can rename the user.",
+      "IdentityWarning": "On save: enabling creates a technical user; disabling deletes it.",
       "Polls": "Notify about poll responses",
-      "PollsHint": "Controls only automatic response notifications. Poll questions and manually posted results remain available while the main chat switch is enabled.",
       "Timers": "Announce timer starts and breaks",
       "Disabled": "Module chat output is disabled in Game Master Settings.",
       "RequiresGM": "This operation requires an active Game Master.",
@@ -534,7 +533,7 @@
                   },
                   "Polls": {
                     "Label": "Notify about poll responses",
-                    "Description": "Enabled by default. Controls automatic answer, decline, and no-answer notifications. It does not disable poll questions or manually posted results; those depend only on the main Chat switch."
+                    "Description": "Enabled by default. Controls only automatic answer, decline, and no-answer notifications. Interactive question cards, including their response buttons, and results manually posted by the Game Master remain available when this option is off, provided the main Chat switch is enabled."
                   },
                   "Timers": {
                     "Label": "Announce timer starts and breaks",
@@ -546,11 +545,11 @@
                   },
                   "Disabled": {
                     "Label": "Main switch off",
-                    "Description": "Saving with chat disabled turns off all module chat output and its dependent notification settings, including the welcome, and deletes only the technical user. The hidden NPC and folder are retained. Request queues, player statuses, and timers continue to work."
+                    "Description": "Saving with chat disabled stops all module chat output, including the welcome, and deletes only the technical user. The hidden NPC and folder are retained. Individual notification choices are saved but have no effect until the main Chat switch is enabled again. Request queues, player statuses, and timers continue to work."
                   },
                   "Recovery": {
                     "Label": "Restore missing identities",
-                    "Description": "With chat enabled, the module checks the technical user and NPC on activation, when settings are saved, and immediately before each message. Missing identities are restored by an active Game Master using the saved IDs."
+                    "Description": "With chat enabled, the module checks the technical user and NPC on activation, whenever Game Master Settings are saved (even without changing any values), and immediately before each message. An active Game Master restores missing identities using the saved IDs and retains the chosen user name."
                   }
                 }
               }

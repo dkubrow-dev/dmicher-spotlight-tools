@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 class MockApplicationV2 {}
@@ -52,6 +53,18 @@ function installSettings(generation, legacyValues, existingKeys = []) {
   };
   return writes;
 }
+
+test("master settings retain only the informer creation and deletion hint", () => {
+  const template = readFileSync(new URL(
+    "../dmicher-spotlight-tools/templates/request-master-settings.hbs",
+    import.meta.url
+  ), "utf8");
+  const hints = template.match(/<p\b[^>]*\bclass=["'][^"']*\bhint\b[^"']*["'][^>]*>[\s\S]*?<\/p>/g) ?? [];
+
+  assert.equal(hints.length, 1);
+  assert.match(hints[0], /TechnicalChat\.IdentityWarning/);
+  assert.doesNotMatch(template, /TechnicalChat\.PollsHint/);
+});
 
 test("v12 keeps request settings in client storage without migration", async () => {
   const request = Object.values(REQUEST_TYPES)[0];
