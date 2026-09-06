@@ -2,14 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { FLAGS, MODULE_ID } from "../dmicher-spotlight-tools/scripts/config.js";
+import { applyChatPortrait, getChatDisplayPortrait, renderChatPortrait } from "../dmicher-spotlight-tools/scripts/chat-portrait.js";
 import {
-  applyRequestChatPortrait,
   buildRequestMessageContent,
   buildWelcomeMessageContent,
-  getRequestDisplayPortrait,
   getRequestAnchorId,
-  renderRequestChatMessage,
-  renderRequestChatPortrait
+  renderRequestChatMessage
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-message.js";
 
 class MockClassList {
@@ -291,12 +289,64 @@ test("request portrait integrations use the saved snapshot and player fallback",
   };
   const customData = { customIconPortraitImage: "gm-token.webp" };
 
-  assert.equal(applyRequestChatPortrait(customData, message), customData);
+  assert.equal(applyChatPortrait(customData, message), customData);
   assert.equal(customData.customIconPortraitImage, "original-token.webp");
-  assert.equal(getRequestDisplayPortrait({ authorId: "player-1", portrait: "  " }), "player-avatar.webp");
+  assert.equal(getChatDisplayPortrait({ authorId: "player-1", portrait: "  " }), "player-avatar.webp");
 
   game.users.get = () => ({ avatar: "" });
-  assert.equal(getRequestDisplayPortrait({ authorId: "player-1", portrait: "" }), "icons/svg/mystery-man.svg");
+  assert.equal(getChatDisplayPortrait({ authorId: "player-1", portrait: "" }), "icons/svg/mystery-man.svg");
+});
+
+test("technical identity takes precedence over the resolved request portrait", () => {
+  installFoundryGlobals();
+  const technical = {
+    authorId: "informer-user",
+    authorName: "Informer",
+    characterName: "Informer NPC",
+    portrait: "informer.webp"
+  };
+  const requestData = {
+    authorId: "player-1",
+    characterName: "Hero",
+    portrait: "request-token.webp"
+  };
+  const message = {
+    getFlag(_namespace, key) {
+      if (key === FLAGS.technical) return technical;
+      if (key === FLAGS.resolution) return { requestData };
+      return null;
+    }
+  };
+  const customData = { customIconPortraitImage: "request-token.webp" };
+  applyChatPortrait(customData, message);
+  assert.equal(customData.customIconPortraitImage, "informer.webp");
+
+  const root = new MockElement();
+  const portrait = new MockElement();
+  root.queries.set(".message-sender .avatar img, .message-sender .avatar video", portrait);
+  renderChatPortrait(message, root);
+  assert.equal(portrait.src, "informer.webp");
+  assert.equal(portrait.alt, "Informer NPC");
+});
+
+test("ordinary chat messages keep their existing portrait and integration data", () => {
+  installFoundryGlobals();
+  const message = { getFlag: () => undefined };
+  const customData = { customIconPortraitImage: "ordinary.webp", other: "preserved" };
+  const originalData = structuredClone(customData);
+  assert.equal(applyChatPortrait(customData, message), customData);
+  assert.deepEqual(customData, originalData);
+
+  const root = new MockElement();
+  const portrait = new MockElement();
+  portrait.src = "ordinary.webp";
+  portrait.alt = "Ordinary speaker";
+  root.queries.set(".message-sender .avatar img, .message-sender .avatar video", portrait);
+  renderChatPortrait(message, root);
+  assert.equal(portrait.src, "ordinary.webp");
+  assert.equal(portrait.alt, "Ordinary speaker");
+  assert.deepEqual(portrait.dataset, {});
+  assert.equal(portrait.listeners.size, 0);
 });
 
 test("dnd5e portrait rendering switches media type and follows a finite fallback chain", () => {
@@ -348,14 +398,14 @@ test("dnd5e portrait rendering switches media type and follows a finite fallback
     }
   };
 
-  renderRequestChatPortrait(message, root);
+  renderChatPortrait(message, root);
   assert.equal(currentPortrait.tagName, "VIDEO");
   assert.equal(currentPortrait.src, "original-token.webm");
   assert.equal(currentPortrait.alt, "Hero");
   assert.equal(currentPortrait.attributes.has("autoplay"), true);
 
   const firstPortrait = currentPortrait;
-  renderRequestChatPortrait(message, root);
+  renderChatPortrait(message, root);
   assert.equal(currentPortrait, firstPortrait);
   assert.equal(currentPortrait.listeners.size, 1);
 

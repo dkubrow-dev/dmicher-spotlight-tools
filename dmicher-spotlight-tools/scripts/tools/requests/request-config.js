@@ -16,6 +16,7 @@ export const DEFAULT_URGENT_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 export function createDefaultRequestConfiguration() {
   return {
     chatEnabled: true,
+    chatNotifications: { polls: true, timers: true },
     soundsEnabled: true,
     blockWhenEnvironment: true,
     showWelcome: true,
@@ -85,6 +86,10 @@ export function normalizeRequestConfiguration(value) {
   const source = value && typeof value === "object" ? value : {};
   const result = {
     chatEnabled: normalizeBoolean(source.chatEnabled, defaults.chatEnabled),
+    chatNotifications: {
+      polls: normalizeBoolean(source.chatNotifications?.polls, defaults.chatNotifications.polls),
+      timers: normalizeBoolean(source.chatNotifications?.timers, defaults.chatNotifications.timers)
+    },
     soundsEnabled: normalizeBoolean(source.soundsEnabled, defaults.soundsEnabled),
     blockWhenEnvironment: normalizeBoolean(source.blockWhenEnvironment, defaults.blockWhenEnvironment),
     showWelcome: normalizeBoolean(source.showWelcome, defaults.showWelcome),

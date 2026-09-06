@@ -20,6 +20,20 @@
         "Light": "Light"
       }
     },
+    "TechnicalChat": {
+      "Informer": "Informer",
+      "Heading": "Chat",
+      "Enabled": "Post messages to chat",
+      "IdentityWarning": "This switch controls request cards and all module service messages. When enabled, the module creates a technical user and a hidden NPC in a module folder where supported. The user has the password infobot and is not intended for login. Disabling chat deletes only this user; the NPC and folder are retained. Missing identities are restored when enabled settings are saved and before sending a message. Identification uses saved IDs, so you can rename the user.",
+      "Polls": "Notify about poll responses",
+      "PollsHint": "Controls only automatic response notifications. Poll questions and manually posted results remain available while the main chat switch is enabled.",
+      "Timers": "Announce timer starts and breaks",
+      "Disabled": "Module chat output is disabled in Game Master Settings.",
+      "RequiresGM": "This operation requires an active Game Master.",
+      "Unavailable": "The technical chat user or actor could not be created or restored.",
+      "ActorTypeUnavailable": "This game system does not provide a suitable actor type for the Informer.",
+      "SendFailed": "Could not deliver the technical chat message."
+    },
     "Requests": {
       "Common": {
         "Label": "Regular request",
@@ -71,7 +85,7 @@
         "WindowTitle": "dmicher Spotlight Tools — Game Master Settings",
         "MenuName": "dmicher Spotlight Tools — Game Master Settings",
         "MenuLabel": "Game Master Settings",
-        "MenuHint": "Configure the world-wide Request Feed, Request Anti-Spam Limits, Images, Sounds, and Welcome Message blocks.",
+        "MenuHint": "Configure the world-wide Request Feed, Chat, Request Anti-Spam Limits, Images, Sounds, and Welcome Message blocks.",
         "Forbidden": "Game Master settings are available only to a Game Master or Assistant."
       },
       "Chat": {
@@ -165,7 +179,7 @@
       },
       "Limits": {
         "Heading": "Request Anti-Spam Limits",
-        "ChatEnabled": "Post requests to chat",
+        "ChatEnabled": "Post messages to chat",
         "Mode": "Limit",
         "None": "Unlimited",
         "ByCount": "Limit per player",
@@ -260,7 +274,7 @@
                   },
                   "Chat": {
                     "Label": "Connection to chat",
-                    "Description": "Chat cards can be disabled while the active queue, Request Feed, and Active Requests window continue to work."
+                    "Description": "The main Chat switch controls request cards and all module service messages. Disabling it leaves the queue, Request Feed, and Active Requests functional."
                   },
                   "Identity": {
                     "Label": "Request author",
@@ -422,7 +436,7 @@
                   },
                   "Technical": {
                     "Label": "Result message",
-                    "Description": "When chat output is enabled, reports the type, waiting time, and resolution to the participants."
+                    "Description": "When chat is enabled, the Informer sends each intended player and moderator a separate private result message with the request type, waiting time, and resolution."
                   }
                 }
               },
@@ -451,7 +465,7 @@
           },
           "MasterSettings": {
             "Title": "Game Master Settings",
-            "Intro": "This separate window contains shared request controls for the world and is available only to a Game Master or Assistant.",
+            "Intro": "This separate window contains shared module controls for the world and is available only to a Game Master or Assistant.",
             "Sections": {
               "Access": {
                 "Title": "Window and access",
@@ -475,27 +489,68 @@
                 "Items": {
                   "Feed": {
                     "Label": "Request Feed",
-                    "Description": "The first block enables Request Feed for the world, controls whether regular players can see it, and controls submission time; all three switches are enabled on first activation."
+                    "Description": "Enables Request Feed for the world, controls whether regular players can see it, and controls submission time; all three switches are enabled on first activation."
+                  },
+                  "Chat": {
+                    "Label": "Chat",
+                    "Description": "Controls all module chat output and the separate automatic poll-response and timer-start notifications."
                   },
                   "Limits": {
                     "Label": "Request Anti-Spam Limits",
-                    "Description": "The second block controls chat output, count limits, prohibitions, timeouts, and blocking during an active Environment request; initial values are detailed on the anti-spam page."
+                    "Description": "Controls count limits, prohibitions, timeouts, and blocking during an active Environment request; initial values are detailed on the anti-spam page."
                   },
                   "Images": {
                     "Label": "Images",
-                    "Description": "The third block configures Regular, Urgent, and Environment images; module defaults are used initially."
+                    "Description": "Configures Regular, Urgent, and Environment images; module defaults are used initially."
                   },
                   "Sounds": {
                     "Label": "Sounds",
-                    "Description": "The fourth block controls request, timer, and break sounds, URLs, volume, and previews. Request sounds start enabled and no custom sounds are configured."
+                    "Description": "Controls request, timer, and break sounds, URLs, volume, and previews. Request sounds start enabled and no custom sounds are configured."
                   },
                   "Welcome": {
                     "Label": "Welcome Message",
-                    "Description": "The final block controls the private startup message; Welcome is enabled by default."
+                    "Description": "Controls the private startup message. It is enabled by default and also depends on the main Chat switch."
                   },
                   "Save": {
                     "Label": "Save button",
-                    "Description": "Saves shared world controls; changing whether Request Feed is enabled or shown to players prompts the user to reload the client."
+                    "Description": "Saves shared world controls and synchronizes the technical user. Changing whether Request Feed is enabled or shown to players prompts a client reload."
+                  }
+                }
+              },
+              "Chat": {
+                "Title": "Chat and the Informer",
+                "Items": {
+                  "Enabled": {
+                    "Label": "Post messages to chat",
+                    "Description": "The main switch is enabled by default and controls request cards, request resolutions, poll cards and results, timer announcements, statuses, stopwatch output, and welcome messages."
+                  },
+                  "Identity": {
+                    "Label": "Technical user and NPC",
+                    "Description": "The module creates Informer with password infobot and a matching NPC using the module portrait. Where supported, the NPC is placed in an actor folder named after the module. The NPC and folder are hidden from ordinary players; the account has only the permissions needed for chat and is not intended for login."
+                  },
+                  "Rename": {
+                    "Label": "Rename the Informer",
+                    "Description": "The Game Master can rename the technical user. Saved IDs identify the user and actor; subsequent synchronization retains the chosen user name and applies it to the NPC."
+                  },
+                  "Polls": {
+                    "Label": "Notify about poll responses",
+                    "Description": "Enabled by default. Controls automatic answer, decline, and no-answer notifications. It does not disable poll questions or manually posted results; those depend only on the main Chat switch."
+                  },
+                  "Timers": {
+                    "Label": "Announce timer starts and breaks",
+                    "Description": "Enabled by default. Controls chat announcements when a timer or break starts. Timers, windows, signals, and the break pause continue to work when these announcements are disabled."
+                  },
+                  "Recipients": {
+                    "Label": "One copy per recipient",
+                    "Description": "Service messages use the technical user and NPC as author and speaker. Each intended recipient receives a separate private message; a message for a player and a Game Master creates two copies."
+                  },
+                  "Disabled": {
+                    "Label": "Main switch off",
+                    "Description": "Saving with chat disabled turns off all module chat output and its dependent notification settings, including the welcome, and deletes only the technical user. The hidden NPC and folder are retained. Request queues, player statuses, and timers continue to work."
+                  },
+                  "Recovery": {
+                    "Label": "Restore missing identities",
+                    "Description": "With chat enabled, the module checks the technical user and NPC on activation, when settings are saved, and immediately before each message. Missing identities are restored by an active Game Master using the saved IDs."
                   }
                 }
               }
@@ -605,7 +660,7 @@
           },
           "Customization": {
             "Title": "Images, sounds, and welcome",
-            "Intro": "The Images, Sounds, and Welcome Message blocks are in the separate Game Master Settings window after Request Feed and Request Anti-Spam Limits and are configured by a moderator for the whole world.",
+            "Intro": "The Images, Sounds, and Welcome Message blocks follow Request Feed, Chat, and Request Anti-Spam Limits in Game Master Settings and apply to the whole world.",
             "Sections": {
               "Images": {
                 "Title": "Images block",
@@ -686,7 +741,7 @@
                 "Items": {
                   "Toggle": {
                     "Label": "Show welcome message",
-                    "Description": "Enables a private startup message for each joining user; it is enabled by default. The moderator welcome provides a direct link to Game Master Settings."
+                    "Description": "Enables a private startup message from the Informer to each joining user. It starts enabled, requires the main Chat switch, and turns off with it. The moderator welcome links to Game Master Settings."
                   },
                   "PlayerMessage": {
                     "Label": "Player text",
@@ -720,12 +775,12 @@
                 "Title": "Chat output",
                 "Items": {
                   "ChatToggle": {
-                    "Label": "Post requests to chat",
-                    "Description": "Creates a card for each accepted request and a technical message after resolution; it is enabled by default."
+                    "Label": "Post messages to chat",
+                    "Description": "This shared switch is in the Chat block of Game Master Settings. It is enabled by default and controls request cards and all module service messages."
                   },
                   "QueueWithoutChat": {
                     "Label": "Toggle off",
-                    "Description": "Requests remain in the active queue, Request Feed, and Active Requests window, but no chat card is created."
+                    "Description": "Requests remain in the queue, Request Feed, and Active Requests. All module chat output is disabled; saving deletes only the technical user and retains its hidden NPC and folder."
                   }
                 }
               },
@@ -1271,7 +1326,7 @@
                 "Items": {
                   "PrivateCard": {
                     "Label": "Private card",
-                    "Description": "The message is whispered to the assigned player and moderators."
+                    "Description": "With the main Chat switch enabled, the Informer sends a separate private copy to the assigned player and each moderator."
                   },
                   "Moderators": {
                     "Label": "Moderator view",
@@ -1333,7 +1388,7 @@
                   },
                   "ResultMessage": {
                     "Label": "Confirmation",
-                    "Description": "A private result message replaces it with the recorded answer."
+                    "Description": "When poll-response notifications are enabled, the Informer sends each intended recipient a private confirmation. Disabling these notifications still records the answer and removes the request cards."
                   }
                 }
               }
@@ -1411,7 +1466,7 @@
                 "Items": {
                   "Post": {
                     "Label": "Post to chat",
-                    "Description": "Publishes the result summary to game chat."
+                    "Description": "Sends a separate result summary from the Informer to each player. Requires the main Chat switch; the automatic poll-response notification switch does not affect this action."
                   },
                   "Finish": {
                     "Label": "Finish",
@@ -1472,11 +1527,11 @@
                 "Items": {
                   "Public": {
                     "Label": "Public",
-                    "Description": "The timer window and chat message are visible to everyone."
+                    "Description": "The timer window is visible to everyone; when timer announcements are enabled, each player also receives a private chat copy."
                   },
                   "Private": {
                     "Label": "Private",
-                    "Description": "Only moderators see the timer and its chat message."
+                    "Description": "Only moderators see the timer and, when timer announcements are enabled, receive its private chat copies."
                   },
                   "AutoOpen": {
                     "Label": "Automatic opening",
@@ -1484,7 +1539,7 @@
                   },
                   "Chat": {
                     "Label": "Chat message",
-                    "Description": "Records the deadline and provides a button to reopen the window."
+                    "Description": "With the main Chat switch and timer announcements enabled, the Informer records the deadline and provides a button to reopen the window. The timer also works without chat."
                   }
                 }
               },
@@ -1758,11 +1813,11 @@
                   },
                   "PublicCard": {
                     "Label": "Public card",
-                    "Description": "Visible to everyone with a public timer."
+                    "Description": "When timer announcements are enabled, each intended player receives a separate private card from the Informer for a public timer."
                   },
                   "PrivateCard": {
                     "Label": "Private card",
-                    "Description": "Whispered only to moderators."
+                    "Description": "When timer announcements are enabled, the Informer sends a separate private card only to each moderator."
                   }
                 }
               }
@@ -1847,7 +1902,7 @@
                   },
                   "Chat": {
                     "Label": "Message",
-                    "Description": "Posts a deadline card with a Watch button."
+                    "Description": "With the main Chat switch and timer announcements enabled, the Informer sends each player a deadline card with a Watch button. The break timer and pause also work without chat."
                   },
                   "NoAutoResume": {
                     "Label": "No automatic resume",
@@ -2201,7 +2256,7 @@
                   },
                   "PrivateNotice": {
                     "Label": "Notification",
-                    "Description": "The player and moderators receive a private old-to-new status message."
+                    "Description": "With the main Chat switch enabled, the Informer sends a separate status-change message to the player and each moderator. Status changes remain functional without chat."
                   },
                   "LoginDefault": {
                     "Label": "World entry",
@@ -2286,7 +2341,7 @@
                   },
                   "ChatIntegration": {
                     "Label": "Chat and polls",
-                    "Description": "Normal and meaningful response messages count; module technical cards do not."
+                    "Description": "Ordinary player chat and actual poll or readiness responses update chat activity. Module service messages do not count as activity; the technical user is excluded from the audit."
                   }
                 }
               }

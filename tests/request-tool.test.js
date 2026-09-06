@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
 
 class MockApplicationV2 {}
 
@@ -83,6 +84,7 @@ test("a cancelled request message creation does not mutate the queue or play sou
       }
     }
   });
+  installTechnicalChatFixture();
   const originalConsoleError = console.error;
   console.error = () => undefined;
   try {
@@ -509,7 +511,7 @@ test("submission payload snapshots the original token and otherwise uses the pla
   assert.equal(withoutToken.portrait, "player-avatar.webp");
 });
 
-test("grant and cancellation messages keep the request speaker after the GM changes scene", async () => {
+test("grant and cancellation use the informer and retain request details after a scene change", async () => {
   const gm = { id: "gm", name: "GM", role: 4, active: true, avatar: "gm-avatar.webp" };
   const player = { id: "player", name: "Player", role: 1, active: true, avatar: "player-avatar.webp" };
   const allUsers = [gm, player];
@@ -563,26 +565,28 @@ test("grant and cancellation messages keep the request speaker after the GM chan
     portrait: "original-token.webp",
     submittedAt: 1000
   };
+  installTechnicalChatFixture();
   const tool = new RequestTool();
 
   await tool.createTechnicalMessage(requestData, true, 1000, gm);
   await tool.createTechnicalMessage(requestData, false, 2000, gm);
 
-  assert.equal(created.length, 2);
+  assert.equal(created.length, 4);
   for (const message of created) {
-    assert.equal(message.user, gm.id);
+    assert.equal(message.author, "informer-user");
     assert.deepEqual(message.speaker, {
-      scene: "scene-original",
-      actor: "actor-original",
-      token: "token-original",
-      alias: "Hero"
+      scene: null,
+      actor: "informer-actor",
+      token: null,
+      alias: "Informer"
     });
     assert.equal(message.flags["dmicher-spotlight-tools"].resolution.requestData, requestData);
-    assert.deepEqual(new Set(message.whisper), new Set([gm.id, player.id]));
+    assert.equal(message.whisper.length, 1);
   }
+  assert.deepEqual(created.map((message) => message.whisper), [[gm.id], [player.id], [gm.id], [player.id]]);
 });
 
-test("welcome message is authored by the joining user and whispered only to them", async () => {
+test("welcome is authored by the informer and whispered only to the joining user", async () => {
   const gm = { id: "gm", name: "GM", role: 4, active: true, avatar: "gm-avatar.webp" };
   const player = { id: "player", name: "Player", role: 1, active: true, avatar: "player-avatar.webp" };
   const allUsers = [gm, player];
@@ -621,14 +625,15 @@ test("welcome message is authored by the joining user and whispered only to them
   };
   const tool = new RequestTool();
 
+  installTechnicalChatFixture();
   await tool.createWelcomeMessage(player.id);
 
-  assert.equal(created.user, player.id);
+  assert.equal(created.author, "informer-user");
   assert.deepEqual(created.speaker, {
     scene: null,
-    actor: null,
+    actor: "informer-actor",
     token: null,
-    alias: player.name
+    alias: "Informer"
   });
   assert.deepEqual(created.whisper, [player.id]);
   assert.equal(created.flags["dmicher-spotlight-tools"].requestWelcome.userId, player.id);

@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./config.js";
+import { activateTechnicalChat, registerTechnicalChat, synchronizeTechnicalIdentity } from "./technical-chat.js";
 import {
   installHotbarMacroCleanup,
   synchronizeCurrentUserHotbarMacroMetadata
@@ -45,12 +46,14 @@ const spotlightControls = new SpotlightControls({
 });
 
 Hooks.once("init", () => {
+  registerTechnicalChat();
   registerThemeSetting();
   focusAuditTool.registerSettings();
   pollTool.registerSettings();
   requestVolumeController.registerSetting();
   requestTool.registerSettings();
   registerRequestSettings({
+    synchronizeChatIdentity: synchronizeTechnicalIdentity,
     submitRequest: requestTool.submitRequest,
     onRequestDragStart: requestHotbar.onRequestDragStart,
     volumeController: requestVolumeController,
@@ -103,6 +106,12 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   applySpotlightTheme();
+  try {
+    await activateTechnicalChat();
+  } catch (error) {
+    console.error(`${MODULE_ID} | Unable to initialize the technical chat identity`, error);
+    ui.notifications.error(error.message);
+  }
   void migrateLegacyClientRequestSettings().catch((error) => {
     console.error(`${MODULE_ID} | Unable to migrate legacy request settings`, error);
   });

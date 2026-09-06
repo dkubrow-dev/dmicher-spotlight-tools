@@ -1,12 +1,11 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
+import { createTechnicalChatMessages, isTechnicalUser } from "../../technical-chat.js";
 import {
-  buildChatSpeaker,
   confirmDialog,
   createSerialTaskQueue,
   escapeHTML,
   format,
   formatDuration,
-  getChatMessageClass,
   getMessageAuthorId,
   getRenderedElement,
   getWhisperRecipientsWithModerators,
@@ -195,6 +194,7 @@ export class FocusAuditTool {
   }
 
   requestOwnStatusChange(status) {
+    if (isTechnicalUser(game.user)) return;
     status = normalizePlayerStatus(status);
     if (this.getPlayerStatus(game.user.id) === status) return;
 
@@ -215,11 +215,13 @@ export class FocusAuditTool {
     if (!isPrimaryModerator()) return;
 
     const userId = String(payload.userId ?? "");
-    if (!game.users.get(userId)) return;
+    const user = game.users.get(userId);
+    if (!user || isTechnicalUser(user)) return;
     void this.setPlayerStatus(userId, payload.status);
   }
 
   async setPlayerStatus(userId, status, { announce = true } = {}) {
+    if (isTechnicalUser(game.users.get(userId))) return false;
     status = normalizePlayerStatus(status);
     const oldStatus = this.getPlayerStatus(userId);
     if (oldStatus === status) return false;
@@ -236,12 +238,9 @@ export class FocusAuditTool {
 
   async createStatusChangeMessage(userId, oldStatus, newStatus) {
     const user = game.users.get(userId);
-    if (!user) return;
+    if (!user || isTechnicalUser(user)) return;
 
-    const ChatMessageClass = getChatMessageClass();
-    await ChatMessageClass.create({
-      user: game.user.id,
-      speaker: buildChatSpeaker({ alias: game.user.name }),
+    await createTechnicalChatMessages({
       content: this.buildStatusChangeContent(user, oldStatus, newStatus),
       whisper: getWhisperRecipientsWithModerators(userId),
       flags: {
@@ -272,7 +271,7 @@ export class FocusAuditTool {
   }
 
   handleUserConnected(user, connected) {
-    if (!connected || !user?.id) return;
+    if (!connected || !user?.id || isTechnicalUser(user)) return;
     if (isPrimaryModerator()) void this.setPlayerStatus(user.id, PLAYER_STATUS.playing);
     this.renderPlayersList();
     this.auditWindow?.onAuditChanged();
@@ -282,7 +281,7 @@ export class FocusAuditTool {
     if (!isPrimaryModerator()) return;
     await this.updateState((state) => {
       for (const user of game.users) {
-        if (!user.active) continue;
+        if (!user.active || isTechnicalUser(user)) continue;
         const entry = state.players[user.id] ?? createCleanAuditEntry({}, Date.now());
         if (normalizePlayerStatus(entry.selfStatus) !== PLAYER_STATUS.unknown) continue;
         entry.selfStatus = PLAYER_STATUS.playing;
@@ -308,12 +307,14 @@ export class FocusAuditTool {
       }
       return;
     }
+    if (message.getFlag(MODULE_ID, FLAGS.technical)) return;
     if (message.getFlag(MODULE_ID, FLAGS.pollRequest)) return;
     if (message.getFlag(MODULE_ID, FLAGS.readinessRequest)) return;
     if (message.getFlag(MODULE_ID, FLAGS.request)) return;
 
     const authorId = getMessageAuthorId(message, userId);
-    if (!authorId || !game.users.get(authorId)) return;
+    const author = game.users.get(authorId);
+    if (!authorId || !author || isTechnicalUser(author)) return;
     void this.markTimestamp(authorId, "lastChatAt", Number(message.timestamp) || Date.now());
   }
 
@@ -400,6 +401,7 @@ export class FocusAuditTool {
   }
 
   async markTimestamp(userId, key, timestamp) {
+    if (isTechnicalUser(game.users.get(userId))) return;
     await this.updateState((state) => {
       const entry = this.getMutableEntry(state, userId);
       entry[key] = timestamp;
@@ -450,6 +452,7 @@ export class FocusAuditTool {
     const now = Date.now();
     await this.updateState((state) => {
       for (const user of game.users) {
+        if (isTechnicalUser(user)) continue;
         const existing = state.players[user.id] ?? {};
         state.players[user.id] = createCleanAuditEntry(existing, now);
       }
@@ -461,6 +464,7 @@ export class FocusAuditTool {
       let changed = false;
       const now = Date.now();
       for (const user of game.users) {
+        if (isTechnicalUser(user)) continue;
         const entry = state.players[user.id];
         if (!entry) {
           state.players[user.id] = createCleanAuditEntry({}, now);
@@ -482,7 +486,7 @@ export class FocusAuditTool {
 
   getAuditRows() {
     const now = Date.now();
-    return Array.from(game.users).map((user) => {
+    return Array.from(game.users).filter((user) => !isTechnicalUser(user)).map((user) => {
       const entry = this.state.players[user.id] ?? createCleanAuditEntry({}, now);
       const enabled = Boolean(entry.enabled);
       if (!enabled) return this.getDisabledAuditRow(user);

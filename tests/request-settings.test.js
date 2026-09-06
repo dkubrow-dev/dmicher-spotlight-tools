@@ -89,6 +89,7 @@ test("master settings save player feed visibility and offer a reload", async () 
   const writes = [];
   const menus = new Map();
   const errors = [];
+  let identitySynchronizations = 0;
   globalThis.game = {
     release: { generation: 14 },
     user: { role: 4 },
@@ -112,7 +113,7 @@ test("master settings save player feed visibility and offer a reload", async () 
       error: (message) => errors.push(message)
     }
   };
-  registerRequestSettings({});
+  registerRequestSettings({ synchronizeChatIdentity: async () => { identitySynchronizations += 1; } });
   const MasterSettings = menus.get("requestMasterSettings").type;
   const application = new MasterSettings();
   let reloadOffers = 0;
@@ -121,6 +122,8 @@ test("master settings save player feed visibility and offer a reload", async () 
 
   const values = new Map([
     ["chatEnabled", "on"],
+    ["chatPollNotifications", "on"],
+    ["chatTimerNotifications", "on"],
     ["soundsEnabled", "on"],
     ["blockWhenEnvironment", "on"],
     ["showWelcome", "on"],
@@ -172,4 +175,5 @@ test("master settings save player feed visibility and offer a reload", async () 
     }
   ]);
   assert.equal(reloadOffers, 1);
+  assert.equal(identitySynchronizations, 1);
 });

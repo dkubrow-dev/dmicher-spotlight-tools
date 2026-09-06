@@ -1,7 +1,6 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
 import {
   applyChatMessageMode,
-  buildChatSpeaker,
   confirmDialog,
   createSerialTaskQueue,
   escapeHTML,
@@ -16,6 +15,11 @@ import {
   localize,
   openSingletonApplication
 } from "../../utils.js";
+import {
+  createTechnicalChatMessages,
+  isTechnicalChatEnabled,
+  isTechnicalUser
+} from "../../technical-chat.js";
 import {
   createOrUpdateHotbarMacro,
   isHotbarDrop,
@@ -226,7 +230,7 @@ export class PollTool {
 
   getParticipantRows(template = null) {
     const selected = template?.participants ?? {};
-    return Array.from(game.users).map((user) => ({
+    return Array.from(game.users).filter((user) => !isTechnicalUser(user)).map((user) => ({
       userId: user.id,
       name: user.name,
       active: user.active,
@@ -453,6 +457,10 @@ export class PollTool {
   }
 
   async launchPreparedPoll(state, template, overrides = {}, { temporary = false } = {}) {
+    if (!isTechnicalChatEnabled()) {
+      ui.notifications.warn(localize("TechnicalChat.Disabled"));
+      return null;
+    }
     if (state.activePoll && !state.activePoll.closed) {
       ui.notifications.warn(localize("Polls.Errors.ClearFirst"));
       return null;
@@ -461,7 +469,7 @@ export class PollTool {
     const launchParticipants = overrides.participants
       ? normalizePollParticipants(overrides.participants, template.participants)
       : template.participants;
-    const selectedUsers = Array.from(game.users).filter((user) => launchParticipants[user.id]);
+    const selectedUsers = Array.from(game.users).filter((user) => !isTechnicalUser(user) && launchParticipants[user.id]);
     if (!selectedUsers.length) {
       ui.notifications.warn(localize("Polls.Errors.NoPlayers"));
       return null;
@@ -550,9 +558,10 @@ export class PollTool {
       }
 
       for (const user of selectedUsers) {
-        const message = await this.createRequestMessage(user, run);
+        const messages = await this.createRequestMessage(user, run);
+        const message = messages.find((candidate) => candidate.whisper?.includes(user.id)) ?? messages[0];
         if (!message?.id) throw new Error(localize("Polls.Errors.StartFailed"));
-        requestMessages.push(message);
+        requestMessages.push(...messages);
         const messageStored = await this.updateState((latestState) => {
           if (latestState.activePoll?.id !== run.id) return false;
           latestState.activePoll.responses[user.id].messageId = message.id;
@@ -634,12 +643,9 @@ export class PollTool {
   }
 
   async createRequestMessage(user, run) {
-    const ChatMessageClass = getChatMessageClass();
     const requestData = this.getRequestData(user.id, run);
 
-    return ChatMessageClass.create({
-      user: game.user.id,
-      speaker: buildChatSpeaker({ alias: game.user.name }),
+    return createTechnicalChatMessages({
       content: this.buildRequestContent(requestData),
       whisper: Array.from(new Set([user.id, ...getModeratorUserIds()])),
       flags: {
@@ -895,13 +901,13 @@ export class PollTool {
   async runPollResponseFinalization(processed, retries) {
     const { messageId, response, run, userId } = processed;
     let failed = false;
-    const message = this.findRequestMessage(run.id, userId, messageId);
-
-    try {
-      if (message) await message.delete();
-    } catch (error) {
-      failed = true;
-      console.warn(`${MODULE_ID} | Unable to remove poll request message`, error);
+    for (const message of this.findRequestMessages(run.id, userId, messageId)) {
+      try {
+        await message.delete();
+      } catch (error) {
+        failed = true;
+        console.warn(`${MODULE_ID} | Unable to remove poll request message`, error);
+      }
     }
 
     try {
@@ -930,8 +936,9 @@ export class PollTool {
 
       for (const [userId, response] of Object.entries(run.responses)) {
         if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
-        const message = this.findRequestMessage(run.id, userId, response.messageId);
-        if (message) await message.delete();
+        for (const message of this.findRequestMessages(run.id, userId, response.messageId)) {
+          await message.delete();
+        }
         run.responses[userId] = normalizePollResponse({
           status: POLL_RESPONSE_STATUS.noAnswer,
           value: null,
@@ -980,8 +987,9 @@ export class PollTool {
       if (state.activePoll?.templateId === templateId) {
         for (const [userId, response] of Object.entries(state.activePoll.responses)) {
           if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
-          const message = this.findRequestMessage(state.activePoll.id, userId, response.messageId);
-          if (message) await message.delete();
+          for (const message of this.findRequestMessages(state.activePoll.id, userId, response.messageId)) {
+            await message.delete();
+          }
         }
         state.activePoll = null;
       }
@@ -990,22 +998,17 @@ export class PollTool {
     });
   }
 
-  findRequestMessage(runId, userId, messageId = "") {
+  findRequestMessages(runId, userId, messageId = "") {
     const byId = messageId ? game.messages.get(messageId) : null;
-    const byIdData = byId?.getFlag(MODULE_ID, FLAGS.pollRequest);
-    if (byIdData?.runId === runId && byIdData?.userId === userId) return byId;
-
-    return Array.from(game.messages ?? []).find((message) => {
+    const candidates = new Set([byId, ...Array.from(game.messages ?? [])].filter(Boolean));
+    return Array.from(candidates).filter((message) => {
       const requestData = message.getFlag(MODULE_ID, FLAGS.pollRequest);
       return requestData?.runId === runId && requestData?.userId === userId;
-    }) ?? null;
+    });
   }
 
   async createResultMessage(userId, run, response) {
     const user = game.users.get(userId);
-    const existing = this.findResultMessage(run.id, userId);
-    if (existing) return existing;
-
     const userName = user?.name ?? response.userName ?? localize("Polls.Results.UnknownUser");
     const answeredAt = Number(response.answeredAt) || Date.now();
     const answerText = this.formatResponseValue(run, response);
@@ -1015,10 +1018,7 @@ export class PollTool {
         ? "Polls.Technical.CancelledTitle"
         : "Polls.Technical.NoAnswerTitle";
 
-    const ChatMessageClass = getChatMessageClass();
-    const message = await ChatMessageClass.create({
-      user: game.user.id,
-      speaker: buildChatSpeaker({ alias: game.user.name }),
+    return createTechnicalChatMessages({
       whisper: getModeratorUserIds(),
       content: `
         <section class="dmicher-technical-card dmicher-poll-technical">
@@ -1047,16 +1047,7 @@ export class PollTool {
           }
         }
       }
-    });
-    if (!message) throw new Error(localize("Polls.Errors.StartFailed"));
-    return message;
-  }
-
-  findResultMessage(runId, userId) {
-    return Array.from(game.messages ?? []).find((message) => {
-      const resultData = message.getFlag(MODULE_ID, FLAGS.pollResult);
-      return resultData?.runId === runId && resultData?.userId === userId;
-    }) ?? null;
+    }, { deduplicationKey: `poll-result:${run.id}:${userId}`, category: "polls" });
   }
 
   getResultRows(run) {
@@ -1169,12 +1160,10 @@ export class PollTool {
 
     const ChatMessageClass = getChatMessageClass();
     const messageData = {
-      user: game.user.id,
-      speaker: buildChatSpeaker({ alias: game.user.name }),
       content
     };
     applyChatMessageMode(messageData, ChatMessageClass);
-    await ChatMessageClass.create(messageData);
+    await createTechnicalChatMessages(messageData);
   }
 
   formatResponseValue(run, response) {

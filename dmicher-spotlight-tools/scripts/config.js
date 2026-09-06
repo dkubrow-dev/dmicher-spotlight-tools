@@ -18,6 +18,7 @@ export const STOPWATCH_EVENTS = Object.freeze({
 });
 
 export const SETTINGS = Object.freeze({
+  technicalChatIdentity: "technicalChatIdentity",
   theme: "theme",
   timers: "timers",
   timerTemplates: "timerTemplates",
@@ -34,6 +35,7 @@ export const SETTINGS = Object.freeze({
 export const THEME = Object.freeze({ dark: "dark", light: "light" });
 
 export const FLAGS = Object.freeze({
+  technical: "technical",
   request: "request",
   resolution: "resolution",
   requestWelcome: "requestWelcome",
