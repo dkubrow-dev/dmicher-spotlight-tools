@@ -5,15 +5,14 @@ import {
   SOCKET_CHANNEL,
   TIMER_SOUND_SOURCES
 } from "../../config.js";
+import { createTechnicalChatMessages, isTechnicalChatEnabled } from "../../technical-chat.js";
 import {
-  buildChatSpeaker,
   confirmDialog,
   createSerialTaskQueue,
   escapeHTML,
   format,
   formatClockTime,
   formatDigitalDuration,
-  getChatMessageClass,
   getChatMessageRenderHook,
   getModeratorUserIds,
   getRenderedElement,
@@ -425,8 +424,10 @@ export class TimerTool {
       state.timers[timer.id] = timer;
     });
     try {
-      const message = await this.createTimerChatMessage(timer);
-      if (!message) throw new Error(localize("Timers.Errors.StartFailed"));
+      const messages = await this.createTimerChatMessage(timer);
+      if (isTechnicalChatEnabled("timers") && (!Array.isArray(messages) || !messages.length)) {
+        throw new Error(localize("Timers.Errors.StartFailed"));
+      }
     } catch (error) {
       await this.rollbackTimerStart(timer.id);
       throw error;
@@ -626,27 +627,24 @@ export class TimerTool {
       console.error(`${MODULE_ID} | Unable to roll back timer start`, rollbackError);
     }
 
-    const message = Array.from(game.messages ?? []).find((candidate) => {
+    const messages = Array.from(game.messages ?? []).filter((candidate) => {
       return candidate.getFlag(MODULE_ID, FLAGS.timer)?.id === timerId;
     });
-    if (!message) return;
-
-    try {
-      await message.delete();
-    } catch (rollbackError) {
-      console.error(`${MODULE_ID} | Unable to remove rolled back timer message`, rollbackError);
+    for (const message of messages) {
+      try {
+        await message.delete();
+      } catch (rollbackError) {
+        console.error(`${MODULE_ID} | Unable to remove rolled back timer message`, rollbackError);
+      }
     }
   }
 
   async createTimerChatMessage(timer) {
-    const ChatMessageClass = getChatMessageClass();
     const messageData = {
       id: timer.id,
       kind: "started"
     };
-    return ChatMessageClass.create({
-      user: game.user.id,
-      speaker: buildChatSpeaker({ alias: game.user.name }),
+    return createTechnicalChatMessages({
       content: this.buildTimerChatMessageContent(timer),
       whisper: timer.visibility === TIMER_VISIBILITY.private ? getModeratorUserIds() : undefined,
       flags: {
@@ -654,7 +652,7 @@ export class TimerTool {
           [FLAGS.timer]: messageData
         }
       }
-    });
+    }, { category: "timers" });
   }
 
   buildTimerChatMessageContent(timer) {

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
 
 class MockApplicationV2 {}
 class TestCollection extends Array {
@@ -34,7 +35,7 @@ globalThis.window = {
   clearTimeout() {}
 };
 
-const { MODULE_ID, SETTINGS } = await import("../dmicher-spotlight-tools/scripts/config.js");
+const { FLAGS, MODULE_ID, SETTINGS } = await import("../dmicher-spotlight-tools/scripts/config.js");
 const {
   POLL_DEFAULTS_VERSION,
   POLL_TYPE,
@@ -45,6 +46,7 @@ const { PollTool } = await import("../dmicher-spotlight-tools/scripts/tools/poll
 function installGame() {
   const gm = { id: "gm", name: "GM", role: 4, active: true };
   const player = { id: "player", name: "Player", role: 1, active: true };
+  let requestConfiguration = { chatEnabled: true };
   let state = normalizePollState({
     defaultsVersion: POLL_DEFAULTS_VERSION,
     templates: {
@@ -76,11 +78,16 @@ function installGame() {
     settings: {
       get(namespace, key) {
         assert.equal(namespace, MODULE_ID);
+        if (key === SETTINGS.requestConfiguration) return requestConfiguration;
         assert.equal(key, SETTINGS.polls);
         return state;
       },
       async set(namespace, key, value) {
         assert.equal(namespace, MODULE_ID);
+        if (key === SETTINGS.requestConfiguration) {
+          requestConfiguration = structuredClone(value);
+          return requestConfiguration;
+        }
         assert.equal(key, SETTINGS.polls);
         state = structuredClone(value);
         return state;
@@ -92,8 +99,137 @@ function installGame() {
       format: (key) => key
     }
   };
+  installTechnicalChatFixture();
 
   return { getState: () => state };
+}
+
+function installMessageRecorder() {
+  const created = [];
+  CONFIG.ChatMessage.documentClass = {
+    applyMode: (data) => data,
+    async create(data) {
+      const message = {
+        ...structuredClone(data),
+        id: `message-${created.length + 1}`,
+        getFlag(namespace, key) {
+          return this.flags?.[namespace]?.[key];
+        },
+        async delete() {
+          const index = game.messages.indexOf(this);
+          if (index !== -1) game.messages.splice(index, 1);
+        }
+      };
+      created.push(message);
+      game.messages.push(message);
+      return message;
+    }
+  };
+  return created;
+}
+
+test("disabled technical chat does not reserve a poll or start its timer", async () => {
+  const { getState } = installGame();
+  await game.settings.set(MODULE_ID, SETTINGS.requestConfiguration, { chatEnabled: false });
+  const warnings = [];
+  ui.notifications.warn = (message) => warnings.push(message);
+  const tool = new PollTool({
+    timerTool: { startTimer: () => assert.fail("Disabled chat must not start a timer") }
+  });
+
+  assert.equal(await tool.launchPoll("template"), null);
+  assert.equal(getState().activePoll, null);
+  assert.deepEqual(getState().lastRuns, {});
+  assert.deepEqual(warnings, ["DMICHERSPOTLIGHTTOOLS.TechnicalChat.Disabled"]);
+});
+
+test("poll invitations use separate informer messages and exclude the informer from participants", async () => {
+  const { getState } = installGame();
+  const created = installMessageRecorder();
+  getState().templates.template.participants["informer-user"] = true;
+  const tool = new PollTool();
+  tool.openResultsWindow = () => null;
+
+  const run = await tool.launchPoll("template", { timerEnabled: false });
+  assert.deepEqual(Object.keys(run.selected), ["player"]);
+  assert.equal(tool.getParticipantRows().some((row) => row.userId === "informer-user"), false);
+  assert.equal(created.length, 2);
+  assert.deepEqual(created.map((message) => message.whisper[0]).sort(), ["gm", "player"]);
+  for (const message of created) {
+    assert.equal(message.author ?? message.user, "informer-user");
+    assert.equal(message.speaker.actor, "informer-actor");
+    assert.equal(message.whisper.length, 1);
+    assert.equal(message.getFlag(MODULE_ID, FLAGS.pollRequest).userId, "player");
+  }
+  const storedMessage = game.messages.get(getState().activePoll.responses.player.messageId);
+  assert.deepEqual(storedMessage.whisper, ["player"]);
+});
+
+test("answer reconciliation removes every invitation and deduplicates each moderator result", async () => {
+  const { getState } = installGame();
+  game.users.push({ id: "gm-2", name: "GM 2", role: 4, active: true });
+  installMessageRecorder();
+  const tool = new PollTool();
+  tool.openResultsWindow = () => null;
+  const run = await tool.launchPoll("template", { timerEnabled: false });
+  const payload = {
+    runId: run.id,
+    userId: "player",
+    messageId: getState().activePoll.responses.player.messageId,
+    status: "answered",
+    value: "yes"
+  };
+
+  await tool.processResponse(payload);
+  await tool.processResponse(payload);
+  assert.equal(tool.findRequestMessages(run.id, "player").length, 0);
+  const results = game.messages.filter((message) => message.getFlag(MODULE_ID, FLAGS.pollResult));
+  assert.equal(results.length, 2);
+  assert.deepEqual(Array.from(results, (message) => message.whisper[0]).sort(), ["gm", "gm-2"]);
+});
+
+test("muting poll response notifications keeps invitations and published results available", async () => {
+  const { getState } = installGame();
+  await game.settings.set(MODULE_ID, SETTINGS.requestConfiguration, {
+    chatEnabled: true,
+    chatNotifications: { polls: false }
+  });
+  const created = installMessageRecorder();
+  const tool = new PollTool();
+  tool.openResultsWindow = () => null;
+  const run = await tool.launchPoll("template", { timerEnabled: false });
+  assert.equal(created.length, 2);
+
+  await tool.processResponse({
+    runId: run.id,
+    userId: "player",
+    status: "answered",
+    value: "yes"
+  });
+  assert.equal(getState().activePoll.responses.player.status, "answered");
+  assert.equal(game.messages.length, 0);
+  tool.state = getState();
+  await tool.postResultsToChat("template");
+  assert.equal(game.messages.length, 2);
+  assert.ok(game.messages.every((message) => message.content.includes("dmicher-poll-results-card")));
+});
+
+for (const action of ["clear", "discard"]) {
+  test(`${action} removes all recipient copies of pending poll invitations`, async () => {
+    const { getState } = installGame();
+    installMessageRecorder();
+    const tool = new PollTool();
+    tool.openResultsWindow = () => null;
+    const run = await tool.launchPreparedPoll(getState(), getState().templates.template, {
+      timerEnabled: false
+    }, { temporary: action === "discard" });
+
+    assert.equal(tool.findRequestMessages(run.id, "player").length, 2);
+    if (action === "clear") await tool.clearActivePoll();
+    else await tool.discardTemporaryPoll(run.templateId);
+    assert.equal(tool.findRequestMessages(run.id, "player").length, 0);
+    assert.equal(getState().activePoll, null);
+  });
 }
 
 test("a poll reserves active state before starting its public timer", async () => {
@@ -116,7 +252,7 @@ test("a poll reserves active state before starting its public timer", async () =
     async deleteTimer() {}
   };
   const tool = new PollTool({ timerTool });
-  tool.createRequestMessage = async () => ({ id: "request-message" });
+  tool.createRequestMessage = async () => [{ id: "request-message" }];
   tool.openResultsWindow = () => null;
 
   const first = tool.launchPoll("template");
@@ -156,16 +292,17 @@ test("a partial request launch rolls back its messages, timer, and state", async
   tool.createRequestMessage = async () => {
     requests += 1;
     if (requests === 2) throw new Error("request failed");
-    return {
-      id: "request-1",
+    return ["player", "gm"].map((recipientId) => ({
+      id: `request-1-${recipientId}`,
+      whisper: [recipientId],
       async delete() {
         deleted += 1;
       }
-    };
+    }));
   };
 
   await assert.rejects(tool.launchPoll("template"), /request failed/);
-  assert.equal(deleted, 1);
+  assert.equal(deleted, 2);
   assert.deepEqual(rolledBackTimers, ["poll-timer"]);
   assert.equal(getState().activePoll, null);
   assert.equal(getState().lastRuns.template, undefined);
@@ -175,7 +312,11 @@ test("parallel response reconciliation creates one result message", async () => 
   installGame();
   const tool = new PollTool();
   let releaseCreate;
+  let reportCreate;
   let createCount = 0;
+  const createStarted = new Promise((resolve) => {
+    reportCreate = resolve;
+  });
   const createBarrier = new Promise((resolve) => {
     releaseCreate = resolve;
   });
@@ -183,9 +324,11 @@ test("parallel response reconciliation creates one result message", async () => 
     getSpeaker: () => ({}),
     async create(data) {
       createCount += 1;
+      reportCreate();
       await createBarrier;
       const message = {
         id: "result-message",
+        ...data,
         getFlag(namespace, key) {
           return data.flags?.[namespace]?.[key];
         }
@@ -217,7 +360,7 @@ test("parallel response reconciliation creates one result message", async () => 
   try {
     const first = tool.finalizePollResponse(processed);
     const second = tool.finalizePollResponse(processed);
-    await Promise.resolve();
+    await createStarted;
     assert.equal(createCount, 1);
     releaseCreate();
     await Promise.all([first, second]);

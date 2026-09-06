@@ -8,6 +8,8 @@ import {
   SPEECH_GRANTED_SOUND,
   normalizeRequestType
 } from "../../config.js";
+import { createTechnicalChatMessages, isTechnicalChatEnabled, isTechnicalUser, synchronizeTechnicalIdentity } from "../../technical-chat.js";
+import { applyChatPortrait, renderChatPortrait } from "../../chat-portrait.js";
 import {
   buildChatSpeaker,
   canUseRequest,
@@ -40,12 +42,10 @@ import {
   registerRequestWorldSettings
 } from "./request-config.js";
 import {
-  applyRequestChatPortrait,
   buildRequestMessageContent,
   buildTechnicalMessageLines,
   buildWelcomeMessageContent,
-  renderRequestChatMessage,
-  renderRequestChatPortrait
+  renderRequestChatMessage
 } from "./request-message.js";
 import { getRequestStyle, getRequestText } from "./request-settings.js";
 import { sanitizeRequestTextStyle } from "./request-text-style.js";
@@ -85,8 +85,8 @@ export class RequestTool {
 
   registerHooks() {
     Hooks.on(getChatMessageRenderHook(), this.renderChatMessage);
-    Hooks.on("ChatPortraitReplaceData", applyRequestChatPortrait);
-    Hooks.on("dnd5e.renderChatMessage", renderRequestChatPortrait);
+    Hooks.on("ChatPortraitReplaceData", applyChatPortrait);
+    Hooks.on("dnd5e.renderChatMessage", renderChatPortrait);
     Hooks.on("deleteChatMessage", this.handleChatMessageDeleted);
     Hooks.on("userConnected", this.handleUserConnected);
   }
@@ -238,7 +238,7 @@ export class RequestTool {
       const type = normalizeRequestType(payload?.urgency);
       const request = REQUEST_TYPES[type];
       const user = game.users.get(String(payload?.authorId ?? ""));
-      if (!user || !canUseRequest(request, user)) {
+      if (!user || isTechnicalUser(user) || !canUseRequest(request, user)) {
         this.sendFeedback(payload?.authorId, "Requests.Chat.Forbidden", "warn");
         return false;
       }
@@ -276,9 +276,10 @@ export class RequestTool {
       if (!entry) throw new Error(localize("Requests.Chat.SubmitError"));
 
       if (configuration.chatEnabled) {
+        await synchronizeTechnicalIdentity();
         const ChatMessageClass = getChatMessageClass();
         const message = await ChatMessageClass.create({
-          user: user.id,
+          author: user.id,
           speaker: buildRequestSpeaker(entry),
           content: buildRequestMessageContent(
             type,
@@ -419,16 +420,13 @@ export class RequestTool {
   }
 
   async createTechnicalMessage(requestData, completed, elapsed, resolver) {
-    const ChatMessageClass = getChatMessageClass();
     const resolutionData = {
       outcome: completed ? "completed" : "cancelled",
       resolverName: completed ? "" : String(resolver?.name ?? game.user.name),
       requestData,
       elapsed
     };
-    await ChatMessageClass.create({
-      user: game.user.id,
-      speaker: buildRequestSpeaker(requestData),
+    await createTechnicalChatMessages({
       content: `<section class="dmicher-request-technical">${buildTechnicalMessageLines(resolutionData)}</section>`,
       whisper: getWhisperRecipientsWithModerators(requestData.authorId),
       flags: { [MODULE_ID]: { [FLAGS.resolution]: resolutionData } }
@@ -574,7 +572,7 @@ export class RequestTool {
   }
 
   handleUserConnected(user, connected) {
-    if (!user?.id) return;
+    if (!user?.id || isTechnicalUser(user)) return;
     if (!connected) {
       this.welcomedUsers.delete(user.id);
       return;
@@ -583,21 +581,18 @@ export class RequestTool {
   }
 
   requestWelcome(userId) {
-    if (!getRequestConfiguration().showWelcome) return;
+    if (!isTechnicalChatEnabled() || !getRequestConfiguration().showWelcome) return;
     if (isPrimaryModerator()) return this.createWelcomeMessage(userId);
     if (this.hasActiveModerator()) game.socket.emit(SOCKET_CHANNEL, { action: "requestWelcome", userId });
   }
 
   async createWelcomeMessage(userId) {
-    if (!isPrimaryModerator() || !getRequestConfiguration().showWelcome || this.welcomedUsers.has(userId)) return;
+    if (!isPrimaryModerator() || !isTechnicalChatEnabled() || !getRequestConfiguration().showWelcome || this.welcomedUsers.has(userId)) return;
     const user = game.users.get(userId);
-    if (!user) return;
+    if (!user || isTechnicalUser(user)) return;
     this.welcomedUsers.add(userId);
     try {
-      const ChatMessageClass = getChatMessageClass();
-      await ChatMessageClass.create({
-        user: user.id,
-        speaker: buildChatSpeaker({ alias: user.name }),
+      await createTechnicalChatMessages({
         content: buildWelcomeMessageContent(isModerator(user)),
         whisper: [user.id],
         flags: { [MODULE_ID]: { [FLAGS.requestWelcome]: { userId, createdAt: Date.now() } } }

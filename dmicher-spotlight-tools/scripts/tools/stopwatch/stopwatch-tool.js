@@ -3,9 +3,9 @@ import {
   MODULE_ID,
   STOPWATCH_CHAT_MACRO_COMMAND
 } from "../../config.js";
+import { createTechnicalChatMessages } from "../../technical-chat.js";
 import {
   applyChatMessageMode,
-  buildChatSpeaker,
   escapeHTML,
   getChatMessageClass,
   isModerator,
@@ -134,12 +134,10 @@ export class StopwatchTool {
 
     const ChatMessageClass = getChatMessageClass();
     const messageData = {
-      user: game.user.id,
-      speaker: buildChatSpeaker({ alias: game.user.name }),
       content: this.buildChatContent()
     };
     applyChatMessageMode(messageData, ChatMessageClass);
-    await ChatMessageClass.create(messageData);
+    await createTechnicalChatMessages(messageData);
   }
 
   buildChatContent() {

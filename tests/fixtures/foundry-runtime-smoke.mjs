@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { installTechnicalChatFixture } from "./technical-chat.mjs";
 
 const generation = Number(process.argv[2]);
 assert.ok([12, 13, 14].includes(generation), "expected Foundry generation 12, 13, or 14");
@@ -482,7 +483,8 @@ if (generation === 12) {
   assert.equal(Array.isArray(sceneControls["dmicher-spotlight-tools"].tools), false);
 }
 
-hooks.call("ready");
+installTechnicalChatFixture({ empty: true });
+await Promise.all(hooks.call("ready"));
 for (const callback of scheduledTimeouts.splice(0)) callback();
 for (const callback of intervalCallbacks) callback();
 await new Promise((resolve) => setImmediate(resolve));

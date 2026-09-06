@@ -27,7 +27,8 @@ const requestPages = [
   ]),
   definePage("master-settings", "MasterSettings", [
     ["Access", ["Window", "GameSettingsButton", "ModeratorOnly"]],
-    ["Blocks", ["Feed", "Limits", "Images", "Sounds", "Welcome", "Save"]]
+    ["Blocks", ["Feed", "Chat", "Limits", "Images", "Sounds", "Welcome", "Save"]],
+    ["Chat", ["Enabled", "Identity", "Rename", "Polls", "Timers", "Recipients", "Disabled", "Recovery"]]
   ]),
   definePage("management", "Management", [
     ["Summary", ["WindowCounter", "Totals", "VisibleCounter", "Refresh"]],

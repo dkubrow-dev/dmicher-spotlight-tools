@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
 
 class MockApplicationV2 {}
 
@@ -96,6 +97,7 @@ function installGame() {
       break: { custom: false, url: "", volume: 1 }
     }
   });
+  installTechnicalChatFixture();
   return { timeouts, values };
 }
 
@@ -218,7 +220,7 @@ test("break duration is rounded from the actual timer start after pausing", asyn
 
   const tool = new TimerTool();
   tool.openTimerWindow = () => null;
-  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.createTimerChatMessage = async () => [{ id: "message" }];
   let displayedDeadline = 0;
 
   try {
@@ -259,7 +261,7 @@ test("failed break announcement rolls back timer state and a newly applied pause
 test("a cancelled chat creation rolls back a timer start", async () => {
   const { values } = installGame();
   const tool = new TimerTool();
-  tool.createTimerChatMessage = async () => undefined;
+  tool.createTimerChatMessage = async () => [];
 
   await assert.rejects(tool.startTimer({
     name: "Cancelled",
@@ -270,6 +272,98 @@ test("a cancelled chat creation rolls back a timer start", async () => {
     sound: TIMER_SOUND.none
   }), /Timers\.Errors\.StartFailed/);
   assert.deepEqual(values.get("dmicher-spotlight-tools.timers").timers, {});
+});
+
+test("disabling technical chat leaves break timers functional without publishing", async () => {
+  const { values } = installGame();
+  values.set("dmicher-spotlight-tools.requestConfiguration", { chatEnabled: false });
+  const originalClass = CONFIG.ChatMessage.documentClass;
+  let messageCreations = 0;
+  CONFIG.ChatMessage.documentClass = {
+    async create() {
+      messageCreations += 1;
+      throw new Error("disabled chat must not publish");
+    }
+  };
+  const tool = new TimerTool();
+  let openedTimer = null;
+  tool.openTimerWindow = (timerId) => {
+    openedTimer = timerId;
+  };
+
+  try {
+    const timer = await tool.startBreakTimer(15);
+    assert.equal(game.paused, true);
+    assert.equal(openedTimer, timer.id);
+    assert.equal(messageCreations, 0);
+    assert.deepEqual(values.get("dmicher-spotlight-tools.timers").timers[timer.id], timer);
+  } finally {
+    CONFIG.ChatMessage.documentClass = originalClass;
+  }
+});
+
+test("disabling timer chat alone still starts the timer without announcements", async () => {
+  const { values } = installGame();
+  values.set("dmicher-spotlight-tools.requestConfiguration", {
+    chatEnabled: true,
+    chatNotifications: { timers: false }
+  });
+  const originalClass = CONFIG.ChatMessage.documentClass;
+  let messageCreations = 0;
+  CONFIG.ChatMessage.documentClass = {
+    async create() {
+      messageCreations += 1;
+      throw new Error("disabled timer notifications must not publish");
+    }
+  };
+  const tool = new TimerTool();
+  tool.openTimerWindow = () => null;
+
+  try {
+    const timer = await tool.startTimer({
+      name: "Quiet timer",
+      mode: TIMER_MODE.duration,
+      time: "00:01:00",
+      visibility: TIMER_VISIBILITY.public,
+      style: TIMER_DISPLAY_STYLE.prominent,
+      sound: TIMER_SOUND.none
+    });
+    assert.equal(messageCreations, 0);
+    assert.deepEqual(values.get("dmicher-spotlight-tools.timers").timers[timer.id], timer);
+  } finally {
+    CONFIG.ChatMessage.documentClass = originalClass;
+  }
+});
+
+test("timer rollback removes every recipient copy and continues after a failed deletion", async () => {
+  const { values } = installGame();
+  values.set("dmicher-spotlight-tools.timers", {
+    version: 2,
+    timers: { failed: createTimer({ id: "failed" }), retained: createTimer({ id: "retained" }) }
+  });
+  const deletionAttempts = [];
+  game.messages = [
+    { id: "copy-gm", timerId: "failed", fail: true },
+    { id: "copy-player", timerId: "failed" },
+    { id: "unrelated", timerId: "retained" }
+  ].map((entry) => ({
+    getFlag: () => ({ id: entry.timerId }),
+    async delete() {
+      deletionAttempts.push(entry.id);
+      if (entry.fail) throw new Error("delete failed");
+    }
+  }));
+  const originalError = console.error;
+  console.error = () => undefined;
+
+  try {
+    await new TimerTool().rollbackTimerStart("failed");
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.deepEqual(deletionAttempts, ["copy-gm", "copy-player"]);
+  assert.deepEqual(Object.keys(values.get("dmicher-spotlight-tools.timers").timers), ["retained"]);
 });
 
 test("a failed unpause does not mask the original break error", async () => {
@@ -321,7 +415,7 @@ test("repeating a timer preserves its launch parameters and full duration", asyn
 
   const tool = new TimerTool();
   tool.state = structuredClone(state);
-  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.createTimerChatMessage = async () => [{ id: "message" }];
   tool.openTimerWindow = () => null;
 
   try {
@@ -364,7 +458,7 @@ test("repeating a break timer pauses the world again", async () => {
 
   const tool = new TimerTool();
   tool.state = structuredClone(state);
-  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.createTimerChatMessage = async () => [{ id: "message" }];
   tool.openTimerWindow = () => null;
 
   const repeated = await tool.repeatTimer("break-source");
@@ -478,7 +572,7 @@ test("starting a standard template creates a linked timer while break template o
   values.set("dmicher-spotlight-tools.timerTemplates", structuredClone(templateState));
   const tool = new TimerTool();
   tool.templateState = structuredClone(templateState);
-  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.createTimerChatMessage = async () => [{ id: "message" }];
   tool.openTimerWindow = () => null;
 
   const timer = await tool.startTimerTemplate("standard");
@@ -507,7 +601,7 @@ test("break descriptors use built-in template appearance and enforce one active 
   values.set("dmicher-spotlight-tools.timerTemplates", structuredClone(templateState));
   const tool = new TimerTool();
   tool.templateState = structuredClone(templateState);
-  tool.createTimerChatMessage = async () => ({ id: "message" });
+  tool.createTimerChatMessage = async () => [{ id: "message" }];
   tool.openTimerWindow = () => null;
 
   const timer = await tool.startBreakTimer({

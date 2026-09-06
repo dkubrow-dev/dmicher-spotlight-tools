@@ -308,6 +308,10 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
         const previous = getRequestConfiguration();
         const next = normalizeRequestConfiguration({
           chatEnabled: formData.has("chatEnabled"),
+          chatNotifications: {
+            polls: formData.has("chatPollNotifications"),
+            timers: formData.has("chatTimerNotifications")
+          },
           soundsEnabled: formData.has("soundsEnabled"),
           blockWhenEnvironment: formData.has("blockWhenEnvironment"),
           showWelcome: formData.has("showWelcome"),
@@ -367,6 +371,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       }
 
       for (const [key, value] of settingUpdates) await game.settings.set(MODULE_ID, key, value);
+      if (this.isMasterSettings) await actions.synchronizeChatIdentity?.();
       ui.notifications.info(localize("Requests.Settings.Saved"));
       await this.render({ force: true });
       if (feedVisibilityChanged) await this.offerReload();
@@ -634,6 +639,8 @@ function prepareMasterSettingsContext(configuration) {
     soundResources: [...requestSounds, ...timerSounds],
     limits,
     chatEnabled: configuration.chatEnabled,
+    chatPollNotifications: configuration.chatNotifications.polls,
+    chatTimerNotifications: configuration.chatNotifications.timers,
     soundsEnabled: configuration.soundsEnabled,
     blockWhenEnvironment: configuration.blockWhenEnvironment,
     showWelcome: configuration.showWelcome,
