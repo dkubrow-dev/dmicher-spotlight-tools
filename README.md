@@ -8,7 +8,9 @@
 Модуль «Приспособы фокуса Дмичера» - набор инструментов для Foundry VTT, не зависящих от игровых систем и предназначенных для контроля фокуса внимания (спотлайта) за игровым столом.
 Модуль позволяет организовать последовательность заявок игроков, проконтролировать время, оставшееся до запланированных мастером событий, провести проверку готовности или другой опрос, организовать перерыв и проследить за тем, кто из игроков долгое время остаётся вне фокуса внимания.
 
-Поддерживаются Foundry VTT версий 12, 13 и 14.
+Поддерживаются Foundry VTT версий 13 и 14.
+
+Базовая версия 1.3 остаётся бесплатной. Сателлит [dmicher-premium](https://boosty.to/dmicher) с подтверждённым доступом включает изменение показа времени, общего вывода в чат, изображений и звуков мира, а также отдельные выключатели приветствий мастеру и игрокам. Без Premium используются встроенные ресурсы, время, чат и оба приветствия включены. Антиспам, видимость ленты, уведомления опросов/таймеров и личные настройки остаются бесплатными. Показ статуса версии можно отключить бесплатно. Прежние премиальные настройки сохраняются при потере доступа и возвращаются при его восстановлении.
 
 ## Как установить модуль?
 
@@ -73,15 +75,15 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 
 «Лента заявок» — отдельная вкладка правой боковой панели после боя и перед сценами. Она показывает очередь, портреты, типы, игроков, персонажей и время; позволяет автору отменить свою заявку, а модератору — отменить любую или предоставить слово. Внизу находятся кнопки подачи и перетаскивания макросов, «Настройки заявок», «Активные заявки» и, когда настроен хотя бы один таймаут, мастерская кнопка «Сброс таймеров». Если лента включена, мастер и ассистенты видят её всегда; переключатель «Показывать ленту заявок игрокам» отдельно управляет доступом обычных игроков и по умолчанию включён. Скрытие вкладки от игроков не отключает очередь или подачу заявок через «Настройки заявок» и макросы. Изменение общего включения ленты или её показа игрокам требует перестройки боковой панели, поэтому модуль предлагает перезагрузить клиент.
 
-Блок антиспама независимо настраивает количество и таймаут обычных и срочных заявок. Таймаут может считаться с подачи или с предоставления слова; предупреждение сообщает оставшееся время. Сброс таймеров не удаляет активные заявки. Вывод карточек в чат можно отключить без отключения очереди, ленты и окна управления.
+Блок антиспама независимо настраивает количество и таймаут обычных и срочных заявок. Таймаут может считаться с подачи или с предоставления слова; предупреждение сообщает оставшееся время. Сброс таймеров не удаляет активные заявки. С Premium вывод карточек в чат можно отключить без отключения очереди, ленты и окна управления.
 
-Собственные изображения и звуки принимаются по прямым RAW-ссылкам. При сохранении клиент проверяет CORS-доступность и возможность отобразить изображение или воспроизвести звук. Старые макросы сохраняют назначенную им иконку, но при запуске используют актуальные ресурсы и ограничения.
+С Premium собственные изображения и звуки принимаются по прямым RAW-ссылкам. При сохранении клиент проверяет CORS-доступность и возможность отобразить изображение или воспроизвести звук. Старые макросы сохраняют назначенную им иконку, но при запуске используют актуальные ресурсы и ограничения.
 
 Окно «Активные заявки» работает независимо от чата. Оно показывает портрет или токен и изображение типа, игрока и выбранного персонажа; фильтрует типы; скрывает повторы по типу или игроку; переходит к карточке чата; позволяет давать слово, отменять заявки, создать «Заявку окружения», сбросить настроенные таймеры и очистить очередь.
 
 В Playlists → User Volume Controls модуль добавляет ползунки «Заявки» и «Таймеры». Громкость заявки равна базовой громкости типа, умноженной на личную громкость «Заявки». Звуки таймеров также учитывают личный ползунок «Таймеры» и дополнительные уровни конкретного сигнала. Штатное отключение звука Foundry имеет приоритет над всеми звуками модуля.
 
-Приветствие отправляется приватно каждому вошедшему пользователю. В нём отображаются точное значение `title` и версия установленного модуля. Ссылки «игровое меню» и «справкой» открывают окна внутри клиента Foundry; мастер и ассистент также могут открыть «Настройки мастера» и отключить приветствие. Отделённый горизонтальной чертой уменьшенный текст сообщает о бесплатности модуля, а «по ссылке» намеренно открывает внешнюю страницу поддержки.
+Приветствие отправляется приватно и показывает точное значение `title` и версию модуля. Ссылки на игровое меню, справку и настройки мастера открываются внутри Foundry. Premium позволяет отдельно отключить приветствия мастеру и игрокам. При включённом статусе бесплатная версия сообщает мастеру о подписке со ссылкой на Boosty, а игрокам — только о бесплатной версии. При подтверждённом Premium оба получают благодарность автора. Общий флаг «Выводить премиум статус» можно отключить независимо от подписки.
 
 Подробная интерактивная справка открывается из настроек игры и первой кнопкой в левом верхнем меню «Приспособы фокуса».
 
@@ -202,7 +204,9 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 The "dmicher Spotlight Tools" module is a system-agnostic toolset for Foundry VTT, designed to help control the focus of attention (spotlight) at the game table.
 The module helps organize the sequence of player requests, track time remaining until events planned by the Game Master, run readiness checks or other polls, organize breaks, and notice which players have been outside the spotlight for a long time.
 
-Foundry VTT versions 12, 13, and 14 are supported.
+Foundry VTT versions 13 and 14 are supported.
+
+The 1.3 base module remains free. The [dmicher-premium](https://boosty.to/dmicher) satellite with confirmed access enables changing time display, global game chat, world images and sounds, and separate Game Master/player welcome switches. Free mode uses built-in resources with time, chat, and both welcomes enabled. Anti-spam, feed visibility, poll/timer notifications, and personal settings stay free. Version status can also be hidden for free. Previous Premium settings are preserved when access expires and restored when it returns.
 
 ## How to install the module?
 
@@ -267,15 +271,15 @@ A newly configured world starts with these defaults:
 
 Request Feed is a right-sidebar tab placed after Combat and before Scenes. It shows the queue, portraits, types, players, characters, and time. Authors can cancel their own requests; moderators can cancel any request or grant the floor. Its footer contains submit-or-drag request controls, Request Settings, Active Requests, and—when at least one timeout is configured—a moderator-only Reset Timers button. When Request Feed is enabled, Game Masters and Assistants always see it; Show Request Feed to players separately controls access for regular players and is enabled by default. Hiding the tab from players does not disable the queue or submission through Request Settings and macros. Changing global feed enablement or player visibility requires rebuilding the sidebar, so the module offers to reload the client.
 
-Anti-spam settings independently control the count and timeout of Regular and Urgent requests. A timeout can start on submission or when the floor is granted, and rejection feedback includes the remaining time. Reset Timers preserves active requests. Chat cards can be disabled without disabling the queue, Request Feed, or management window.
+Anti-spam settings independently control the count and timeout of Regular and Urgent requests. A timeout can start on submission or when the floor is granted, and rejection feedback includes the remaining time. Reset Timers preserves active requests. With Premium, chat cards can be disabled without disabling the queue, Request Feed, or management window.
 
-Custom images and sounds use direct RAW URLs. On save, the client verifies CORS access and whether the image can be displayed or the audio can be played. Existing macros keep their assigned icon, but execution uses current resources and restrictions.
+With Premium, custom images and sounds use direct RAW URLs. On save, the client verifies CORS access and whether the image can be displayed or the audio can be played. Existing macros keep their assigned icon, but execution uses current resources and restrictions.
 
 Active Requests works independently from chat. It shows the portrait or token and type image, player and selected character; filters request types; hides duplicates by type or player; navigates to a chat card; grants the floor; cancels requests; creates an Environment Request; resets configured timers; and clears the queue.
 
 The module adds Requests and Timers sliders to Playlists → User Volume Controls. Request volume is the per-type base volume multiplied by the user's Requests volume. Timer audio also applies the user's Timers slider and any signal-specific levels. Foundry's global mute takes precedence over every module sound.
 
-A private welcome message is sent to each joining user and shows the exact installed module `title` and version. The game menu and Help links open windows inside Foundry; Game Masters and Assistants can also open Game Master Settings and disable the welcome. Smaller text below a horizontal divider states that the module is free, while the support link intentionally opens the external support page.
+Private welcomes show the exact installed module `title` and version. The game menu, Help, and Game Master Settings links open inside Foundry. Premium can disable Game Master and player welcomes independently. With version status enabled, free Game Masters receive a Boosty subscription link while players see only the free status; confirmed Premium shows the author's thanks to both. The Show Premium Status setting is free and can be disabled regardless of subscription.
 
 Detailed interactive Help opens from Game Settings and from the first button in the Spotlight Tools canvas controls.
 
@@ -387,3 +391,21 @@ The indicators refer to different parameters:
 - "FG" - floor granted: the time elapsed since the floor was last granted to the player (this time changes when the floor is granted through module requests or manually by the Game Master).
 
 The audit can be configured in the "Focus Audit Settings" menu (located in the "Focus Audit" window), by setting times in minutes for LR, AR, CH, and FG.
+
+## Разработка и сборка / Development and packaging
+
+Команды выполняются из корня этого репозитория. После размещения проекта в общей папке `dmicher-foundry-tools` все артефакты находятся в `../artifacts/dmicher-spotlight-tools/<version>/`: ZIP, отдельный манифест, описание выпуска и отчёты проверки.
+
+Run these commands from this repository root. When the repository is located inside `dmicher-foundry-tools`, all artifacts are written to `../artifacts/dmicher-spotlight-tools/<version>/`: ZIP, standalone manifest, release notes, and verification reports.
+
+```text
+npm test
+npm run deploy:dry-run
+npm run deploy
+npm run release:build
+npm run release:verify
+```
+
+Перед деплоем просмотрите точные каталоги, обновления и удаления из dry-run. Команда deploy отклоняет изменившийся план. Разрешены только установки этого модуля в AppData и каталогах Foundry 13/14 на E:. Сборка содержит только устанавливаемый модуль; проверка сравнивает состав и SHA256 исходников, ZIP и всех трёх установок. Команды не публикуют файлы в интернет. Локальный каталог `.sources/` хранит прежние материалы разработки и не входит в Git.
+
+Inspect the dry-run targets, updates, and removals before deployment. Deploy rejects stale plans. Only this module's AppData and E: Foundry 13/14 installations are allowed. The ZIP contains installable module files only; verification compares source, ZIP, and all three installations by file list and SHA256. These commands do not publish files online. The local `.sources/` directory retains historical development material and is excluded from Git.

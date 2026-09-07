@@ -16,7 +16,7 @@ import {
   recordRequestTimeoutEvent
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-config.js";
 
-test("fresh-world request configuration matches the 1.2.1 policy", () => {
+test("fresh-world request configuration matches the 1.3 free policy", () => {
   const configuration = createDefaultRequestConfiguration();
   const activeState = createDefaultActiveRequestState();
   assert.equal(activeState.cooldownsResetAt, 0);
@@ -26,6 +26,7 @@ test("fresh-world request configuration matches the 1.2.1 policy", () => {
   assert.equal(configuration.feed.showToPlayers, true);
   assert.equal(configuration.feed.showTime, true);
   assert.equal(configuration.showWelcome, true);
+  assert.deepEqual(configuration.welcome, { gm: true, players: true, showPremiumStatus: true });
   assert.equal(configuration.blockWhenEnvironment, true);
   assert.equal(configuration.limits.common.mode, REQUEST_LIMIT_MODES.none);
   assert.equal(configuration.limits.urgent.mode, REQUEST_LIMIT_MODES.count);

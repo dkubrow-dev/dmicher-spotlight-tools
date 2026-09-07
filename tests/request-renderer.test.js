@@ -181,19 +181,19 @@ test("request renderer also accepts the raw HTMLElement supplied by v13 and v14"
   assert.equal(dom.actions.classList.contains("is-available"), true);
 });
 
-test("welcome actions cannot trigger browser navigation and work with every supported chat wrapper", () => {
+test("welcome internal actions remain buttons and only Boosty uses an external link", () => {
   installFoundryGlobals();
   const content = buildWelcomeMessageContent(true);
   assert.match(content, /Manifest Title/);
   assert.match(content, /1\.2\.0/);
-  assert.doesNotMatch(content, /<a\b|href\s*=/i);
+  assert.match(content, /<a href="https:\/\/boosty\.to\/dmicher" target="_blank" rel="noopener noreferrer">Boosty<\/a>/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="settings"/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="master-settings"/);
   assert.match(content, /<button type="button"[^>]+data-request-welcome-action="help"/);
-  assert.match(content, /<button type="button"[^>]+data-request-welcome-action="thanks"/);
+  assert.doesNotMatch(content, /data-request-welcome-action="thanks"/);
   assert.match(content, /<hr class="dmicher-request-welcome-divider">/);
   assert.match(content, /<p class="dmicher-request-welcome-support">/);
-  assert.equal((content.match(/class="dmicher-inline-link-tail"/g) ?? []).length, 2);
+  assert.equal((content.match(/class="dmicher-inline-link-tail"/g) ?? []).length, 1);
   assert.ok(content.indexOf("dmicher-request-welcome-divider") < content.indexOf("dmicher-request-welcome-support"));
   assert.doesNotMatch(buildWelcomeMessageContent(false), /data-request-welcome-action="master-settings"/);
 

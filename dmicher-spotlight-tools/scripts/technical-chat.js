@@ -1,4 +1,5 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "./config.js";
+import { getRequestConfiguration } from "./tools/requests/request-config.js";
 import { buildChatSpeaker, createSerialTaskQueue, getChatMessageClass, isModerator, localize } from "./utils.js";
 
 export const INFORMER_PORTRAIT = `modules/${MODULE_ID}/assets/chat/token_dak.webp`;
@@ -8,7 +9,7 @@ const runDelivery = createSerialTaskQueue();
 const pendingRequests = new Map();
 
 export function isTechnicalChatEnabled(category) {
-  const configuration = game.settings.get(MODULE_ID, SETTINGS.requestConfiguration);
+  const configuration = getRequestConfiguration();
   return configuration?.chatEnabled !== false && (!category || configuration?.chatNotifications?.[category] !== false);
 }
 

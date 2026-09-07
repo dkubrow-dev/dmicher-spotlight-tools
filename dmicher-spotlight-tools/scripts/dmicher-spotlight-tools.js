@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./config.js";
+import { PREMIUM_API_VERSION, getPremiumStatus, registerPremiumProvider, notifyPremiumChanged, subscribePremiumChanges, waitForPremiumReady } from "./premium-provider.js";
 import { activateTechnicalChat, registerTechnicalChat, synchronizeTechnicalIdentity } from "./technical-chat.js";
 import {
   installHotbarMacroCleanup,
@@ -84,7 +85,18 @@ Hooks.once("init", () => {
   spotlightControls.registerControls();
   stopwatchTool.registerHooks();
 
+  subscribePremiumChanges(() => {
+    if (!game.ready) return;
+    requestTool.notifyConfigurationChanged();
+    if (Number(game.user?.role) === 4) {
+      void synchronizeTechnicalIdentity().catch((error) => console.warn(`${MODULE_ID} | Unable to synchronize Premium chat settings`, error));
+    }
+  });
   game.modules.get(MODULE_ID).api = {
+    premiumApiVersion: PREMIUM_API_VERSION,
+    registerPremiumProvider,
+    notifyPremiumChanged,
+    getPremiumStatus,
     openRequestSettings,
     openRequestMasterSettings,
     openRequestHelp,
@@ -102,10 +114,12 @@ Hooks.once("init", () => {
     recordStopwatchEvent: (eventType) => stopwatchTool.recordEvent(eventType),
     submitRequest: requestTool.submitRequest
   };
+  Hooks.callAll("dmicherSpotlightReady", game.modules.get(MODULE_ID).api);
 });
 
 Hooks.once("ready", async () => {
   applySpotlightTheme();
+  await waitForPremiumReady();
   try {
     await activateTechnicalChat();
   } catch (error) {

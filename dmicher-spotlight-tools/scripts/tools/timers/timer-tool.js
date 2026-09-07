@@ -320,8 +320,8 @@ export class TimerTool {
 
   getSoundSource(sound, configuration = getRequestConfiguration()) {
     if (Object.hasOwn(TIMER_SOUND_SOURCES, sound)) return TIMER_SOUND_SOURCES[sound];
-    if (sound === TIMER_SOUND.custom) return getCustomTimerSound("timer", configuration);
-    if (sound === TIMER_SOUND.breakCustom) return getCustomTimerSound("break", configuration);
+    if (sound === TIMER_SOUND.custom) return getCustomTimerSound("timer", configuration) || TIMER_SOUND_SOURCES.signal1;
+    if (sound === TIMER_SOUND.breakCustom) return getCustomTimerSound("break", configuration) || TIMER_SOUND_SOURCES.signal1;
     return "";
   }
 
