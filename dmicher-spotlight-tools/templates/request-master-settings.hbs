@@ -1,4 +1,9 @@
 <form class="dmicher-request-settings-form dmicher-request-master-settings-form">
+  <section class="dmicher-premium-summary" aria-labelledby="dmicher-premium-state">
+    <strong id="dmicher-premium-state">{{premiumState}}</strong>
+    <p id="dmicher-premium-note">{{premiumHint}}</p>
+    {{#if premiumSettingsAvailable}}<button type="button" data-premium-settings><i class="fa-solid fa-key" aria-hidden="true"></i> {{localize "DMICHERSPOTLIGHTTOOLS.Premium.OpenSettings"}}</button>{{/if}}
+  </section>
   <fieldset class="dmicher-settings-section">
     <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.SettingsHeading"}}</legend>
     <label class="dmicher-checkbox-row">
@@ -10,16 +15,16 @@
       <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.ShowToPlayers"}}</span>
     </label>
     <label class="dmicher-checkbox-row">
-      <input type="checkbox" name="feedShowTime" {{#if feedShowTime}}checked{{/if}}>
-      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.ShowTime"}}</span>
+      <input type="checkbox" name="feedShowTime" {{#if feedShowTime}}checked{{/if}} {{#unless premiumActive}}disabled{{/unless}} aria-describedby="dmicher-premium-note">
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Feed.ShowTime"}}</span><span class="dmicher-premium-badge">Premium</span>
     </label>
   </fieldset>
 
   <fieldset class="dmicher-settings-section dmicher-chat-settings">
     <legend>{{localize "DMICHERSPOTLIGHTTOOLS.TechnicalChat.Heading"}}</legend>
     <label class="dmicher-checkbox-row">
-      <input type="checkbox" name="chatEnabled" {{#if chatEnabled}}checked{{/if}}>
-      <span>{{localize "DMICHERSPOTLIGHTTOOLS.TechnicalChat.Enabled"}}</span>
+      <input type="checkbox" name="chatEnabled" {{#if chatEnabled}}checked{{/if}} {{#unless premiumActive}}disabled{{/unless}} aria-describedby="dmicher-premium-note">
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.TechnicalChat.Enabled"}}</span><span class="dmicher-premium-badge">Premium</span>
     </label>
     <p class="hint">{{localize "DMICHERSPOTLIGHTTOOLS.TechnicalChat.IdentityWarning"}}</p>
     <label class="dmicher-checkbox-row">
@@ -72,8 +77,8 @@
     </label>
   </fieldset>
 
-  <fieldset class="dmicher-settings-section">
-    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.ImagesHeading"}}</legend>
+  <fieldset class="dmicher-settings-section" {{#unless premiumActive}}disabled{{/unless}} aria-describedby="dmicher-premium-note">
+    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.ImagesHeading"}} <span class="dmicher-premium-badge">Premium</span></legend>
     {{#each imageResources}}
     <section class="dmicher-resource-row">
       <div>
@@ -95,8 +100,8 @@
     {{/each}}
   </fieldset>
 
-  <fieldset class="dmicher-settings-section">
-    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundsHeading"}}</legend>
+  <fieldset class="dmicher-settings-section" {{#unless premiumActive}}disabled{{/unless}} aria-describedby="dmicher-premium-note">
+    <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundsHeading"}} <span class="dmicher-premium-badge">Premium</span></legend>
     <label class="dmicher-checkbox-row">
       <input type="checkbox" name="soundsEnabled" {{#if soundsEnabled}}checked{{/if}}>
       <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundsEnabled"}}</span>
@@ -138,8 +143,16 @@
   <fieldset class="dmicher-settings-section">
     <legend>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.Heading"}}</legend>
     <label class="dmicher-checkbox-row">
-      <input type="checkbox" name="showWelcome" {{#if showWelcome}}checked{{/if}}>
-      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.Show"}}</span>
+      <input type="checkbox" name="showWelcomeGM" {{#if showWelcomeGM}}checked{{/if}} {{#unless premiumActive}}disabled{{/unless}} aria-describedby="dmicher-premium-note">
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.ShowGM"}}</span><span class="dmicher-premium-badge">Premium</span>
+    </label>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="showWelcomePlayers" {{#if showWelcomePlayers}}checked{{/if}} {{#unless premiumActive}}disabled{{/unless}} aria-describedby="dmicher-premium-note">
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.ShowPlayers"}}</span><span class="dmicher-premium-badge">Premium</span>
+    </label>
+    <label class="dmicher-checkbox-row">
+      <input type="checkbox" name="showPremiumStatus" {{#if showPremiumStatus}}checked{{/if}}>
+      <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Welcome.ShowPremiumStatus"}}</span>
     </label>
   </fieldset>
 

@@ -6,6 +6,7 @@ import {
   SETTINGS,
   normalizeRequestType
 } from "../../config.js";
+import { isPremiumActive, resolvePremiumConfiguration } from "../../premium-provider.js";
 
 export const REQUEST_LIMIT_TYPES = Object.freeze(["common", "urgent"]);
 export const REQUEST_RESOURCE_TYPES = Object.freeze(Object.keys(REQUEST_TYPES));
@@ -20,6 +21,7 @@ export function createDefaultRequestConfiguration() {
     soundsEnabled: true,
     blockWhenEnvironment: true,
     showWelcome: true,
+    welcome: { gm: true, players: true, showPremiumStatus: true },
     feed: {
       enabled: true,
       showToPlayers: true,
@@ -71,9 +73,32 @@ export function registerRequestWorldSettings({ onConfigurationChanged, onActiveR
   });
 }
 
-export function getRequestConfiguration() {
+export function getStoredRequestConfiguration() {
   const value = globalThis.game?.settings?.get?.(MODULE_ID, SETTINGS.requestConfiguration);
   return normalizeRequestConfiguration(value);
+}
+
+export function getRequestConfiguration() {
+  return normalizeRequestConfiguration(resolvePremiumConfiguration(
+    getStoredRequestConfiguration(), createDefaultRequestConfiguration()
+  ));
+}
+
+export function mergeRequestConfigurationUpdate(previous, proposed, premiumActive = isPremiumActive()) {
+  const stored = normalizeRequestConfiguration(previous);
+  const next = normalizeRequestConfiguration(proposed);
+  const premium = premiumActive ? next : stored;
+  return normalizeRequestConfiguration({
+    ...next,
+    chatEnabled: premium.chatEnabled,
+    soundsEnabled: premium.soundsEnabled,
+    showWelcome: premium.showWelcome,
+    welcome: { ...next.welcome, gm: premium.welcome.gm, players: premium.welcome.players },
+    feed: { ...next.feed, showTime: premium.feed.showTime },
+    images: premium.images,
+    sounds: premium.sounds,
+    timerSounds: premium.timerSounds
+  });
 }
 
 export function getActiveRequestState() {
@@ -93,6 +118,11 @@ export function normalizeRequestConfiguration(value) {
     soundsEnabled: normalizeBoolean(source.soundsEnabled, defaults.soundsEnabled),
     blockWhenEnvironment: normalizeBoolean(source.blockWhenEnvironment, defaults.blockWhenEnvironment),
     showWelcome: normalizeBoolean(source.showWelcome, defaults.showWelcome),
+    welcome: {
+      gm: normalizeBoolean(source.welcome?.gm, normalizeBoolean(source.showWelcome, true)),
+      players: normalizeBoolean(source.welcome?.players, normalizeBoolean(source.showWelcome, true)),
+      showPremiumStatus: normalizeBoolean(source.welcome?.showPremiumStatus, true)
+    },
     feed: {
       enabled: normalizeBoolean(source.feed?.enabled, defaults.feed.enabled),
       showToPlayers: normalizeBoolean(source.feed?.showToPlayers, defaults.feed.showToPlayers),

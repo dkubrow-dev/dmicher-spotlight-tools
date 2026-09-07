@@ -46,6 +46,10 @@ class HookBus {
     return listeners.length;
   }
 
+  callAll(name, ...args) {
+    return this.call(name, ...args);
+  }
+
   call(name, ...args) {
     const listeners = [
       ...(this.listeners.get(name) ?? []),

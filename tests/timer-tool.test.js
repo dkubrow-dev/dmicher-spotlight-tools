@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { installPremiumFixture } from "./fixtures/premium.mjs";
+test.beforeEach(() => installPremiumFixture());
 import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
 
 class MockApplicationV2 {}
@@ -826,4 +828,21 @@ test("pause rollback keeps the world paused when persisted state gained an activ
   );
   assert.deepEqual(pauseCalls, [true]);
   assert.equal(game.paused, true);
+});
+
+test("expired Premium makes existing custom timer selections use a built-in signal", async () => {
+  const { values } = installGame();
+  values.set("dmicher-spotlight-tools.requestConfiguration", {
+    timerSounds: {
+      timer: { custom: true, url: "https://example.test/timer.ogg", volume: 0.4 },
+      break: { custom: true, url: "https://example.test/break.ogg", volume: 0.2 }
+    }
+  });
+  const tool = new TimerTool({ volumeController: {} });
+  const { registerPremiumProvider } = await import("../dmicher-spotlight-tools/scripts/premium-provider.js");
+  assert.equal(tool.getSoundSource(TIMER_SOUND.custom), "https://example.test/timer.ogg");
+  registerPremiumProvider(null);
+  assert.equal(tool.getSoundSource(TIMER_SOUND.custom), tool.getSoundSource(TIMER_SOUND.signal1));
+  assert.equal(tool.getSoundSource(TIMER_SOUND.breakCustom), tool.getSoundSource(TIMER_SOUND.signal1));
+  assert.equal(tool.getSoundBaseVolume(TIMER_SOUND.custom), 1);
 });

@@ -5,7 +5,7 @@ import test from "node:test";
 
 const childPath = fileURLToPath(new URL("./fixtures/foundry-runtime-smoke.mjs", import.meta.url));
 
-for (const generation of [12, 13, 14]) {
+for (const generation of [13, 14]) {
   test(`isolated init/ready runtime smoke succeeds for Foundry v${generation}`, () => {
     const result = spawnSync(process.execPath, [childPath, String(generation)], {
       cwd: fileURLToPath(new URL("..", import.meta.url)),

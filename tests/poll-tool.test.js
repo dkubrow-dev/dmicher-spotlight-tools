@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { installPremiumFixture } from "./fixtures/premium.mjs";
+test.beforeEach(() => installPremiumFixture());
 import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
 
 class MockApplicationV2 {}

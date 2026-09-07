@@ -227,12 +227,18 @@
         "HelpBefore": "Use the",
         "HelpLink": "help",
         "HelpAfter": " to learn about every module feature.",
-        "DisableBefore": "This welcome message can be disabled in",
+        "DisableBefore": "Common and Premium module options are available in",
         "MasterSettingsLink": "Game Master Settings",
         "DisableAfter": ".",
-        "FreeBefore": "This module is completely free for you and all other users. If you would like to support the author, you can do so",
+        "FreeBefore": "The base module is free. You can support the author and purchase Premium",
         "SupportLink": "at this link",
-        "FreeAfter": "."
+        "FreeAfter": ".",
+        "ShowGM": "Show welcome to Game Masters",
+        "ShowPlayers": "Show welcome to players",
+        "ShowPremiumStatus": "Show Premium status",
+        "FreeMasterBefore": "The free version of the module is in use. You can purchase a Premium subscription on",
+        "FreePlayer": "The free version of the module is in use.",
+        "PremiumActive": "The Premium version is in use. With special thanks to you from dmicher abathur kubrow"
       },
       "Help": {
         "WindowTitle": "dmicher Spotlight Tools — Help",
@@ -273,7 +279,7 @@
                   },
                   "Chat": {
                     "Label": "Connection to chat",
-                    "Description": "The main Chat switch controls request cards and all module service messages. Disabling it leaves the queue, Request Feed, and Active Requests functional."
+                    "Description": "Chat is enabled in the free version. Premium can disable it while the queue, feed, and Active Requests window keep working."
                   },
                   "Identity": {
                     "Label": "Request author",
@@ -464,14 +470,14 @@
           },
           "MasterSettings": {
             "Title": "Game Master Settings",
-            "Intro": "This separate window contains shared module controls for the world and is available only to a Game Master or Assistant.",
+            "Intro": "World-wide options are available to Game Masters and Assistants. Free and Premium controls share one list; Premium requires dmicher-premium with confirmed access.",
             "Sections": {
               "Access": {
                 "Title": "Window and access",
                 "Items": {
                   "Window": {
                     "Label": "Game Master Settings window",
-                    "Description": "Shared world controls have moved out of personal Request Settings and are saved independently."
+                    "Description": "The top shows Premium status and, when available, a button opening the satellite settings. Locked fields display free defaults; saved choices return when access is restored."
                   },
                   "GameSettingsButton": {
                     "Label": "Game Master Settings button",
@@ -488,11 +494,11 @@
                 "Items": {
                   "Feed": {
                     "Label": "Request Feed",
-                    "Description": "Enables Request Feed for the world, controls whether regular players can see it, and controls submission time; all three switches are enabled on first activation."
+                    "Description": "Feed enablement and player visibility are free. Changing submission-time display requires Premium; the free version always shows time."
                   },
                   "Chat": {
                     "Label": "Chat",
-                    "Description": "Controls all module chat output and the separate automatic poll-response and timer-start notifications."
+                    "Description": "Disabling all game chat requires Premium; the free version keeps chat enabled. Poll-response and timer-launch notification controls are free."
                   },
                   "Limits": {
                     "Label": "Request Anti-Spam Limits",
@@ -500,19 +506,19 @@
                   },
                   "Images": {
                     "Label": "Images",
-                    "Description": "Configures Regular, Urgent, and Environment images; module defaults are used initially."
+                    "Description": "Premium settings for custom images. The free version uses the module's built-in images."
                   },
                   "Sounds": {
                     "Label": "Sounds",
-                    "Description": "Controls request, timer, and break sounds, URLs, volume, and previews. Request sounds start enabled and no custom sounds are configured."
+                    "Description": "Premium world sound settings cover enablement, URLs, base volume, and previews. Free mode uses built-in sounds and 100% base volume; personal volume controls and Foundry mute remain available."
                   },
                   "Welcome": {
                     "Label": "Welcome Message",
-                    "Description": "Controls the private startup message. It is enabled by default and also depends on the main Chat switch."
+                    "Description": "Premium can disable Game Master and player welcomes independently. Both are enabled in free mode. Showing version status is a separate free option."
                   },
                   "Save": {
                     "Label": "Save button",
-                    "Description": "Saves shared world controls and synchronizes the technical user. Changing whether Request Feed is enabled or shown to players prompts a client reload."
+                    "Description": "Saves available edits and synchronizes the Informer. Locked Premium values are preserved. Changes to feed enablement or player visibility offer a client reload."
                   }
                 }
               },
@@ -521,7 +527,7 @@
                 "Items": {
                   "Enabled": {
                     "Label": "Post messages to chat",
-                    "Description": "The main switch is enabled by default and controls request cards, request resolutions, poll cards and results, timer announcements, statuses, stopwatch output, and welcome messages."
+                    "Description": "This Premium switch controls game messages and welcomes. It is always enabled in free mode; poll and timer notifications remain separate free settings."
                   },
                   "Identity": {
                     "Label": "Technical user and NPC",
@@ -545,7 +551,7 @@
                   },
                   "Disabled": {
                     "Label": "Main switch off",
-                    "Description": "Saving with chat disabled stops all module chat output, including the welcome, and deletes only the technical user. The hidden NPC and folder are retained. Individual notification choices are saved but have no effect until the main Chat switch is enabled again. Request queues, player statuses, and timers continue to work."
+                    "Description": "With Premium, disabling chat stops game messages and welcomes and deletes only the technical user; its NPC and folder remain. Requests and timers keep working. Losing Premium enables chat again without erasing the saved choice. Satellite license warnings are independent."
                   },
                   "Recovery": {
                     "Label": "Restore missing identities",
@@ -659,7 +665,7 @@
           },
           "Customization": {
             "Title": "Images, sounds, and welcome",
-            "Intro": "The Images, Sounds, and Welcome Message blocks follow Request Feed, Chat, and Request Anti-Spam Limits in Game Master Settings and apply to the whole world.",
+            "Intro": "World images and sounds are configured with Premium. Free mode uses built-in resources while keeping saved URLs and levels for restored access. Game Master and player welcomes have separate Premium switches.",
             "Sections": {
               "Images": {
                 "Title": "Images block",
@@ -670,7 +676,7 @@
                   },
                   "CustomToggle": {
                     "Label": "Custom image toggle",
-                    "Description": "Enables the required external URL field for the selected type; it starts off and uses the module image."
+                    "Description": "Premium setting. Enables the required external URL field for the selected type; it starts off and uses the module image."
                   },
                   "Url": {
                     "Label": "URL field",
@@ -695,11 +701,11 @@
                 "Items": {
                   "GlobalToggle": {
                     "Label": "Enable request sounds",
-                    "Description": "Enables or disables all request sound playback in the world; it is enabled by default."
+                    "Description": "A Premium switch for world request sounds. Free mode keeps sounds enabled; personal sliders and Foundry global mute remain available."
                   },
                   "CustomToggle": {
                     "Label": "Custom sound toggle",
-                    "Description": "Enables an external URL for one type; it starts off and uses the standard sound."
+                    "Description": "Premium setting. Enables an external URL for one type; it starts off and uses the standard sound."
                   },
                   "Url": {
                     "Label": "URL field",
@@ -707,7 +713,7 @@
                   },
                   "BaseVolume": {
                     "Label": "Base volume slider",
-                    "Description": "Sets 0–100% for the selected type before personal user volume is applied."
+                    "Description": "Premium setting; free mode uses 100%. Sets 0–100% for the selected type before personal user volume is applied."
                   },
                   "Preview": {
                     "Label": "Play/stop button",
@@ -719,11 +725,11 @@
                   },
                   "TimerCustom": {
                     "Label": "Custom timer sound",
-                    "Description": "Enables a required URL, base volume, and preview for the custom ordinary-timer signal; it is off by default."
+                    "Description": "Premium setting. Enables a required URL, base volume, and preview for the custom ordinary-timer signal; it is off by default."
                   },
                   "BreakCustom": {
                     "Label": "Custom break signal",
-                    "Description": "Independently enables a URL, base volume, and preview for the quick-break signal; it is off by default."
+                    "Description": "Premium setting. Independently enables a URL, base volume, and preview for the quick-break signal; it is off by default."
                   },
                   "TimerVolume": {
                     "Label": "Personal timer volume",
@@ -739,8 +745,8 @@
                 "Title": "Welcome block",
                 "Items": {
                   "Toggle": {
-                    "Label": "Show welcome message",
-                    "Description": "Enables a private startup message from the Informer to each joining user. It starts enabled, requires the main Chat switch, and turns off with it. The moderator welcome links to Game Master Settings."
+                    "Label": "Game Master and player welcomes",
+                    "Description": "Two independent Premium switches. Both welcomes are enabled without a subscription. With Premium, welcomes also follow the main Chat switch."
                   },
                   "PlayerMessage": {
                     "Label": "Player text",
@@ -748,19 +754,19 @@
                   },
                   "ModeratorMessage": {
                     "Label": "Moderator addition",
-                    "Description": "Game Masters and Assistants also receive links that open Help and Game Master Settings, where this welcome can be disabled."
+                    "Description": "Game Masters and Assistants receive Help and Game Master Settings links. Disabling welcomes requires Premium."
                   },
                   "InternalButtons": {
                     "Label": "Message buttons",
                     "Description": "The game menu, Help, and Game Master Settings links open windows inside Foundry; only the support link is intended for an external page."
                   },
                   "Free": {
-                    "Label": "Free module",
-                    "Description": "Below a horizontal divider, smaller text tells every user that all module functionality is free."
+                    "Label": "Show Premium status",
+                    "Description": "A free option enabled by default. Displays free or Premium version status and can be hidden regardless of subscription. License warnings to the Game Master are separate."
                   },
                   "Support": {
-                    "Label": "Support link",
-                    "Description": "The “at this link” button opens the existing author thanks page."
+                    "Label": "Boosty link",
+                    "Description": "The free Game Master status includes a subscription invitation and boosty.to/dmicher link. Players see only the version status. Premium shows the author's thanks to both."
                   }
                 }
               }
@@ -921,7 +927,7 @@
                   },
                   "ShowTime": {
                     "Label": "Show time toggle",
-                    "Description": "Adds relative submission time to every Request Feed row; it is enabled by default."
+                    "Description": "Shows relative submission time. It is always enabled without Premium; changing it requires confirmed dmicher-premium access."
                   }
                 }
               },
@@ -1619,7 +1625,7 @@
                   },
                   "CustomSound": {
                     "Label": "Custom sound",
-                    "Description": "Appears only after the custom timer sound is enabled and saved."
+                    "Description": "Custom resources require Premium. A previously saved custom signal falls back to a built-in sound when access expires. Appears only after the custom timer sound is enabled and saved."
                   },
                   "Volume": {
                     "Label": "Launch volume",
@@ -1889,7 +1895,7 @@
                   },
                   "CustomSignal": {
                     "Label": "Custom signal",
-                    "Description": "When the template selects the enabled custom break sound, its URL and base volume are used; an unavailable custom source falls back to Signal 1."
+                    "Description": "A custom signal requires Premium; free mode uses the built-in signal. When the template selects the enabled custom break sound, its URL and base volume are used; an unavailable custom source falls back to Signal 1."
                   },
                   "Unique": {
                     "Label": "Only one break",
@@ -2933,6 +2939,13 @@
         "Owner": "Player",
         "Created": "Created"
       }
+    },
+    "Premium": {
+      "Active": "Premium version in use",
+      "Free": "Free version in use",
+      "EnabledHint": "Premium settings are available through dmicher-premium. Saved values apply throughout this world.",
+      "LockedHint": "Install and enable dmicher-premium and confirm access to change Premium settings. Free defaults are in use; your previous settings are preserved.",
+      "OpenSettings": "Open Premium settings"
     }
   }
 }

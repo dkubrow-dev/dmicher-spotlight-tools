@@ -1,5 +1,8 @@
+import { registerPremiumProvider } from "../dmicher-spotlight-tools/scripts/premium-provider.js";
 import assert from "node:assert/strict";
 import test from "node:test";
+import { installPremiumFixture } from "./fixtures/premium.mjs";
+test.beforeEach(() => installPremiumFixture());
 import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
 
 class MockApplicationV2 {}
@@ -637,4 +640,42 @@ test("welcome is authored by the informer and whispered only to the joining user
   });
   assert.deepEqual(created.whisper, [player.id]);
   assert.equal(created.flags["dmicher-spotlight-tools"].requestWelcome.userId, player.id);
+});
+
+test("a delayed satellite check controls both the first welcome and its Premium status", async () => {
+  for (const welcomeEnabled of [false, true]) {
+    const gm = {id:"gm",name:"GM",role:4,active:true};
+    const player = {id:"player",name:"Player",role:1,active:true};
+    const allUsers = [gm, player];
+    const created = [];
+    let complete;
+    const readyPromise = new Promise((resolve) => { complete = resolve; });
+    globalThis.CONFIG = {ChatMessage:{documentClass:{
+      async create(data) { created.push(data); return {id:"welcome-" + created.length}; }
+    }},Macro:{}};
+    globalThis.game = {
+      user:gm,
+      users:{filter:predicate => allUsers.filter(predicate)},
+      modules:new Map([["dmicher-premium",{active:true,api:{readyPromise}}]]),
+      settings:{get:(_namespace,key) => key === "requestConfiguration"
+        ? {chatEnabled:true,welcome:{gm:welcomeEnabled,players:welcomeEnabled,showPremiumStatus:true}} : ""},
+      i18n:{localize:key => key,format:key => key}
+    };
+    installTechnicalChatFixture();
+    registerPremiumProvider(null);
+    const tool = new RequestTool();
+    const first = tool.createWelcomeMessage(player.id);
+    const concurrent = tool.requestWelcome(player.id);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(created.length, 0);
+    assert.equal(tool.welcomedUsers.has(player.id), false);
+    registerPremiumProvider({isActive:() => true,resolveConfiguration:raw => raw});
+    complete();
+    await Promise.all([first, concurrent]);
+    assert.equal(created.length, welcomeEnabled ? 1 : 0);
+    if (welcomeEnabled) {
+      assert.match(created[0].content, /Requests.Welcome.PremiumActive/);
+      assert.doesNotMatch(created[0].content, /Requests.Welcome.FreePlayer/);
+    }
+  }
 });

@@ -1,0 +1,29 @@
+# dmicher Spotlight Tools 1.3.0
+
+## Русский
+
+Выпуск 1.3.0 входит в общий комплект с dmicher Premium 1.3.0 и dmicher licence server 1.3.0.
+
+- Базовый модуль остаётся бесплатным и работает самостоятельно: заявки, лента, таймеры, перерывы, опросы, статусы игроков и контроль внимания мастером доступны без сателлита.
+- Подключение активного модуля `dmicher-premium` с действующей лицензией открывает премиальные настройки: показ времени в ленте, общий вывод в чат, изображения и звуки мира, отдельное отключение приветствий мастеру и игрокам.
+- Общие и премиальные параметры расположены в одном окне настроек мастера. Недоступные премиальные параметры отмечены и отключены; из окна можно перейти к настройкам установленного сателлита.
+- В бесплатном режиме используются встроенные изображения и звуки; время, чат и оба приветствия включены. Видимость ленты, антиспам, уведомления опросов и таймеров, личные настройки и показ статуса версии остаются общими параметрами.
+- При потере доступа модуль возвращается к бесплатным значениям, сохраняя прежние премиальные настройки для восстановления после подтверждения лицензии. Ошибка или отсутствие сателлита не препятствует работе базовых функций.
+- Приветствия и справка объясняют различия бесплатной и премиальной версий. Мастер видит ссылку на подписку в бесплатном статусе, игроки — только статус версии; подтверждённый Premium сопровождается благодарностью автора.
+- Поддерживаются Foundry VTT 13 и 14. Поддержка Foundry VTT 12 прекращена.
+
+Для Premium установите и включите `dmicher-premium`, затем введите личную лицензию в его настройках. Для бесплатной работы Spotlight Tools установка сателлита не требуется.
+
+## English
+
+Version 1.3.0 is released together with dmicher Premium 1.3.0 and dmicher licence server 1.3.0.
+
+- The base module remains free and works independently: requests, Request Feed, timers, breaks, polls, player statuses, and the Game Master's focus audit remain available without the satellite.
+- Enabling `dmicher-premium` with a valid license unlocks Premium settings: feed timestamps, global chat output, world images and sounds, and separate switches for Game Master and player welcomes.
+- Common and Premium controls share the Game Master Settings window. Unavailable Premium controls are labeled and disabled; the installed satellite's settings can be opened from this window.
+- Free mode uses built-in images and sounds, with timestamps, chat output, and both welcomes enabled. Feed visibility, anti-spam limits, poll and timer notifications, personal preferences, and version-status display remain common settings.
+- When access expires, the module uses free defaults and preserves previous Premium settings for restoration after license confirmation. A missing or failing satellite does not prevent the base tools from working.
+- Welcomes and Help explain the free and Premium editions. The free-status message gives the Game Master a subscription link, while players see only the edition status; confirmed Premium includes the author's thanks.
+- Foundry VTT 13 and 14 are supported. Foundry VTT 12 support has ended.
+
+To use Premium, install and enable `dmicher-premium`, then enter your personal license in its settings. The satellite is optional for free use of Spotlight Tools.

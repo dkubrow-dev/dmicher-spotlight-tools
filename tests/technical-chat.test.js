@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { installPremiumFixture } from "./fixtures/premium.mjs";
+test.beforeEach(() => installPremiumFixture());
 
 import { FLAGS, MODULE_ID, SETTINGS } from "../dmicher-spotlight-tools/scripts/config.js";
 import {
@@ -302,8 +304,8 @@ test("disabled chat or disabled notification category creates neither bot nor me
   assert.deepEqual(await createTechnicalChatMessages({ content: "Disabled" }), []);
   assert.equal(await synchronizeTechnicalIdentity(), null);
   fixture.configuration.chatEnabled = true;
-  fixture.configuration.chatNotifications.resolved = false;
-  assert.deepEqual(await createTechnicalChatMessages({ content: "Disabled category" }, { category: "resolved" }), []);
+  fixture.configuration.chatNotifications.polls = false;
+  assert.deepEqual(await createTechnicalChatMessages({ content: "Disabled category" }, { category: "polls" }), []);
   assert.deepEqual(Object.values(fixture.created).map((list) => list.length), [0, 0, 0]);
   assert.equal(fixture.sent.length, 0);
 });

@@ -8,6 +8,7 @@ import {
   TIMER_SOUND_SOURCES
 } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
+import { PREMIUM_MODULE_ID, getPremiumStatus } from "../../premium-provider.js";
 import {
   canUseRequest,
   confirmDialog,
@@ -29,6 +30,8 @@ import {
   clampRequestCount,
   getActiveRequestState,
   getRequestConfiguration,
+  getStoredRequestConfiguration,
+  mergeRequestConfigurationUpdate,
   getRequestImage,
   getRequestTimeoutStatus,
   normalizeRequestConfiguration
@@ -100,6 +103,9 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       const form = this.element.querySelector(".dmicher-request-settings-form");
       if (!form) return;
       form.addEventListener("submit", (event) => void this._saveSettings(event));
+      form.querySelector("[data-premium-settings]")?.addEventListener("click", () => {
+        game.modules?.get?.(PREMIUM_MODULE_ID)?.api?.openSettings?.();
+      });
       for (const image of form.querySelectorAll("[data-request-image]")) {
         image.addEventListener("click", () => {
           if (image.dataset.disabled === "true") {
@@ -305,7 +311,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       let feedVisibilityChanged = false;
       if (this.isMasterSettings) {
         if (!isModerator()) throw new Error(localize("Requests.MasterSettings.Forbidden"));
-        const previous = getRequestConfiguration();
+        const previous = getStoredRequestConfiguration();
         const next = normalizeRequestConfiguration({
           chatEnabled: formData.has("chatEnabled"),
           chatNotifications: {
@@ -314,7 +320,12 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
           },
           soundsEnabled: formData.has("soundsEnabled"),
           blockWhenEnvironment: formData.has("blockWhenEnvironment"),
-          showWelcome: formData.has("showWelcome"),
+          showWelcome: previous.showWelcome,
+          welcome: {
+            gm: formData.has("showWelcomeGM"),
+            players: formData.has("showWelcomePlayers"),
+            showPremiumStatus: formData.has("showPremiumStatus")
+          },
           feed: {
             enabled: formData.has("feedEnabled"),
             showToPlayers: formData.has("feedShowToPlayers"),
@@ -367,7 +378,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
         }
         feedVisibilityChanged = previous.feed.enabled !== next.feed.enabled
           || previous.feed.showToPlayers !== next.feed.showToPlayers;
-        settingUpdates.unshift([SETTINGS.requestConfiguration, normalizeRequestConfiguration(next)]);
+        settingUpdates.unshift([SETTINGS.requestConfiguration, mergeRequestConfigurationUpdate(previous, next)]);
       }
 
       for (const [key, value] of settingUpdates) await game.settings.set(MODULE_ID, key, value);
@@ -578,6 +589,8 @@ function preparePersonalSettingsContext(configuration) {
 }
 
 function prepareMasterSettingsContext(configuration) {
+  const premium = getPremiumStatus();
+  const premiumModule = game.modules?.get?.(PREMIUM_MODULE_ID);
   const imageResources = REQUEST_RESOURCE_TYPES.map((type) => {
     const request = REQUEST_TYPES[type];
     const image = configuration.images[type];
@@ -644,6 +657,13 @@ function prepareMasterSettingsContext(configuration) {
     soundsEnabled: configuration.soundsEnabled,
     blockWhenEnvironment: configuration.blockWhenEnvironment,
     showWelcome: configuration.showWelcome,
+    showWelcomeGM: configuration.welcome.gm,
+    showWelcomePlayers: configuration.welcome.players,
+    showPremiumStatus: configuration.welcome.showPremiumStatus,
+    premiumActive: premium.active,
+    premiumState: localize(premium.active ? "Premium.Active" : "Premium.Free"),
+    premiumHint: localize(premium.active ? "Premium.EnabledHint" : "Premium.LockedHint"),
+    premiumSettingsAvailable: typeof premiumModule?.api?.openSettings === "function",
     feedEnabled: configuration.feed.enabled,
     feedShowToPlayers: configuration.feed.showToPlayers,
     feedShowTime: configuration.feed.showTime

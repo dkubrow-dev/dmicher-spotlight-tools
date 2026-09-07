@@ -14,7 +14,8 @@ import {
   localize
 } from "../../utils.js";
 import { renderChatPortrait } from "../../chat-portrait.js";
-import { getRequestImage } from "./request-config.js";
+import { getRequestConfiguration, getRequestImage } from "./request-config.js";
+import { isPremiumActive } from "../../premium-provider.js";
 
 export function getGrantActionKey(type) {
   return normalizeRequestType(type) === "stop" ? "Requests.Chat.TakeFloor" : "Requests.Chat.GiveFloor";
@@ -54,14 +55,20 @@ export function buildWelcomeMessageContent(includeHelp) {
   const help = includeHelp
     ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))} ${escapeHTML(localize("Requests.Welcome.DisableBefore"))} ${masterSettingsLink}</p>`
     : "";
-  const supportLink = `<span class="dmicher-inline-link-tail"><button type="button" class="dmicher-inline-link" data-request-welcome-action="thanks">${escapeHTML(localize("Requests.Welcome.SupportLink"))}</button>${escapeHTML(localize("Requests.Welcome.FreeAfter"))}</span>`;
-  const support = `<p class="dmicher-request-welcome-support">${escapeHTML(localize("Requests.Welcome.FreeBefore"))} ${supportLink}</p>`;
+  const configuration = getRequestConfiguration();
+  const status = isPremiumActive()
+    ? escapeHTML(localize("Requests.Welcome.PremiumActive"))
+    : includeHelp
+      ? `${escapeHTML(localize("Requests.Welcome.FreeMasterBefore"))} <a href="https://boosty.to/dmicher" target="_blank" rel="noopener noreferrer">Boosty</a>.`
+      : escapeHTML(localize("Requests.Welcome.FreePlayer"));
+  const support = configuration.welcome.showPremiumStatus
+    ? `<p class="dmicher-request-welcome-support">${status}</p>`
+    : "";
   return `
     <section class="dmicher-technical-card dmicher-request-welcome">
       <p>${escapeHTML(format("Requests.Welcome.MainBefore", { module: moduleTitle, version: moduleVersion }))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="settings">${escapeHTML(localize("Requests.Welcome.MenuLink"))}</button>${escapeHTML(localize("Requests.Welcome.MainAfter"))}</p>
       ${help}
-      <hr class="dmicher-request-welcome-divider">
-      ${support}
+      ${support ? `<hr class="dmicher-request-welcome-divider">${support}` : ""}
     </section>`;
 }
 

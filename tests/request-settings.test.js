@@ -97,8 +97,15 @@ test("v13+ migrates legacy client values only when a user value is absent", asyn
   }
 });
 
-test("master settings save player feed visibility and offer a reload", async () => {
+test("free master settings preserve locked Premium values while saving common visibility", async () => {
   const previous = createDefaultRequestConfiguration();
+  previous.chatEnabled = false;
+  previous.soundsEnabled = false;
+  previous.feed.showTime = false;
+  previous.welcome.gm = false;
+  previous.welcome.players = false;
+  previous.images.common = { custom: true, url: "https://example.test/saved.webp" };
+  previous.sounds.common = { custom: true, url: "https://example.test/saved.ogg", volume: 0.3 };
   const writes = [];
   const menus = new Map();
   const errors = [];
@@ -134,14 +141,11 @@ test("master settings save player feed visibility and offer a reload", async () 
   application.offerReload = async () => { reloadOffers += 1; };
 
   const values = new Map([
-    ["chatEnabled", "on"],
     ["chatPollNotifications", "on"],
     ["chatTimerNotifications", "on"],
-    ["soundsEnabled", "on"],
     ["blockWhenEnvironment", "on"],
-    ["showWelcome", "on"],
+    ["showPremiumStatus", "on"],
     ["feedEnabled", "on"],
-    ["feedShowTime", "on"],
     ["commonLimitMode", "none"],
     ["commonLimitCount", "1"],
     ["urgentLimitMode", "count"],

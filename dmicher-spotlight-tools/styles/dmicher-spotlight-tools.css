@@ -2867,3 +2867,24 @@ html[data-dmicher-spotlight-theme="light"] .dmicher-spotlight-window .dmicher-to
     grid-template-columns: 1fr;
   }
 }
+
+.dmicher-premium-summary {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--dmicher-border);
+  border-radius: 0.5rem;
+  background: var(--dmicher-surface-raised);
+}
+.dmicher-premium-summary p { margin: 0.35rem 0; font-size: 0.85em; }
+.dmicher-premium-summary button { margin-top: 0.35rem; }
+.dmicher-premium-badge {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 0.4rem;
+  color: var(--dmicher-text-muted);
+  font-size: 0.72em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.dmicher-settings-section[disabled] .dmicher-resource-row { opacity: 0.65; }

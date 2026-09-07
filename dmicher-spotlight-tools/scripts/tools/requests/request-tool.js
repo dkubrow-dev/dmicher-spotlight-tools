@@ -9,6 +9,7 @@ import {
   normalizeRequestType
 } from "../../config.js";
 import { createTechnicalChatMessages, isTechnicalChatEnabled, isTechnicalUser, synchronizeTechnicalIdentity } from "../../technical-chat.js";
+import { waitForPremiumReady } from "../../premium-provider.js";
 import { applyChatPortrait, renderChatPortrait } from "../../chat-portrait.js";
 import {
   buildChatSpeaker,
@@ -580,16 +581,19 @@ export class RequestTool {
     if (isPrimaryModerator()) void this.createWelcomeMessage(user.id);
   }
 
-  requestWelcome(userId) {
-    if (!isTechnicalChatEnabled() || !getRequestConfiguration().showWelcome) return;
+  async requestWelcome(userId) {
+    await waitForPremiumReady();
+    const user = game.users.get(userId);
+    if (!user || !isTechnicalChatEnabled() || !getRequestConfiguration().welcome[isModerator(user) ? "gm" : "players"]) return;
     if (isPrimaryModerator()) return this.createWelcomeMessage(userId);
     if (this.hasActiveModerator()) game.socket.emit(SOCKET_CHANNEL, { action: "requestWelcome", userId });
   }
 
   async createWelcomeMessage(userId) {
-    if (!isPrimaryModerator() || !isTechnicalChatEnabled() || !getRequestConfiguration().showWelcome || this.welcomedUsers.has(userId)) return;
+    await waitForPremiumReady();
+    if (!isPrimaryModerator() || !isTechnicalChatEnabled() || this.welcomedUsers.has(userId)) return;
     const user = game.users.get(userId);
-    if (!user || isTechnicalUser(user)) return;
+    if (!user || isTechnicalUser(user) || !getRequestConfiguration().welcome[isModerator(user) ? "gm" : "players"]) return;
     this.welcomedUsers.add(userId);
     try {
       await createTechnicalChatMessages({
