@@ -7,7 +7,7 @@ const childPath = fileURLToPath(new URL("./fixtures/foundry-runtime-smoke.mjs", 
 
 for (const generation of [13, 14]) {
   test(`isolated init/ready runtime smoke succeeds for Foundry v${generation}`, () => {
-    const result = spawnSync(process.execPath, [childPath, String(generation)], {
+    const result = spawnSync(process.execPath, ["--import", "./scripts/esm-loader.mjs", childPath, String(generation)], {
       cwd: fileURLToPath(new URL("..", import.meta.url)),
       encoding: "utf8",
       timeout: 10_000

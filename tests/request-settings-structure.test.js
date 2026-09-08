@@ -44,11 +44,12 @@ test("personal and Game Master request settings use separate templates", () => {
 });
 
 test("sound resource sliders have a stable explicit width", () => {
-  const css = read("styles/dmicher-spotlight-tools.css");
+  const commonCss = fs.readFileSync(path.resolve(ROOT, "../dmicher-generics/dmicher-generics/styles/dmicher-generics.css"), "utf8");
+  const css = commonCss + read("styles/dmicher-spotlight-tools.css");
   assert.match(css, /--dmicher-sound-volume-width: 14rem;/);
   assert.match(css, /\.dmicher-sound-resource \.dmicher-volume-field input\[type="range"\][\s\S]*?width: var\(--dmicher-sound-volume-width\);/);
   assert.doesNotMatch(css, /\.dmicher-request-settings-tabs/);
-  assert.match(css, /\.dmicher-spotlight-window h4,[\s\S]*?color: var\(--dmicher-heading\) !important;[\s\S]*?text-shadow: none !important;/);
+  assert.match(css, /\.dmicher-window h4,[\s\S]*?color: var\(--dmicher-heading\) !important;[\s\S]*?text-shadow: none !important;/);
   assert.match(css, /input::placeholder,[\s\S]*?color: var\(--dmicher-text-muted\) !important;/);
   assert.match(css, /-webkit-text-fill-color: var\(--dmicher-text-muted\);/);
   assert.match(css, /background: var\(--dmicher-surface-raised\) !important;[\s\S]*?opacity: 1 !important;/);

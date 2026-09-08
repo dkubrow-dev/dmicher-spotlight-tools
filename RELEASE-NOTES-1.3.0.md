@@ -1,10 +1,14 @@
 # dmicher Spotlight Tools 1.3.0
 
+Рабочая пересборка: общий код вынесен в обязательный бесплатный `dmicher-generics` 1.0.0 / API 1. Его нужно установить и включить вместе со Spotlight; Premium остаётся необязательным. Прежние настройки темы, функции и API Spotlight сохраняются. Перед публичным распространением этой пересборки необходимо опубликовать Generics; текущая работа не публикует релизы.
+
+Development rebuild: the free `dmicher-generics` 1.0.0 / API 1 module is now required for shared window styles and helpers. Existing Spotlight settings, functions and API remain available; Premium is still optional. Publish Generics before publicly distributing this rebuild; this work does not publish releases.
+
 ## Русский
 
 Выпуск 1.3.0 входит в общий комплект с dmicher Premium 1.3.0 и dmicher licence server 1.3.0.
 
-- Базовый модуль остаётся бесплатным и работает самостоятельно: заявки, лента, таймеры, перерывы, опросы, статусы игроков и контроль внимания мастером доступны без сателлита.
+- Базовый модуль остаётся бесплатным: заявки, лента, таймеры, перерывы, опросы, статусы игроков и контроль внимания мастером доступны с Generics, без сателлита Premium.
 - Подключение активного модуля `dmicher-premium` с действующей лицензией открывает премиальные настройки: показ времени в ленте, общий вывод в чат, изображения и звуки мира, отдельное отключение приветствий мастеру и игрокам.
 - Общие и премиальные параметры расположены в одном окне настроек мастера. Недоступные премиальные параметры отмечены и отключены; из окна можно перейти к настройкам установленного сателлита.
 - В бесплатном режиме используются встроенные изображения и звуки; время, чат и оба приветствия включены. Видимость ленты, антиспам, уведомления опросов и таймеров, личные настройки и показ статуса версии остаются общими параметрами.
@@ -18,7 +22,7 @@
 
 Version 1.3.0 is released together with dmicher Premium 1.3.0 and dmicher licence server 1.3.0.
 
-- The base module remains free and works independently: requests, Request Feed, timers, breaks, polls, player statuses, and the Game Master's focus audit remain available without the satellite.
+- The base module remains free: requests, Request Feed, timers, breaks, polls, player statuses, and the Game Master's focus audit remain available with Generics and without the Premium satellite.
 - Enabling `dmicher-premium` with a valid license unlocks Premium settings: feed timestamps, global chat output, world images and sounds, and separate switches for Game Master and player welcomes.
 - Common and Premium controls share the Game Master Settings window. Unavailable Premium controls are labeled and disabled; the installed satellite's settings can be opened from this window.
 - Free mode uses built-in images and sounds, with timestamps, chat output, and both welcomes enabled. Feed visibility, anti-spam limits, poll and timer notifications, personal preferences, and version-status display remain common settings.

@@ -10,6 +10,10 @@
 
 Поддерживаются Foundry VTT версий 13 и 14.
 
+В текущей рабочей сборке общий код и оформление окон выделены в обязательный бесплатный модуль **dmicher Generics 1.0.0 (API 1)**. Установите и включите `dmicher-generics` вместе со Spotlight. Тема, настройки и возможности Spotlight сохраняются; Premium по-прежнему необязателен. Новая зависимость пока готовится локально и должна быть опубликована до распространения этой сборки Spotlight. Для разработки расположите репозитории `dmicher-generics` и `dmicher-spotlight-tools` рядом: тесты используют настоящий общий код из соседнего репозитория.
+
+The current development build requires the free **dmicher Generics 1.0.0 / API 1** module for shared styles and window helpers. Install and enable it alongside Spotlight; Premium remains optional. The dependency is a local development build and must be published before distributing this updated Spotlight build. Tests expect the Generics repository next to the Spotlight repository.
+
 Базовая версия 1.3 остаётся бесплатной. Сателлит [dmicher-premium](https://boosty.to/dmicher) с подтверждённым доступом включает изменение показа времени, общего вывода в чат, изображений и звуков мира, а также отдельные выключатели приветствий мастеру и игрокам. Без Premium используются встроенные ресурсы, время, чат и оба приветствия включены. Антиспам, видимость ленты, уведомления опросов/таймеров и личные настройки остаются бесплатными. Показ статуса версии можно отключить бесплатно. Прежние премиальные настройки сохраняются при потере доступа и возвращаются при его восстановлении.
 
 ## Как установить модуль?

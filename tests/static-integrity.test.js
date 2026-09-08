@@ -33,6 +33,9 @@ test("manifest and localization files are internally consistent", () => {
   assert.match(manifest.changelog, /\/tag\/1\.3\.0$/);
   assert.equal(manifest.compatibility.minimum, "13");
   assert.equal(manifest.compatibility.verified, "14");
+  assert.deepEqual(manifest.relationships.requires.map(({ id, compatibility }) => ({ id, compatibility })), [{
+    id: "dmicher-generics", compatibility: { minimum: "1.0.0" }
+  }]);
 
   const declaredFiles = [
     ...manifest.esmodules,
@@ -82,7 +85,9 @@ test("all relative module imports, templates, and assets resolve", () => {
   for (const script of scripts) {
     const source = fs.readFileSync(script, "utf8");
     for (const match of source.matchAll(/from\s+"([^"]+\.js)"/g)) {
-      const target = path.resolve(path.dirname(script), match[1]);
+      const target = match[1] === "../../dmicher-generics/scripts/api.js"
+        ? path.resolve(ROOT, "../dmicher-generics/dmicher-generics/scripts/api.js")
+        : path.resolve(path.dirname(script), match[1]);
       assert.ok(fs.existsSync(target), `${path.relative(ROOT, script)} -> ${match[1]}`);
     }
     for (const match of source.matchAll(/modules\/\$\{MODULE_ID\}\/(templates\/[^`"]+\.hbs)/g)) {

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
+    "test": "node --import ./scripts/esm-loader.mjs --test",
     "release:build": "node scripts/release.mjs build",
     "deploy:dry-run": "node scripts/release.mjs dry-run",
     "deploy": "node scripts/release.mjs deploy",

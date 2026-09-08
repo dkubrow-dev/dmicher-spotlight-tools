@@ -405,6 +405,10 @@ assert.equal(hooks.count("ready"), 1);
 hooks.call("init");
 assert.equal(invalidScopes.length, 0);
 assert.ok(moduleRecord.api);
+const { generics: genericApi } = await import("../../dmicher-spotlight-tools/scripts/generics.js");
+assert.equal(genericApi.modules.get("dmicher-spotlight-tools"), moduleRecord.api);
+assert.equal(moduleRecord.api.apiVersion, 1);
+assert.ok(genericApi.modules.list()[0].capabilities.includes("openFocusAudit"));
 assert.ok(CONFIG.ui.requests);
 if (generation === 12) {
   assert.equal(CONFIG.ui.requests.usesHandlebarsApplicationMixin, undefined);

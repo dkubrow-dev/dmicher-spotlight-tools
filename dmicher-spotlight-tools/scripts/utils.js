@@ -1,4 +1,10 @@
 import { I18N_PREFIX, MODULE_ID } from "./config.js";
+import { generics } from "./generics.js";
+
+export const { escapeHTML, createSerialTaskQueue } = generics.utilities;
+export const { getRenderedElement, runAfterApplicationLifecycle } = generics.windows;
+export const openSingletonApplication = (application, createApplication) =>
+  generics.windows.openSingletonApplication(application, createApplication, { moduleId: MODULE_ID });
 
 
 export function i18nKey(key) {
@@ -68,23 +74,6 @@ export function formatTimestamp(timestamp) {
   }
 }
 
-export function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[character]);
-}
-
-export function getRenderedElement(html) {
-  if (html instanceof HTMLElement) return html;
-  if (html?.[0] instanceof HTMLElement) return html[0];
-  if (html?.element instanceof HTMLElement) return html.element;
-  return null;
-}
-
 export function getFoundryGeneration() {
   return Number(game.release?.generation ?? String(game.version ?? "").split(".")[0]);
 }
@@ -101,53 +90,6 @@ export function setGamePaused(paused, { broadcast = true } = {}) {
   return getFoundryGeneration() >= 13
     ? game.togglePause(paused, { broadcast })
     : game.togglePause(paused, broadcast);
-}
-
-export function createSerialTaskQueue() {
-  let tail = Promise.resolve();
-  return (task) => {
-    const result = tail.then(task);
-    tail = result.catch(() => undefined);
-    return result;
-  };
-}
-
-const renderingApplications = new WeakSet();
-
-export function openSingletonApplication(application, createApplication) {
-  if (application?.rendered || renderingApplications.has(application)) {
-    if (application.rendered) application.bringToFront();
-    return application;
-  }
-
-  const nextApplication = createApplication();
-  renderingApplications.add(nextApplication);
-  let renderResult;
-  try {
-    renderResult = nextApplication.render({ force: true });
-  } catch (error) {
-    renderingApplications.delete(nextApplication);
-    throw error;
-  }
-
-  if (renderResult && typeof renderResult.then === "function") {
-    void Promise.resolve(renderResult).then(
-      () => renderingApplications.delete(nextApplication),
-      (error) => {
-        renderingApplications.delete(nextApplication);
-        console.error(`${MODULE_ID} | Unable to render application`, error);
-      }
-    );
-  } else {
-    renderingApplications.delete(nextApplication);
-  }
-  return nextApplication;
-}
-
-export function runAfterApplicationLifecycle(result, continuation) {
-  if (result && typeof result.then === "function") return result.then(continuation);
-  continuation();
-  return result;
 }
 
 export function getChatMessageClass() {

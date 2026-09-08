@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./config.js";
+import { generics } from "./generics.js";
 import { PREMIUM_API_VERSION, getPremiumStatus, registerPremiumProvider, notifyPremiumChanged, subscribePremiumChanges, waitForPremiumReady } from "./premium-provider.js";
 import { activateTechnicalChat, registerTechnicalChat, synchronizeTechnicalIdentity } from "./technical-chat.js";
 import {
@@ -93,6 +94,7 @@ Hooks.once("init", () => {
     }
   });
   game.modules.get(MODULE_ID).api = {
+    apiVersion: 1,
     premiumApiVersion: PREMIUM_API_VERSION,
     registerPremiumProvider,
     notifyPremiumChanged,
@@ -114,6 +116,11 @@ Hooks.once("init", () => {
     recordStopwatchEvent: (eventType) => stopwatchTool.recordEvent(eventType),
     submitRequest: requestTool.submitRequest
   };
+  generics.modules.register(MODULE_ID, {
+    apiVersion: 1,
+    api: game.modules.get(MODULE_ID).api,
+    capabilities: ["openHelp", "openActiveRequests", "openFocusAudit", "openTimers", "openPolls", "openStopwatch"]
+  });
   Hooks.callAll("dmicherSpotlightReady", game.modules.get(MODULE_ID).api);
 });
 
