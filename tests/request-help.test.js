@@ -1,85 +1,33 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { buildSpotlightHelp, SETTING_HELP, getSettingHelpEntries } from "../dmicher-spotlight-tools/scripts/tools/requests/request-help-content.js";
 
-import {
-  REQUEST_HELP_GROUPS,
-  REQUEST_HELP_PAGES
-} from "../dmicher-spotlight-tools/scripts/tools/requests/request-help-content.js";
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const MODULE_ROOT = path.join(ROOT, "dmicher-spotlight-tools");
-
-function readLocale(locale) {
-  return JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", locale + ".json"), "utf8"));
+for (const language of ["ru", "en"]) {
+  const locale = JSON.parse(fs.readFileSync(new URL(`../dmicher-spotlight-tools/lang/${language}.json`, import.meta.url), "utf8")).DMICHERSPOTLIGHTTOOLS;
+  const localize = (key) => key.split(".").reduce((value, part) => value?.[part], locale);
+  test(`${language}: concise operational help includes common footer and every settings target`, () => {
+    const content = buildSpotlightHelp({ language, localize });
+    assert.deepEqual(content.footer, ["author", "thanks", "premium"]);
+    const pages = new Map(content.pages.map((page) => [page.id, page]));
+    assert.equal(pages.size, content.pages.length);
+    for (const page of pages.values()) {
+      assert.ok(page.title?.trim()); assert.ok(page.html?.trim());
+      assert.doesNotMatch(page.html, /undefined|\[object Object\]|socket|schemaVersion|module\.api/);
+      for (const match of page.html.matchAll(/data-help-page="([^"]+)"/g)) assert.ok(pages.has(match[1]), match[1]);
+    }
+    for (const entry of SETTING_HELP) {
+      assert.ok(localize(entry.labelKey), entry.labelKey);
+      assert.ok(entry.description[language]?.trim());
+      assert.ok(pages.get(entry.pageId)?.html.includes(`id="${entry.id}"`), entry.id);
+    }
+    for (const entry of getSettingHelpEntries(language)) {
+      assert.ok(pages.get(entry.pageId)?.html.includes(`id="${entry.anchor}"`));
+      assert.ok(entry.hint.length > 10);
+    }
+  });
 }
 
-function assertText(value, key) {
-  assert.equal(typeof value, "string", key);
-  assert.ok(value.trim().length > 0, key);
-}
-
-test("module help describes every configured interface element in both locales", () => {
-  let itemCount = 0;
-  assert.deepEqual(
-    REQUEST_HELP_GROUPS.flatMap((group) => group.pages),
-    [...REQUEST_HELP_PAGES]
-  );
-
-  for (const locale of ["ru", "en"]) {
-    const help = readLocale(locale).DMICHERSPOTLIGHTTOOLS.Requests.Help;
-    assert.deepEqual(Object.keys(help.Groups), REQUEST_HELP_GROUPS.map((group) => group.key));
-    for (const group of REQUEST_HELP_GROUPS) {
-      assertText(help.Groups[group.key], locale + ".Groups." + group.key);
-    }
-
-    const pages = help.Pages;
-    assert.deepEqual(Object.keys(pages), REQUEST_HELP_PAGES.map((page) => page.key));
-    for (const definition of REQUEST_HELP_PAGES) {
-      const page = pages[definition.key];
-      assertText(page.Title, locale + "." + definition.key + ".Title");
-      assert.doesNotMatch(page.Title, /:/, locale + "." + definition.key + ".Title");
-      assertText(page.Intro, locale + "." + definition.key + ".Intro");
-      assert.deepEqual(
-        Object.keys(page.Sections),
-        definition.sections.map((section) => section.key),
-        locale + "." + definition.key + ".Sections"
-      );
-      for (const sectionDefinition of definition.sections) {
-        const section = page.Sections[sectionDefinition.key];
-        assertText(section.Title, locale + "." + definition.key + "." + sectionDefinition.key + ".Title");
-        assert.deepEqual(
-          Object.keys(section.Items),
-          sectionDefinition.items,
-          locale + "." + definition.key + "." + sectionDefinition.key + ".Items"
-        );
-        for (const itemKey of sectionDefinition.items) {
-          const item = section.Items[itemKey];
-          const key = locale + "." + definition.key + "." + sectionDefinition.key + "." + itemKey;
-          assertText(item.Label, key + ".Label");
-          assertText(item.Description, key + ".Description");
-          itemCount += 1;
-        }
-      }
-    }
-  }
-  assert.ok(itemCount >= 600);
-});
-
-
-test("interface and help use canonical window and request-feed names", () => {
-  for (const locale of ["ru", "en"]) {
-    const root = readLocale(locale).DMICHERSPOTLIGHTTOOLS;
-    const requests = root.Requests;
-    assert.equal(requests.Feed.SettingsHeading, requests.Feed.Tab);
-    assert.equal(requests.Feed.Tab, requests.Feed.Heading);
-    assert.equal(requests.Feed.Heading, requests.Help.Pages.Feed.Title);
-    assert.equal(requests.Feed.Management, requests.Active.Heading);
-    assert.equal(root.Controls.Requests, requests.Active.Heading);
-    assert.equal(requests.Help.Pages.Limits.Title, requests.Limits.Heading);
-    assert.equal(requests.Help.Pages.AuditWindow.Title, root.Focus.Audit.WindowTitle);
-    assert.equal(requests.Help.Pages.AuditSettings.Title, root.Focus.Settings.WindowTitle);
-  }
+test("both locales keep the same page identities for contextual links", () => {
+  assert.deepEqual(buildSpotlightHelp({ language: "ru" }).pages.map((page) => page.id), buildSpotlightHelp({ language: "en" }).pages.map((page) => page.id));
 });

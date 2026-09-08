@@ -436,8 +436,9 @@ assert.deepEqual(
 );
 assert.equal(registeredMenus.get("dmicher-spotlight-tools.requestsSettings")?.restricted, false);
 assert.equal(registeredMenus.get("dmicher-spotlight-tools.requestMasterSettings")?.restricted, true);
-assert.equal(hooks.count("renderSettingsConfig"), 1);
-assert.equal(hooks.count("renderSettingsConfigHTML"), 1);
+assert.equal(hooks.count("renderSettingsConfig"), 0);
+assert.equal(hooks.count("renderSettingsConfigHTML"), 0);
+assert.equal(registeredSettings.get("dmicher-spotlight-tools.theme")?.config, false);
 const requestConfiguration = registeredSettings.get("dmicher-spotlight-tools.requestConfiguration");
 assert.equal(requestConfiguration.default.feed.enabled, true);
 assert.equal(requestConfiguration.default.feed.showToPlayers, true);

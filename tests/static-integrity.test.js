@@ -165,15 +165,6 @@ test("Handlebars block structure is balanced in every template", () => {
 });
 
 
-test("interactive help navigation never exposes browser URLs", () => {
-  const helpTemplate = fs.readFileSync(
-    path.join(MODULE_ROOT, "templates", "requests", "help.hbs"),
-    "utf8"
-  );
-  assert.doesNotMatch(helpTemplate, /<a\b|href\s*=/i);
-  assert.match(helpTemplate, /<button type="button"[^>]+data-help-page=/);
-});
-
 test("literal module localization references exist", () => {
   const en = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "en.json"), "utf8"));
   const files = [
@@ -201,13 +192,11 @@ test("stopwatch minimum height yields to ApplicationV2 minimization states", fun
   assert.match(stylesheet, /\.dmicher-stopwatch\.minimizing,[\s\S]*\.dmicher-stopwatch\.minimized,[\s\S]*\.dmicher-stopwatch\.maximizing\s*\{\s*min-height:\s*0;/);
 });
 
-test("help content uses module theme colors", function (){
-  const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
-  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-item\s+dt\s*\{[\s\S]*?color:\s*var\(--dmicher-text-muted[\s\S]*?text-shadow:\s*none;/s);
-  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-item\s+dd\s*\{[\s\S]*?color:\s*var\(--dmicher-text/s);
-  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help\s+\.dmicher-request-help-page\s+h2[\s\S]*color:\s*var\(--dmicher-heading/);
-  assert.match(stylesheet, /\.dmicher-spotlight-window\.dmicher-request-help \.dmicher-request-help-toc \.dmicher-help-page-link\s*\{[\s\S]*?background:\s*transparent !important;[\s\S]*?color:\s*var\(--dmicher-text\) !important;/);
-  assert.match(stylesheet, /\.dmicher-help-page-link\.active\s*\{[\s\S]*?background:\s*var\(--dmicher-surface-raised\) !important;[\s\S]*?border-left-color:\s*var\(--dmicher-accent\) !important;/);
+test("help uses the shared shell while content remains in Spotlight", function (){
+  const application = fs.readFileSync(path.join(MODULE_ROOT, "scripts/tools/requests/request-help.js"), "utf8");
+  assert.match(application, /generics\.help\.createHelpApplication/);
+  assert.match(application, /getContent:.*buildSpotlightHelp/);
+  assert.equal(fs.existsSync(path.join(MODULE_ROOT, "templates/requests/help.hbs")), false);
 });
 
 test("poll template macro thumbnails keep a usable size across Foundry versions", function () {

@@ -1,5 +1,6 @@
 import { MODULE_ID, SETTINGS } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
+import { bindSpotlightSettingHelp } from "../requests/request-help.js";
 import {
   i18nKey,
   localize,
@@ -66,6 +67,8 @@ class FocusAuditSettingsApplication extends HandlebarsApplicationMixin(Applicati
   _onRender(context, options) {
     return runAfterApplicationLifecycle(super._onRender(context, options), () => {
       const form = this.element.querySelector(".dmicher-focus-audit-settings-form");
+      this.disposeSettingHelp?.();
+      this.disposeSettingHelp = bindSpotlightSettingHelp(form);
       form?.addEventListener("submit", (event) => void this.saveSettings(event));
     });
   }
@@ -94,6 +97,11 @@ class FocusAuditSettingsApplication extends HandlebarsApplicationMixin(Applicati
       console.error(`${MODULE_ID} | Unable to save focus audit settings`, error);
       ui.notifications.error(localize("Focus.Settings.SaveError"));
     }
+  }
+
+  _onClose(options) {
+    this.disposeSettingHelp?.();
+    return super._onClose(options);
   }
 }
 

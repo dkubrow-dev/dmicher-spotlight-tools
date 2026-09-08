@@ -1,168 +1,125 @@
-function definePage(id, key, sections) {
-  return Object.freeze({
-    id,
-    key,
-    sections: Object.freeze(sections.map(([sectionKey, items]) => Object.freeze({
-      key: sectionKey,
-      items: Object.freeze([...items])
-    })))
-  });
+// Product-owned operational help. The shared shell never owns these pages.
+const words = (ru, en) => ({ ru, en });
+const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+const pick = (value, language) => value[language] ?? value.en;
+
+export const TASK_HELP = [
+  { id: "overview", title: words("Распределить внимание за столом", "Share attention at the table"), body: words(
+    "<p>Договоритесь с игроками, когда подавать обычную и срочную заявку. Откройте меню Spotlight слева: отдельные кнопки открывают заявки, аудит внимания, опросы и таймеры.</p><ol><li>Следите за очередью в «Ленте заявок» и предоставляйте слово по очереди.</li><li>В «Аудите спотлайта» замечайте тех, кто давно не участвовал, и приглашайте их в разговор.</li><li>Перед продолжением игры проверяйте готовность; для отдыха объявляйте перерыв.</li></ol><p>Цвет индикатора — повод спросить игрока, а не оценка качества его игры.</p><p><a href=\"#\" data-help-page=\"management\">Следить за заявками</a> · <a href=\"#\" data-help-page=\"audit-window\">Замечать тихих игроков</a></p>",
+    "<p>Agree when players should use regular and urgent requests. Open the Spotlight menu on the left; individual buttons open requests, attention audit, polls and timers.</p><ol><li>Watch the Request feed and give players their turns.</li><li>Use Focus audit to notice people who have not participated recently and invite them into the conversation.</li><li>Check readiness before continuing; announce a break when the table needs rest.</li></ol><p>An indicator is a reason to ask the player, not a score for their roleplaying.</p><p><a href=\"#\" data-help-page=\"management\">Manage requests</a> · <a href=\"#\" data-help-page=\"audit-window\">Notice quiet players</a></p>") },
+  { id: "management", title: words("Следить за заявками и дать слово", "Manage requests and give the floor"), body: words(
+    "<ol><li>Игрок нажимает обычную или срочную заявку в личных настройках либо внизу ленты. Значок можно перетащить на панель макросов.</li><li>Откройте «Управление активными заявками». Фильтры по типу и повторениям сокращают список, не удаляя заявки.</li><li>Нажмите «Дать слово» у выбранного участника. Отмена убирает заявку; игрок может отменить свою.</li><li>Для описания сцены используйте заявку окружения. При настроенной блокировке новые заявки ждут её завершения.</li></ol><p>Отключение карточек чата не очищает очередь. Для нового раунда разговора при необходимости сбросьте таймауты кнопкой управления.</p><p><a href=\"#\" data-help-page=\"settings-limits\">Настроить ограничения</a></p>",
+    "<ol><li>A player clicks a regular or urgent request in personal settings or below the feed. Drag its icon to the macro hotbar for quick access.</li><li>Open Active requests. Type and duplicate filters shorten the view without deleting requests.</li><li>Choose Give the floor for the next participant. Cancel removes a request; players can cancel their own.</li><li>Use an environment request when describing the scene. If blocking is enabled, new requests wait until it is resolved.</li></ol><p>Disabling chat cards does not clear the queue. Reset timeouts from request management when you need a fresh round of conversation.</p><p><a href=\"#\" data-help-page=\"settings-limits\">Configure limits</a></p>") },
+  { id: "audit-window", title: words("Замечать игроков, оставшихся в тени", "Notice players left out of the action"), body: words(
+    "<ol><li>Откройте «Аудит спотлайта» и включите в наблюдение участвующих игроков.</li><li>Смотрите время последней заявки, ожидания активной заявки, сообщения в чат и предоставления слова. Цвет меняется по порогам мастера.</li><li>Пригласите давно молчащего участника к действию. Если дали слово устно, отметьте это кнопкой у игрока.</li><li>Перед новым отрезком сессии сбросьте показатели одного игрока или всей группы.</li></ol><p>Игрок выбирает свой статус в списке игроков: играет, слушает, отошёл или недоступен. Сопоставляйте статус с индикаторами; длительное слушание может быть осознанным выбором.</p><p><a href=\"#\" data-help-page=\"audit-settings\">Настроить пороги внимания</a></p>",
+    "<ol><li>Open Focus audit and enable the participating players.</li><li>Watch time since the last request, pending request, chat message and granted turn. Colours follow the GM's thresholds.</li><li>Invite a quiet participant to act. If you gave a turn verbally, mark it with that player's grant button.</li><li>Reset one player's measurements or the whole group's before a new part of the session.</li></ol><p>Players choose a status in the player list: playing, listening, away or unavailable. Compare it with the indicators; listening for a while may be their preference.</p><p><a href=\"#\" data-help-page=\"audit-settings\">Set attention thresholds</a></p>") },
+  { id: "readiness", title: words("Убедиться, что все готовы", "Check that everyone is ready"), body: words(
+    "<ol><li>В меню Spotlight запустите проверку готовности перед началом игры или после перерыва.</li><li>Участники отвечают в своих карточках. Проверьте результаты и обратитесь к тем, кто не ответил или пока не готов.</li><li>Возобновляйте игру, когда группа договорится продолжать. Ответы не снимают паузу автоматически.</li></ol><p>Для собственного вопроса откройте «Опросы», задайте варианты и выберите участников.</p>",
+    "<ol><li>Start a readiness check from the Spotlight menu before play or after a break.</li><li>Participants answer their cards. Review the results and check with anyone who has not answered or is not ready.</li><li>Resume when the group agrees. Answers do not automatically unpause the game.</li></ol><p>For a custom question, open Polls, enter choices and select participants.</p>") },
+  { id: "timers-break", title: words("Организовать перерыв", "Organize a break"), body: words(
+    "<ol><li>Откройте «Перерыв (таймер)». Выберите готовую длительность, время окончания или собственную длительность.</li><li>Нажмите «Объявить»: игра встанет на паузу, участники увидят общий таймер.</li><li>После сигнала проверьте готовность группы и самостоятельно снимите паузу.</li></ol><p>Вид отсчёта, звук и громкость задаются в шаблоне «Перерыв» окна «Таймеры». Закрытие окна не останавливает таймер. Пока перерыв активен, второй такой перерыв не запускается.</p>",
+    "<ol><li>Open Break (timer). Choose a preset duration, an end time or a custom duration.</li><li>Click Announce: the game pauses and participants see a public timer.</li><li>After the signal, check the group's readiness and unpause manually.</li></ol><p>Set the countdown view, sound and volume in the Break template in Timers. Closing the window leaves its timer running. A second break cannot start while one is active.</p>") },
+  { id: "polls-overview", title: words("Собрать мнение группы", "Ask the group"), body: words(
+    "<ol><li>В «Опросах» создайте вопрос с кнопками, одним выбором, несколькими выборами или свободным текстом. Выберите участников.</li><li>Сохраните шаблон либо запустите временный опрос. Одновременно активен один опрос; перед новым завершите предыдущий.</li><li>Участник отвечает в личной карточке. Следите за таблицей ответов, затем завершите опрос и при необходимости опубликуйте итоги.</li></ol><p>Неответившие остаются видны в результатах. Таймер опроса напоминает о сроке; сам по себе он не завершает сбор ответов.</p>",
+    "<ol><li>In Polls, create a question with buttons, one choice, multiple choices or free text. Select participants.</li><li>Save a reusable template or launch a temporary poll. Only one poll is active; finish the previous one first.</li><li>Participants answer private cards. Follow the response table, then finish the poll and post results if needed.</li></ol><p>Missing responses remain visible. A poll timer reminds the table of a deadline; it does not itself finish the poll.</p>") },
+  { id: "timers-overview", title: words("Отмерить время на действие", "Time an activity"), body: words(
+    "<ol><li>В «Таймерах» задайте имя, длительность или время окончания, видимость, вид отсчёта и сигнал.</li><li>Запустите таймер. Общий видят участники, приватный — мастера. Сохраните настройки как шаблон для повторного использования.</li><li>В списке текущих таймеров открывайте отсчёт, повторяйте или удаляйте его. Удаление активного требует подтверждения.</li></ol><p>Закрытие окна не останавливает отсчёт. Компактный и крупный вид переключаются кнопкой или двойным щелчком. Личная громкость и отключение звука Foundry влияют на сигнал.</p>",
+    "<ol><li>In Timers, choose a name, duration or end time, visibility, countdown view and signal.</li><li>Start the timer. Public timers are visible to participants; private timers to GMs. Save a template for repeated activities.</li><li>Use the current list to reopen, repeat or delete a countdown. Deleting an active timer requires confirmation.</li></ol><p>Closing the window does not stop the countdown. A button or double-click switches compact and prominent views. Personal volume and Foundry mute affect the signal.</p>") },
+  { id: "stopwatch-overview", title: words("Отметить события по времени", "Record timed events"), body: words(
+    "<ol><li>Откройте «Секундомер» и начните отсчёт.</li><li>Четырьмя кнопками ставьте отметки событий. Их значки можно перенести на панель макросов.</li><li>При необходимости приостановите отсчёт и отправьте список отметок в чат.</li></ol><p>Очистка списка сохраняет время, сброс времени сохраняет список. Закрытие окна сохраняет отсчёт; перезагрузка страницы сбрасывает секундомер.</p>",
+    "<ol><li>Open Stopwatch and start it.</li><li>Use the four buttons to record event marks. Drag their icons onto the macro hotbar if useful.</li><li>Pause when needed and post the list of marks to chat.</li></ol><p>Clearing events keeps elapsed time; resetting time keeps events. Closing the window preserves the stopwatch, while reloading the page resets it.</p>") }
+];
+
+const setting = (pageId, id, selector, labelKey, ru, en) => ({ pageId, id, selector, labelKey, description: words(ru, en) });
+export const SETTING_HELP = [
+  setting("settings-feed", "feedEnabled", '[name="feedEnabled"]', "Requests.Feed.Enabled", "Добавляет отдельную вкладку очереди. После изменения может потребоваться перезагрузка интерфейса; заявки сохраняются.", "Adds a queue tab. Changing it may require reloading the interface; requests are preserved."),
+  setting("settings-feed", "feedShowToPlayers", '[name="feedShowToPlayers"]', "Requests.Feed.ShowToPlayers", "Показывает вкладку игрокам. При выключении лента остаётся у мастера; подача заявок остаётся доступной.", "Shows the tab to players. When off, GMs keep the feed and players can still submit requests."),
+  setting("settings-feed", "feedShowTime", '[name="feedShowTime"]', "Requests.Feed.ShowTime", "Показывает время подачи рядом с заявкой. Требуется Premium.", "Displays each request's submission time. Requires Premium."),
+  setting("settings-chat", "chatEnabled", '[name="chatEnabled"]', "TechnicalChat.Enabled", "Включает карточки заявок и сообщения Информатора. Отключение через Premium сохраняет очередь и таймеры, но для запуска опросов нужен включённый чат. Служебного пользователя и актёра Информатора можно переименовать, но не следует удалять.", "Enables request cards and Informer messages. Disabling chat with Premium preserves the queue and timers, but launching polls requires chat. You may rename the Informer's service user and actor, but keep those documents."),
+  setting("settings-chat", "chatPollNotifications", '[name="chatPollNotifications"]', "TechnicalChat.Polls", "Добавляет сообщения о завершении опросов и готовности при включённом чате. Личные карточки для ответа сохраняются и без этих уведомлений.", "Adds poll and readiness completion messages when chat is enabled. Private response cards remain without these announcements."),
+  setting("settings-chat", "chatTimerNotifications", '[name="chatTimerNotifications"]', "TechnicalChat.Timers", "При включённом чате отправляет карточки таймеров и перерыва с кнопкой просмотра. Выключение не скрывает окна отсчёта.", "Sends timer and break cards with a watch button when chat is enabled. Turning this off does not hide countdown windows."),
+  setting("settings-limits", "LimitMode", '[name$="LimitMode"]', "Requests.Limits.Mode", "Для обычных и срочных заявок отдельно: без ограничения, ограничить количество активных или запретить подачу. Прежняя очередь сохраняется.", "For regular and urgent requests separately: unlimited, limit active requests, or forbid submissions. Existing requests remain."),
+  setting("settings-limits", "LimitCount", '[name$="LimitCount"]', "Requests.Limits.Count", "При ограничении по количеству задаёт от 1 до 10 одновременно активных заявок этого типа на игрока.", "In count mode, allows 1–10 active requests of this type per player."),
+  setting("settings-limits", "TimeoutMode", '[name$="TimeoutMode"]', "Requests.Limits.Timeout", "Без задержки, отсчёт после подачи или после предоставления слова. До конца отсчёта повторная заявка этого типа недоступна.", "No delay, a delay after submission, or after being given the floor. Another request of that type is unavailable until it ends."),
+  setting("settings-limits", "TimeoutTime", '[name$="TimeoutTime"]', "Requests.Limits.TimeoutTime", "Длительность задержки в формате ЧЧ:ММ:СС. Действует при выбранном режиме таймаута; остаток виден у кнопки заявки.", "Delay in HH:MM:SS. Applies when a timeout mode is selected; remaining time appears beside the request button."),
+  setting("settings-limits", "blockWhenEnvironment", '[name="blockWhenEnvironment"]', "Requests.Limits.BlockForEnvironment", "Пока активна заявка окружения, запрещает новые заявки. Уже поданные остаются в очереди.", "Blocks new requests while an environment request is active. Existing requests remain in the queue."),
+  setting("settings-resources", "ImageCustom", '[name$="ImageCustom"]', "Requests.Resources.CustomImage", "Включает собственную картинку этого типа заявки. Требуется Premium; при недоступном Premium используется встроенная картинка.", "Uses a custom image for this request type. Requires Premium; the built-in image is used when Premium is unavailable."),
+  setting("settings-resources", "ImageUrl", '[name$="ImageUrl"]', "Requests.Resources.Url", "Адрес изображения для выбранного типа заявки. Загрузка проверяется перед сохранением; прежние макросы сохраняют свою картинку.", "Image address for this request type. Loading is checked before saving; existing macros retain their image."),
+  setting("settings-sounds", "soundsEnabled", '[name="soundsEnabled"]', "Requests.Resources.SoundsEnabled", "Включает звуки заявок. Личная громкость и отключение звука Foundry сохраняют действие. Изменение требует Premium.", "Enables request sounds. Personal volume and Foundry mute still apply. Changing this requires Premium."),
+  setting("settings-sounds", "SoundCustom", '[name$="SoundCustom"]:not([name$="TimerSoundCustom"])', "Requests.Resources.CustomSound", "Включает собственный сигнал выбранного типа заявки. Требуется Premium; при его недоступности используется встроенный звук.", "Enables a custom signal for this request type. Requires Premium; otherwise the built-in sound is used."),
+  setting("settings-sounds", "timerTimerSoundCustom", '[name="timerTimerSoundCustom"]', "Requests.Resources.UseCustomTimerSound", "Добавляет сохранённый собственный сигнал в выбор звука таймера. Задайте адрес, сохраните настройки, затем выберите этот сигнал при создании таймера. Требуется Premium.", "Adds the saved custom signal to the timer's sound choices. Enter its address, save, then select the signal when creating a timer. Requires Premium."),
+  setting("settings-sounds", "breakTimerSoundCustom", '[name="breakTimerSoundCustom"]', "Requests.Resources.UseCustomBreakSound", "Добавляет собственный сигнал перерыва. После сохранения выберите его в шаблоне «Перерыв» окна «Таймеры». Требуется Premium.", "Adds a custom break signal. After saving, select it in the Break template in Timers. Requires Premium."),
+  setting("settings-sounds", "SoundUrl", '[name$="SoundUrl"]', "Requests.Resources.Url", "Адрес аудиофайла. Воспроизведение проверяется перед сохранением; кнопка прослушивания позволяет проверить сигнал.", "Audio address. Playback is checked before saving; the preview button lets you check the signal."),
+  setting("settings-sounds", "SoundVolume", '[name$="SoundVolume"]', "Requests.Resources.BaseVolume", "Базовая громкость сигнала от 0 до 100%. Учитывается вместе с личной громкостью заявок или таймеров и уровнем запуска таймера.", "Base signal volume from 0 to 100%. Combined with personal request or timer volume and a timer's launch volume."),
+  setting("settings-volume", "requestVolume", '.dmicher-request-volume-slider', "Requests.Volume.Label", "В разделе аудио Foundry меняет громкость заявок только для вас. Ноль отключает их звук; общая настройка отключения звука Foundry имеет приоритет.", "In Foundry's audio sidebar, changes request volume for you only. Zero mutes requests; Foundry's global mute still takes priority."),
+  setting("settings-volume", "timerVolume", '.dmicher-timer-volume-slider', "Timers.Volume.Label", "В разделе аудио Foundry меняет громкость таймеров и перерывов только для вас. Учитывается вместе с громкостью самого сигнала и таймера.", "In Foundry's audio sidebar, changes timer and break volume for you only. Combined with the signal and timer's own volume."),
+  setting("settings-welcome", "showWelcomeGM", '[name="showWelcomeGM"]', "Requests.Welcome.ShowGM", "Приветственная карточка со ссылками на инструменты при входе мастера. Отключение доступно с Premium.", "Welcome card with tool links when the GM logs in. Disabling it requires Premium."),
+  setting("settings-welcome", "showWelcomePlayers", '[name="showWelcomePlayers"]', "Requests.Welcome.ShowPlayers", "Приветственная карточка при входе игроков. Отключение доступно с Premium.", "Welcome card when players log in. Disabling it requires Premium."),
+  setting("settings-welcome", "showPremiumStatus", '[name="showPremiumStatus"]', "Requests.Welcome.ShowPremiumStatus", "Добавляет сведения о Premium в приветствие; не меняет доступ к функциям.", "Includes Premium information in the welcome card; does not change feature access."),
+  setting("settings-personal", "Text", 'textarea[name$="Text"]', "Requests.Settings.Text", "Текст вашей карточки данного типа заявки. Сохранение пустого поля возвращает стандартный текст.", "Text for your card of this request type. Saving an empty field restores the standard text."),
+  setting("settings-personal", "Color", 'input[name$="Color"], input[name$="ColorPicker"]', "Requests.Settings.Color", "Цвет текста: выберите образец или введите HEX-код. Не меняет общую тему окон.", "Text colour: choose a swatch or enter a HEX code. Does not change the shared window theme."),
+  setting("settings-personal", "FontSize", '[name$="FontSize"]', "Requests.Settings.FontSize", "Размер текста карточки. Сохраняется для данного типа вашей заявки.", "Card text size, saved for this type of your request."),
+  setting("settings-personal", "Underline", '[data-request-font-toggle="Underline"]', "Requests.Settings.Underline", "Подчёркивает текст заявки; повторное нажатие снимает подчёркивание.", "Underlines request text; click again to remove it."),
+  setting("settings-personal", "Italic", '[data-request-font-toggle="Italic"]', "Requests.Settings.Italic", "Выделяет текст заявки курсивом; повторное нажатие отключает его.", "Italicizes request text; click again to turn it off."),
+  setting("settings-personal", "Bold", '[data-request-font-toggle="Bold"]', "Requests.Settings.Bold", "Делает текст заявки жирным; повторное нажатие отключает его.", "Makes request text bold; click again to turn it off."),
+  setting("settings-personal", "Alignment", '[name$="Alignment"]', "Requests.Settings.Alignment", "Выравнивает текст карточки слева, по центру или справа.", "Aligns card text left, centre or right.")
+];
+
+for (const [metric, key] of Object.entries({ lastRequest: "LastRequest", activeRequest: "ActiveRequest", lastChat: "LastChat", lastGranted: "LastGranted" })) {
+  for (const [level, label] of Object.entries({ doubt: "Doubt", problem: "Problem", deadline: "Deadline" })) {
+    SETTING_HELP.push({ ...setting(`audit-settings-${metric}`, `${metric}-${level}`, `[name="${metric}.${level}"]`, `Focus.Indicators.${label}`,
+      "Количество минут до этого уровня предупреждения. Значения возрастают: сомнение, проблема, предел. После сохранения цвет меняется по новым порогам.",
+      "Minutes until this warning level. Values increase from doubt to problem to deadline. Saving immediately updates the indicator's thresholds."), metricLabelKey: `Focus.Audit.Metrics.${key}.Title`, metricDescriptionKey: `Focus.Audit.Metrics.${key}.Description` });
+  }
 }
 
-function defineGroup(id, key, pages) {
-  return Object.freeze({ id, key, pages: Object.freeze(pages) });
+const SETTINGS_PAGES = [
+  ["settings-feed", words("Лента заявок", "Request feed")], ["settings-chat", words("Сообщения в чат", "Chat messages")],
+  ["settings-limits", words("Ограничения заявок", "Request limits")], ["settings-resources", words("Картинки заявок", "Request images")],
+  ["settings-sounds", words("Звуки", "Sounds")], ["settings-volume", words("Личная громкость", "Personal volume")], ["settings-welcome", words("Приветствие", "Welcome cards")],
+  ["settings-personal", words("Личные карточки", "Personal cards")], ["audit-settings", words("Пороги аудита внимания", "Attention thresholds")]
+];
+const AUDIT_PAGES = [
+  ["audit-settings-lastRequest", words("Давно не подавал заявку", "Time since a request")],
+  ["audit-settings-activeRequest", words("Долго ждёт слова", "Time waiting for a turn")],
+  ["audit-settings-lastChat", words("Давно не писал в чат", "Time since a chat message")],
+  ["audit-settings-lastGranted", words("Давно не получал слова", "Time since a granted turn")]
+];
+
+export function buildSpotlightHelp({ language = "en", localize = (key) => key } = {}) {
+  language = String(language).startsWith("ru") ? "ru" : "en";
+  const pages = TASK_HELP.map((page) => ({ id: page.id, title: pick(page.title, language), html: pick(page.body, language) }));
+  for (const [id, title] of [...SETTINGS_PAGES, ...AUDIT_PAGES]) {
+    const intro = id === "settings-volume" ? words("Откройте раздел аудио на правой панели Foundry. Личная громкость изменяется сразу и сохраняется отдельно от настроек других участников.", "Open the audio sidebar in Foundry. Personal volume changes immediately and is saved separately from other participants.")
+      : id === "settings-personal" ? words("Откройте личные настройки заявок; изменения применяются после «Сохранить».", "Open personal request settings; changes apply after Save.")
+      : id.startsWith("audit-settings") ? words("Откройте настройки из «Аудита спотлайта». Для каждого показателя задайте три порога и сохраните.", "Open settings from Focus audit. Set three thresholds for each measurement, then save.")
+        : words("Откройте «Настройки мастера» Spotlight. Изменения применяются после «Сохранить»; недоступные поля требуют Premium.", "Open Spotlight GM settings. Changes apply after Save; locked fields require Premium.");
+    const rows = SETTING_HELP.filter((entry) => entry.pageId === id).map((entry) => {
+      const label = `${entry.metricLabelKey ? `${localize(entry.metricLabelKey)} — ` : ""}${localize(entry.labelKey)}`;
+      return `<section id="${entry.id}"><h2>${escape(label)}</h2>${entry.metricDescriptionKey ? `<p>${escape(localize(entry.metricDescriptionKey))}</p>` : ""}<p>${escape(pick(entry.description, language))}</p></section>`;
+    }).join("");
+    const links = id === "audit-settings" ? `<ul>${AUDIT_PAGES.map(([pageId, pageTitle]) => `<li><a href="#" data-help-page="${pageId}">${pick(pageTitle, language)}</a></li>`).join("")}</ul>` : "";
+    pages.push({ id, title: pick(title, language), html: `<p>${pick(intro, language)}</p>${links}${rows}` });
+  }
+  pages.push({ id: "appearance", title: pick(words("Оформление и перемещение окон", "Window appearance and movement"), language), html: pick(words(
+    "<p>Откройте настройки dmicher Generics: выбранная там тема применяется ко всем окнам модулей dmicher. Там же включаются прилипание к экрану и соседним окнам, выравнивание по углам и центрам.</p><p>С Premium импортируйте CSS поверх встроенной темы в настройках Generics. Оформление карточек заявок остаётся в личных настройках Spotlight.</p>",
+    "<p>Open dmicher Generics settings: its theme applies to every dmicher module window. The same settings control snapping to the screen and neighbouring windows, plus corner and centre alignment.</p><p>With Premium, import CSS over the built-in theme in Generics settings. Request card styling remains in Spotlight personal settings.</p>"), language) });
+  pages.push({ id: "author", title: pick(words("Об авторе", "Author"), language), html: `<p>dmicher abathur kubrow</p><p><a href="https://github.com/dkubrow-dev/dmicher-spotlight-tools/issues" target="_blank" rel="noopener noreferrer">${pick(words("Сообщить об ошибке или предложить улучшение", "Report an issue or suggest an improvement"), language)}</a></p>` });
+  pages.push({ id: "thanks", title: pick(words("Благодарности", "Thanks"), language), html: `<p>${pick(words("Спасибо мастерам и игрокам, которые испытывают инструменты за столом, сообщают о проблемах и помогают сделать игру удобнее.", "Thank you to the GMs and players who try these tools at the table, report problems and help make play more comfortable."), language)}</p><p><a href="https://boosty.to/dmicher" target="_blank" rel="noopener noreferrer">${pick(words("Поддержать автора", "Support the author"), language)}</a></p>` });
+  pages.push({ id: "premium", title: "dmicher Premium", html: pick(words(
+    "<p>Базовые заявки, аудит внимания, опросы и таймеры работают без Premium. Подписка открывает дополнительные настройки карточек, ресурсов и оформления.</p><ol><li>Откройте настройки dmicher Premium и укажите свою лицензию.</li><li>Вернитесь в настройки мастера: доступные дополнительные поля станут активны.</li></ol><p>При недоступном Premium применяются бесплатные значения. Сохранённые дополнительные настройки возвращаются после восстановления доступа.</p><p><a href=\"https://boosty.to/dmicher\" target=\"_blank\" rel=\"noopener noreferrer\">Страница автора и поддержки</a></p>",
+    "<p>Core requests, attention audit, polls and timers work without Premium. A subscription adds options for cards, resources and appearance.</p><ol><li>Open dmicher Premium settings and enter your licence.</li><li>Return to GM settings: available additional controls become active.</li></ol><p>Free values apply when Premium is unavailable. Saved additional settings return when access is restored.</p><p><a href=\"https://boosty.to/dmicher\" target=\"_blank\" rel=\"noopener noreferrer\">Author and support page</a></p>"), language) });
+  return {
+    pages, footer: ["author", "thanks", "premium"],
+    tree: [
+      { id: "during-play", title: pick(words("Во время игры", "During play"), language), children: TASK_HELP.map((page) => ({ id: page.id, pageId: page.id, title: pick(page.title, language) })) },
+      { id: "settings", title: pick(words("Настройки", "Settings"), language), children: [...SETTINGS_PAGES.map(([id, title]) => ({ id, pageId: id, title: pick(title, language), ...(id === "audit-settings" ? { children: AUDIT_PAGES.map(([pageId, pageTitle]) => ({ id: pageId, pageId, title: pick(pageTitle, language) })) } : {}) })), { id: "appearance", pageId: "appearance", title: pages.find((page) => page.id === "appearance").title }] }
+    ],
+    labels: { contents: pick(words("Содержание справки", "Help contents"), language), resizeNavigation: pick(words("Изменить ширину меню", "Resize navigation"), language) }
+  };
 }
 
-const requestPages = [
-  definePage("overview", "Overview", [
-    ["Types", ["Regular", "Urgent", "Environment"]],
-    ["Mechanics", ["Queue", "Chat", "Identity", "Authority", "Resolution"]],
-    ["Navigation", ["Contents", "Theme", "OpenSettings", "OpenMasterSettings", "OpenManagement", "ModuleMenu", "SceneControls"]]
-  ]),
-  definePage("players", "Players", [
-    ["Window", ["SettingsWindow", "RequestBlock", "Image", "Text", "Color", "FontSize", "Underline", "Italic", "Bold", "Alignment", "Save", "TimeoutOverlay"]],
-    ["Submission", ["Click", "Drag", "ExistingMacro", "RestrictionFeedback", "ModeratorRequired", "MacroMetadata", "MacroCleanup"]],
-    ["Chat", ["Card", "Cancel", "Grant", "TakeFloor", "Technical"]],
-    ["Volume", ["Slider", "Formula", "Mute", "FoundryMute"]]
-  ]),
-  definePage("master-settings", "MasterSettings", [
-    ["Access", ["Window", "GameSettingsButton", "ModeratorOnly"]],
-    ["Blocks", ["Feed", "Chat", "Limits", "Images", "Sounds", "Welcome", "Save"]],
-    ["Chat", ["Enabled", "Identity", "Rename", "Polls", "Timers", "Recipients", "Disabled", "Recovery"]]
-  ]),
-  definePage("management", "Management", [
-    ["Summary", ["WindowCounter", "Totals", "VisibleCounter", "Refresh"]],
-    ["Filters", ["Type", "DuplicatesNone", "DuplicatesType", "DuplicatesPlayer"]],
-    ["Row", ["Images", "Submitted", "Author", "OpenMessage", "Grant", "Cancel"]],
-    ["Queue", ["ResetTimeouts", "EnvironmentRequest", "Clear", "Empty", "EnvironmentGrant"]]
-  ]),
-  definePage("customization", "Customization", [
-    ["Images", ["TypeSections", "CustomToggle", "Url", "Validation", "Preview", "ExistingMacros"]],
-    ["Sounds", ["GlobalToggle", "CustomToggle", "Url", "BaseVolume", "Preview", "FinalVolume", "TimerCustom", "BreakCustom", "TimerVolume", "FoundryMute"]],
-    ["Welcome", ["Toggle", "PlayerMessage", "ModeratorMessage", "InternalButtons", "Free", "Support"]]
-  ]),
-  definePage("limits", "Limits", [
-    ["Chat", ["ChatToggle", "QueueWithoutChat"]],
-    ["Types", ["RegularSection", "UrgentSection", "Unlimited", "CountMode", "CountField", "Forbidden", "TimeoutSelect", "TimeoutNone", "TimeoutSubmission", "TimeoutGrant", "TimeoutTime"]],
-    ["Environment", ["Toggle", "AllTypes", "Priority", "ExistingQueue"]],
-    ["Enforcement", ["LocalCheck", "AuthoritativeCheck", "Warnings", "TimeoutDisplay", "TimeoutWarning", "TimeoutDrag", "TimeoutReset", "TimeoutExpiry"]]
-  ]),
-  definePage("feed", "Feed", [
-    ["Settings", ["Enable", "ShowToPlayers", "ReloadPrompt", "ReloadNow", "ReloadLater", "ShowTime"]],
-    ["Rows", ["Tab", "Images", "Names", "Time", "Empty"]],
-    ["Controls", ["PlayerCancel", "ModeratorGrant", "ModeratorCancel"]],
-    ["Footer", ["MacroClick", "MacroDrag", "Settings", "ResetTimeouts", "Management", "TimeoutOverlay"]]
-  ])
-];
-
-const pollPages = [
-  definePage("polls-overview", "PollsOverview", [
-    ["Access", ["Manager", "ModeratorOnly", "WorldState", "OneActive"]],
-    ["Types", ["Buttons", "Radio", "Checkbox", "Text"]],
-    ["Lifecycle", ["Template", "Launch", "PrivateRequest", "Answer", "Finish"]]
-  ]),
-  definePage("polls-templates", "PollsTemplates", [
-    ["Table", ["Macro", "Name", "Type", "LastResult", "Edit", "Start", "Results", "Delete"]],
-    ["Form", ["NewTemplate", "PollName", "Question", "TypeSelect", "Options", "OptionToggle", "Participants", "TimerToggle", "TimerTime", "TimerSound"]],
-    ["Actions", ["Cancel", "Save", "StartTemporary", "RestoreDefaults", "ClearActive"]],
-    ["Macros", ["Drag", "Existing", "MissingTemplate", "Metadata", "Cleanup"]]
-  ]),
-  definePage("polls-launch", "PollsLaunch", [
-    ["Summary", ["Type", "SelectedCount", "Name", "Question"]],
-    ["Timer", ["Enable", "Time", "Sound", "OrdinaryTimer"]],
-    ["Participants", ["Selection", "Inactive", "Required"]],
-    ["Options", ["Enable", "Rename", "Limits", "Text"]],
-    ["Actions", ["FinishCurrent", "Cancel", "Start", "Validation"]]
-  ]),
-  definePage("polls-voting", "PollsVoting", [
-    ["Delivery", ["PrivateCard", "Moderators", "TargetOnly"]],
-    ["Input", ["ButtonChoice", "RadioChoice", "CheckboxChoice", "TextAnswer", "Submit", "Cancel", "Empty"]],
-    ["Processing", ["PrimaryModerator", "FirstAnswer", "RequestRemoved", "ResultMessage"]]
-  ]),
-  definePage("polls-results", "PollsResults", [
-    ["Header", ["NameQuestion", "Type", "Started", "StartedBy"]],
-    ["Summary", ["Options", "Counts", "Voters", "TextNoSummary"]],
-    ["Responses", ["Player", "Status", "Answer", "AnsweredAt"]],
-    ["Actions", ["Post", "Finish", "Close", "TemporaryClose"]],
-    ["Completion", ["Pending", "LastResult", "TimerSeparate"]]
-  ])
-];
-
-const timerPages = [
-  definePage("timers-overview", "TimersOverview", [
-    ["Access", ["Manager", "ModeratorOnly", "WorldState"]],
-    ["Visibility", ["Public", "Private", "AutoOpen", "Chat"]],
-    ["Time", ["Duration", "Deadline", "NextDay", "Accuracy"]],
-    ["Volume", ["Personal", "Formula", "Mute", "FoundryMute"]]
-  ]),
-  definePage("timers-manager", "TimersManager", [
-    ["Form", ["Name", "Mode", "Time", "Visibility", "Style", "Sound", "CustomSound", "Volume", "Preview", "SaveTemplate", "Reset", "Start"]],
-    ["Templates", ["Purpose", "Start", "Edit", "Delete", "BuiltInBreak"]],
-    ["Table", ["TemplateMarker", "Name", "StartedBy", "StartedAt", "Deadline", "Remaining", "Open", "Repeat", "SaveCurrent", "Delete"]],
-    ["Cleanup", ["ExpiredRows", "DeleteExpired", "ConfirmActive"]]
-  ]),
-  definePage("timers-window", "TimersWindow", [
-    ["Display", ["Prominent", "Compact", "Toggle", "Drag", "Close"]],
-    ["Active", ["Remaining", "Deadline", "Cancel"]],
-    ["Expired", ["ForceProminent", "Sound", "Repeat", "Delete", "OncePerClient"]],
-    ["Chat", ["Watch", "PublicCard", "PrivateCard"]]
-  ]),
-  definePage("timers-break", "TimersBreak", [
-    ["Selection", ["Options", "Default", "DeadlineInput", "DurationInput", "RoundedDeadline", "LiveDeadline"]],
-    ["Actions", ["Cancel", "Announce"]],
-    ["Result", ["Pause", "PublicTimer", "TemplateStyle", "Signal", "CustomSignal", "Unique", "Repeat", "Chat", "NoAutoResume"]],
-    ["Failure", ["RollbackPause"]]
-  ])
-];
-
-const stopwatchPages = [
-  definePage("stopwatch-overview", "StopwatchOverview", [
-    ["Access", ["ModeratorOnly", "LocalState", "CloseKeeps", "ReloadResets", "Minimize"]],
-    ["Clock", ["Display", "Start", "Pause", "StopReset", "Accumulation"]]
-  ]),
-  definePage("stopwatch-events", "StopwatchEvents", [
-    ["Buttons", ["Circle", "Square", "Plus", "Minus"]],
-    ["Recording", ["Click", "Keyboard", "Timestamp", "Paused", "NotStarted"]],
-    ["List", ["Icon", "Label", "Time", "Scroll"]],
-    ["Macros", ["Drag", "ChatMacro", "MacroUse", "Metadata", "Cleanup"]]
-  ]),
-  definePage("stopwatch-output", "StopwatchOutput", [
-    ["Actions", ["Post", "EmptyPost", "Clear"]],
-    ["Separation", ["ClearKeepsClock", "ResetKeepsEvents", "NotSynchronized"]],
-    ["Chat", ["Table", "EventColumn", "TimeColumn"]]
-  ])
-];
-
-const auditPages = [
-  definePage("audit-overview", "AuditOverview", [
-    ["Access", ["ModeratorOnly", "WorldState", "AutoRefresh"]],
-    ["Indicators", ["Good", "Doubt", "Problem", "Deadline", "Muted"]],
-    ["Scope", ["Enabled", "Disabled", "Sorting"]]
-  ]),
-  definePage("audit-status", "AuditStatus", [
-    ["Location", ["PlayerList", "Selector", "Indicator"]],
-    ["Statuses", ["Playing", "Listening", "Away", "Unavailable", "Unknown"]],
-    ["Sync", ["PlayerRequest", "PrimaryModerator", "PrivateNotice", "LoginDefault"]]
-  ]),
-  definePage("audit-window", "AuditWindow", [
-    ["Columns", ["Enable", "Player", "FoundryStatus", "SelfStatus", "LastRequest", "ActiveRequest", "LastChat", "LastGranted"]],
-    ["Controls", ["Grant", "ResetPlayer", "ResetAll", "Settings"]],
-    ["Behavior", ["Tooltips", "RequestsIntegration", "ChatIntegration"]]
-  ]),
-  definePage("audit-settings", "AuditSettings", [
-    ["Blocks", ["PerMetric", "Description"]],
-    ["Thresholds", ["Doubt", "Problem", "Deadline", "Units", "Order"]],
-    ["Defaults", ["LastRequest", "ActiveRequest", "LastChat", "LastGranted"]],
-    ["Actions", ["Save", "LiveUpdate", "Validation"]]
-  ])
-];
-
-export const REQUEST_HELP_GROUPS = Object.freeze([
-  defineGroup("requests", "Requests", requestPages),
-  defineGroup("polls", "Polls", pollPages),
-  defineGroup("timers", "Timers", timerPages),
-  defineGroup("stopwatch", "Stopwatch", stopwatchPages),
-  defineGroup("audit", "Audit", auditPages)
-]);
-
-export const REQUEST_HELP_PAGES = Object.freeze(REQUEST_HELP_GROUPS.flatMap((group) => group.pages));
+export function getSettingHelpEntries(language = "en") {
+  const locale = String(language).startsWith("ru") ? "ru" : "en";
+  return SETTING_HELP.map((entry) => ({ selector: entry.selector, pageId: entry.pageId, anchor: entry.id, hint: pick(entry.description, locale) }));
+}

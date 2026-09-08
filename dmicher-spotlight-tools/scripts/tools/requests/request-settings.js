@@ -44,6 +44,7 @@ import {
   sanitizeRequestTextStyle
 } from "./request-text-style.js";
 import { parseDurationInput } from "../timers/timer-utils.js";
+import { bindSpotlightSettingHelp } from "./request-help.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const THANK_AUTHOR_URL = "https://boosty.to/dmicher";
@@ -102,6 +103,8 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
     return runAfterApplicationLifecycle(super._onRender(context, options), () => {
       const form = this.element.querySelector(".dmicher-request-settings-form");
       if (!form) return;
+      this.disposeSettingHelp?.();
+      this.disposeSettingHelp = bindSpotlightSettingHelp(form);
       form.addEventListener("submit", (event) => void this._saveSettings(event));
       form.querySelector("[data-premium-settings]")?.addEventListener("click", () => {
         openPremiumSettings();
@@ -409,6 +412,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
   }
 
   async _onClose(options) {
+    this.disposeSettingHelp?.();
     this.stopTimeoutTicking();
     await this.previewAudio?.stop?.();
     this.previewAudio = null;

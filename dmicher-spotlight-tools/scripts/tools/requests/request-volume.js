@@ -9,6 +9,8 @@ import {
   runAfterApplicationLifecycle
 } from "../../utils.js";
 import { clampVolume } from "./request-config.js";
+import { generics } from "../../generics.js";
+import { getSettingHelpEntries } from "./request-help-content.js";
 
 const VOLUME_ROWS = Object.freeze([
   Object.freeze({
@@ -71,6 +73,10 @@ export class RequestVolumeController {
         }
         previousRow = row;
       }
+      generics.help.bindSettingHelp(root, {
+        entries: getSettingHelpEntries(game.i18n.lang).filter((entry) => entry.pageId === "settings-volume"),
+        open: async (pageId, anchor) => (await import("./request-help.js")).openRequestHelp(pageId, anchor)
+      });
     });
   }
 

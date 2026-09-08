@@ -25,6 +25,8 @@ class MockElement {
     return null;
   }
 
+  querySelectorAll() { return []; }
+
   append(...children) {
     this.children.push(...children);
     this.lastElementChild = children.at(-1) ?? this.lastElementChild;

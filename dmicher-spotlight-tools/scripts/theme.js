@@ -14,7 +14,7 @@ export function registerThemeSetting() {
     name: i18nKey("Settings.Theme.Name"),
     hint: i18nKey("Settings.Theme.Hint"),
     scope: "client",
-    config: true,
+    config: false,
     type: String,
     choices: {
       [THEME.dark]: i18nKey("Settings.Theme.Dark"),
@@ -22,10 +22,12 @@ export function registerThemeSetting() {
     },
     default: THEME.dark,
     requiresReload: false,
-    onChange: (value) => applySpotlightTheme(value)
+    onChange: () => applySpotlightTheme()
   });
-  Hooks.on("renderSettingsConfig", moveThemeSettingFirst);
-  Hooks.on("renderSettingsConfigHTML", moveThemeSettingFirst);
+  try {
+    const saved = game.settings.storage.get("client").getItem(`${MODULE_ID}.${SETTINGS.theme}`);
+    if (saved !== null && saved !== undefined) generics.appearance.adoptLegacyTheme(JSON.parse(saved), 30);
+  } catch (_error) { /* Unavailable or invalid legacy storage leaves the common default intact. */ }
 }
 
 export function getThemedWindowClasses(...classes) {
@@ -34,17 +36,14 @@ export function getThemedWindowClasses(...classes) {
 
 export function getCurrentTheme() {
   try {
-    return normalizeTheme(game.settings.get(MODULE_ID, SETTINGS.theme));
+    return generics.appearance.getTheme();
   } catch (_error) {
     return THEME.dark;
   }
 }
 
-export function applySpotlightTheme(value = getCurrentTheme()) {
-  const theme = normalizeTheme(value);
-  document.documentElement?.setAttribute("data-dmicher-spotlight-theme", theme);
-  document.body?.setAttribute("data-dmicher-spotlight-theme", theme);
-  windowTheme.apply(theme);
+export function applySpotlightTheme() {
+  windowTheme.apply(getCurrentTheme());
 }
 
 export function normalizeTheme(value) {
