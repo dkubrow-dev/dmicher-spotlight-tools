@@ -10,9 +10,13 @@
 
 Поддерживаются Foundry VTT версий 13 и 14.
 
-В текущей рабочей сборке общий код и оформление окон выделены в обязательный бесплатный модуль **dmicher Generics 1.0.0 (API 1)**. Установите и включите `dmicher-generics` вместе со Spotlight. Тема, настройки и возможности Spotlight сохраняются; Premium по-прежнему необязателен. Новая зависимость пока готовится локально и должна быть опубликована до распространения этой сборки Spotlight. Для разработки расположите репозитории `dmicher-generics` и `dmicher-spotlight-tools` рядом: тесты используют настоящий общий код из соседнего репозитория.
+В текущей рабочей сборке общий код и оформление окон выделены в обязательный бесплатный модуль **dmicher Generics 1.0.0 (API 1)**. Установите и включите `dmicher-generics` вместе со Spotlight. Его манифест для этого выпуска: [Generics 1.0.0](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json). Тема, настройки и возможности Spotlight сохраняются; Premium по-прежнему необязателен. Новая зависимость пока готовится локально и должна быть опубликована до распространения этой сборки Spotlight. Для разработки расположите репозитории `dmicher-generics` и `dmicher-spotlight-tools` рядом: тесты используют настоящий общий код из соседнего репозитория.
 
-The current development build requires the free **dmicher Generics 1.0.0 / API 1** module for shared styles and window helpers. Install and enable it alongside Spotlight; Premium remains optional. The dependency is a local development build and must be published before distributing this updated Spotlight build. Tests expect the Generics repository next to the Spotlight repository.
+The current development build requires the free **dmicher Generics 1.0.0 / API 1** module for shared styles and window helpers. Install and enable it alongside Spotlight using the [Generics 1.0.0 manifest](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json); Premium remains optional. The dependency is a local development build and must be published before distributing this updated Spotlight build. Tests expect the Generics repository next to the Spotlight repository.
+
+Для базовых функций не нужны сторонние модули или внешние библиотеки: инфраструктуру предоставляет Generics. Необязательный `dmicher-premium` отвечает только за премиальные возможности и проверку доступа. Если появляются интеграции со сторонними инструментами, мастер явно выбирает их в настройках; установка стороннего модуля сама по себе не меняет исполнитель. Общие стили, поведение окон и контракты dmicher развиваются в Generics.
+
+Base functionality needs no third-party modules or libraries; Generics provides the common infrastructure. The optional `dmicher-premium` module provides Premium capabilities and access checks. Third-party tool integrations must be selected explicitly in settings: installation alone must not change the selected provider. Shared dmicher styles, window behavior, and integration contracts belong in Generics.
 
 Базовая версия 1.3 остаётся бесплатной. Сателлит [dmicher-premium](https://boosty.to/dmicher) с подтверждённым доступом включает изменение показа времени, общего вывода в чат, изображений и звуков мира, а также отдельные выключатели приветствий мастеру и игрокам. Без Premium используются встроенные ресурсы, время, чат и оба приветствия включены. Антиспам, видимость ленты, уведомления опросов/таймеров и личные настройки остаются бесплатными. Показ статуса версии можно отключить бесплатно. Прежние премиальные настройки сохраняются при потере доступа и возвращаются при его восстановлении.
 
@@ -25,7 +29,7 @@ The current development build requires the free **dmicher Generics 1.0.0 / API 1
 Нажмите на кнопку "Установить модуль".
 Внизу окна введите в поле "Ссылка манифеста" ссылку:
 ```
-https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/module.json
+https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/module.json
 ```
 Нажмите на кнопку "Установить" рядом с полем.
 
@@ -221,7 +225,7 @@ Choose "Add-on Modules".
 Click "Install Module".
 At the bottom of the window, enter this link in the "Manifest URL" field:
 ```
-https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/module.json
+https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/module.json
 ```
 Click "Install" next to the field.
 
@@ -401,6 +405,10 @@ The audit can be configured in the "Focus Audit Settings" menu (located in the "
 Команды выполняются из корня этого репозитория. После размещения проекта в общей папке `dmicher-foundry-tools` все артефакты находятся в `../artifacts/dmicher-spotlight-tools/<version>/`: ZIP, отдельный манифест, описание выпуска и отчёты проверки.
 
 Run these commands from this repository root. When the repository is located inside `dmicher-foundry-tools`, all artifacts are written to `../artifacts/dmicher-spotlight-tools/<version>/`: ZIP, standalone manifest, release notes, and verification reports.
+
+Поле `manifest` указывает на `releases/download/<version>/module.json`, а `download` — на ZIP того же выпуска. Ссылка зависимости Generics также указывает на конкретный выпуск; минимальная совместимая версия отдельно описана в `relationships.requires`. Исходный `module.json`, отдельный манифест артефактов и файл в корне ZIP побайтово совпадают. Сборка отклоняет `latest`, чужой репозиторий, несогласованные версии и незаявленные обязательные модули. Ссылки описывают планируемые артефакты выпуска; создание локальной сборки не публикует их.
+
+The `manifest` field points to `releases/download/<version>/module.json`; `download` points to that release's ZIP. The Generics dependency also names a specific release, while its supported minimum is declared separately in `relationships.requires`. The source manifest, standalone artifact manifest, and ZIP-root manifest are byte-identical. Packaging rejects `latest`, foreign repositories, mismatched release URLs, and unapproved required modules. These URLs describe intended release artifacts; local packaging does not publish them.
 
 ```text
 npm test

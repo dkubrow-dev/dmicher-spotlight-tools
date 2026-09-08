@@ -4,6 +4,10 @@
 
 Development rebuild: the free `dmicher-generics` 1.0.0 / API 1 module is now required for shared window styles and helpers. Existing Spotlight settings, functions and API remain available; Premium is still optional. Publish Generics before publicly distributing this rebuild; this work does not publish releases.
 
+Манифест этого выпуска закреплён за [Spotlight 1.3.0](https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/module.json); обязательная инфраструктурная зависимость — [Generics 1.0.0](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json), минимум 1.0.0 / API 1. Один и тот же `module.json` используется в исходниках, рядом с ZIP и в корне ZIP. Базовая работа не требует сторонних модулей и внешних библиотек; Premium остаётся необязательным. Подключение сторонних исполнителей в будущих интеграциях требует явного выбора мастера в настройках.
+
+This release pins its manifest to [Spotlight 1.3.0](https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/module.json) and the required infrastructure dependency to [Generics 1.0.0](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json), minimum 1.0.0 / API 1. The source, standalone artifact, and ZIP-root `module.json` are identical. Base functionality requires no third-party modules or libraries; Premium remains optional. Future third-party providers require the Game Master's explicit selection in settings.
+
 ## Русский
 
 Выпуск 1.3.0 входит в общий комплект с dmicher Premium 1.3.0 и dmicher licence server 1.3.0.

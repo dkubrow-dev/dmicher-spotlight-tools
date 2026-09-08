@@ -4,6 +4,7 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { createZip, readZip } from "./zip.mjs";
+import { validateReleaseManifest } from "./release-manifest.mjs";
 
 const repo = fileURLToPath(new URL("../", import.meta.url));
 const moduleId = "dmicher-spotlight-tools";
@@ -11,12 +12,7 @@ const source = path.join(repo, moduleId);
 const manifestBytes = fs.readFileSync(path.join(source, "module.json"));
 const manifest = JSON.parse(manifestBytes);
 const version = manifest.version;
-assert.equal(manifest.id, moduleId);
-assert.match(version, /^\d+\.\d+\.\d+$/);
-assert.equal(manifest.compatibility.minimum, "13");
-assert.equal(manifest.compatibility.verified, "14");
-assert.ok(manifest.download.endsWith("/" + version + "/" + moduleId + "-" + version + ".zip"));
-assert.ok(manifest.changelog.endsWith("/" + version));
+validateReleaseManifest(manifest);
 const output = path.resolve(repo, "..", "artifacts", moduleId, version);
 const archiveName = moduleId + "-" + version + ".zip";
 const targets = [
@@ -98,6 +94,7 @@ function verifyArchive() {
   const entries = readZip(archive), expected = sourceSnapshot();
   assert.deepEqual([...entries.keys()].sort(), expected.map(file => file.name), "ZIP must contain only module files at its root");
   for (const file of expected) assert.equal(digest(entries.get(file.name)), file.sha256, "ZIP content mismatch: " + file.name);
+  assert.deepEqual(entries.get("module.json"), manifestBytes, "ZIP manifest must be byte-identical to the source manifest");
   assert.deepEqual(fs.readFileSync(path.join(output, "module.json")), manifestBytes, "Published manifest mismatch");
   const notesName = "RELEASE-NOTES-" + version + ".md";
   assert.deepEqual(fs.readFileSync(path.join(output, notesName)), fs.readFileSync(path.join(repo, notesName)), "Release notes mismatch");
