@@ -8,7 +8,7 @@ import {
   TIMER_SOUND_SOURCES
 } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { PREMIUM_MODULE_ID, getPremiumStatus } from "../../premium-provider.js";
+import { getPremiumStatus, openPremiumSettings } from "../../premium-provider.js";
 import {
   canUseRequest,
   confirmDialog,
@@ -104,7 +104,7 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       if (!form) return;
       form.addEventListener("submit", (event) => void this._saveSettings(event));
       form.querySelector("[data-premium-settings]")?.addEventListener("click", () => {
-        game.modules?.get?.(PREMIUM_MODULE_ID)?.api?.openSettings?.();
+        openPremiumSettings();
       });
       for (const image of form.querySelectorAll("[data-request-image]")) {
         image.addEventListener("click", () => {
@@ -590,7 +590,6 @@ function preparePersonalSettingsContext(configuration) {
 
 function prepareMasterSettingsContext(configuration) {
   const premium = getPremiumStatus();
-  const premiumModule = game.modules?.get?.(PREMIUM_MODULE_ID);
   const imageResources = REQUEST_RESOURCE_TYPES.map((type) => {
     const request = REQUEST_TYPES[type];
     const image = configuration.images[type];
@@ -663,7 +662,7 @@ function prepareMasterSettingsContext(configuration) {
     premiumActive: premium.active,
     premiumState: localize(premium.active ? "Premium.Active" : "Premium.Free"),
     premiumHint: localize(premium.active ? "Premium.EnabledHint" : "Premium.LockedHint"),
-    premiumSettingsAvailable: typeof premiumModule?.api?.openSettings === "function",
+    premiumSettingsAvailable: premium.settingsAvailable,
     feedEnabled: configuration.feed.enabled,
     feedShowToPlayers: configuration.feed.showToPlayers,
     feedShowTime: configuration.feed.showTime

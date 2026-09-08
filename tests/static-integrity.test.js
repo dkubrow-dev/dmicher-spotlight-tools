@@ -26,6 +26,13 @@ function flattenKeys(value, prefix = "", output = []) {
   return output.sort();
 }
 
+test("the installed module accesses Premium exclusively through Generics", () => {
+  for (const file of walk(path.join(MODULE_ROOT, "scripts")).filter((name) => name.endsWith(".js"))) {
+    const source = fs.readFileSync(file, "utf8");
+    assert.doesNotMatch(source, /["']dmicher-premium["']|registerPremiumProvider|notifyPremiumChanged|dmicherPremiumReady/, file);
+  }
+});
+
 test("manifest and localization files are internally consistent", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "module.json"), "utf8"));
   assert.equal(manifest.version, "1.3.0");

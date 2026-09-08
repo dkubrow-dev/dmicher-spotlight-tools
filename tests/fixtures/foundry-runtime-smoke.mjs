@@ -408,6 +408,11 @@ assert.ok(moduleRecord.api);
 const { generics: genericApi } = await import("../../dmicher-spotlight-tools/scripts/generics.js");
 assert.equal(genericApi.modules.get("dmicher-spotlight-tools"), moduleRecord.api);
 assert.equal(moduleRecord.api.apiVersion, 1);
+assert.equal(moduleRecord.api.registerPremiumProvider, undefined);
+assert.equal(moduleRecord.api.notifyPremiumChanged, undefined);
+assert.equal(moduleRecord.api.premiumApiVersion, undefined);
+assert.equal(genericApi.premium.apiVersion, 1);
+assert.equal(moduleRecord.api.getPremiumStatus().active, false);
 assert.ok(genericApi.modules.list()[0].capabilities.includes("openFocusAudit"));
 assert.ok(CONFIG.ui.requests);
 if (generation === 12) {

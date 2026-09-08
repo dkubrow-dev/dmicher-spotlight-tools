@@ -1,112 +1,77 @@
+import { MODULE_ID } from "./config.js";
+import { generics } from "./generics.js";
+
 export const PREMIUM_API_VERSION = 1;
-export const PREMIUM_MODULE_ID = "dmicher-premium";
-let provider = null;
-let providerFailed = false;
-const listeners = new Set();
-const initialChecks = new WeakMap();
+if (generics.premium?.apiVersion !== PREMIUM_API_VERSION) {
+  throw new Error("dmicher-spotlight-tools requires the Generics Premium bridge API 1; update dmicher-generics.");
+}
+const premium = generics.premium.forModule(MODULE_ID, {
+  apiVersion: PREMIUM_API_VERSION,
+  methods: ["resolveConfiguration", "mergeConfiguration"]
+});
 
-export function waitForPremiumReady(timeoutMs = 50_000) {
-  const satellite = globalThis.game?.modules?.get?.(PREMIUM_MODULE_ID);
-  const ready = satellite?.active ? satellite.api?.readyPromise : null;
-  if (!ready || typeof ready.then !== "function") return Promise.resolve();
-  if (initialChecks.has(ready)) return initialChecks.get(ready);
-  let timeout;
-  const settled = Promise.race([
-    Promise.resolve(ready).then(() => undefined, () => undefined),
-    new Promise((resolve) => { timeout = globalThis.setTimeout(resolve, timeoutMs); })
-  ]).finally(() => globalThis.clearTimeout(timeout));
-  // Every startup action shares one deadline, including early userConnected events.
-  initialChecks.set(ready, settled);
-  return settled;
+const clone = (value) => JSON.parse(JSON.stringify(value));
+export const waitForPremiumReady = (timeoutMs = 50_000) => premium.waitUntilReady(timeoutMs);
+export const getPremiumStatus = () => premium.getStatus();
+export const isPremiumActive = () => getPremiumStatus().active;
+export const openPremiumSettings = () => premium.openSettings();
+export const subscribePremiumChanges = (listener) => premium.subscribe(listener);
+
+// These fields belong to Spotlight's configuration contract, not to Generics.
+function applyPremiumFields(base, selected) {
+  return {
+    ...base,
+    chatEnabled: selected.chatEnabled,
+    soundsEnabled: selected.soundsEnabled,
+    showWelcome: selected.showWelcome,
+    welcome: { ...base.welcome, gm: selected.welcome.gm, players: selected.welcome.players },
+    feed: { ...base.feed, showTime: selected.feed.showTime },
+    images: clone(selected.images),
+    sounds: clone(selected.sounds),
+    timerSounds: clone(selected.timerSounds)
+  };
 }
 
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
+function freeConfiguration(stored, defaults) {
+  return applyPremiumFields(clone(stored), {
+    ...defaults,
+    chatEnabled: true, soundsEnabled: true, showWelcome: true,
+    welcome: { gm: true, players: true }, feed: { showTime: true }
+  });
 }
 
-function failProvider(error) {
-  if (!providerFailed) console.warn("dmicher-spotlight-tools | Premium provider unavailable; using free defaults", error);
-  providerFailed = true;
+function freeConfigurationUpdate(stored, proposed) {
+  return applyPremiumFields(clone(proposed), stored);
 }
 
-export function isPremiumActive() {
-  if (!provider || providerFailed) return false;
-  try {
-    const active = provider.isActive();
-    if (active && typeof active.then === "function") {
-      Promise.resolve(active).catch(() => undefined);
-      throw new TypeError("A Premium activity check must be synchronous.");
-    }
-    return active === true;
-  } catch (error) { failProvider(error); return false; }
-}
-
-export function getPremiumStatus() {
-  return { apiVersion: PREMIUM_API_VERSION, available: Boolean(provider), active: isPremiumActive() };
-}
-
-export function registerPremiumProvider(nextProvider) {
-  if (nextProvider !== null && (!nextProvider || typeof nextProvider.isActive !== "function"
-    || typeof nextProvider.resolveConfiguration !== "function")) {
-    throw new TypeError("A Premium provider requires synchronous isActive and resolveConfiguration methods.");
-  }
-  provider = nextProvider;
-  providerFailed = false;
-  notifyPremiumChanged();
-}
-
-export function subscribePremiumChanges(listener) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-export function notifyPremiumChanged() {
-  providerFailed = false;
-  const status = getPremiumStatus();
-  for (const listener of listeners) {
-    try { listener(status); }
-    catch (error) { console.warn("dmicher-spotlight-tools | Premium change listener failed", error); }
-  }
-  globalThis.Hooks?.callAll?.("dmicherSpotlightPremiumChanged", status);
-  return status;
+const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+function validPremiumFields(value, expected) {
+  if (!isRecord(value) || !isRecord(value.welcome) || !isRecord(value.feed)) return false;
+  if (![value.chatEnabled, value.soundsEnabled, value.showWelcome,
+    value.welcome.gm, value.welcome.players, value.feed.showTime].every((item) => typeof item === "boolean")) return false;
+  const validResources = ["images", "sounds", "timerSounds"].every((group) => isRecord(value[group])
+    && Object.keys(expected[group]).every((key) => {
+      const resource = value[group][key];
+      return isRecord(resource) && typeof resource.custom === "boolean" && typeof resource.url === "string"
+        && (group === "images" || (typeof resource.volume === "number" && Number.isFinite(resource.volume)));
+    }));
+  if (!validResources) return false;
+  // Serialization errors must be handled by the bridge before the result is applied.
+  for (const group of ["images", "sounds", "timerSounds"]) clone(value[group]);
+  return true;
 }
 
 export function resolvePremiumConfiguration(stored, defaults) {
-  const free = {
-    ...clone(stored),
-    chatEnabled: true,
-    soundsEnabled: true,
-    showWelcome: true,
-    welcome: { ...stored.welcome, gm: true, players: true },
-    feed: { ...stored.feed, showTime: true },
-    images: clone(defaults.images),
-    sounds: clone(defaults.sounds),
-    timerSounds: clone(defaults.timerSounds)
-  };
-  if (!isPremiumActive()) return free;
-  try {
-    const resolved = provider.resolveConfiguration(clone(stored), clone(defaults));
-    if (resolved && typeof resolved.then === "function") {
-      Promise.resolve(resolved).catch(() => undefined);
-      throw new TypeError("A Premium configuration must be synchronous.");
-    }
-    if (!resolved || typeof resolved !== "object") {
-      throw new TypeError("A Premium configuration must be an object.");
-    }
-    // The satellite can override Premium fields only. Common settings remain authoritative.
-    return {
-      ...free,
-      chatEnabled: resolved.chatEnabled,
-      soundsEnabled: resolved.soundsEnabled,
-      showWelcome: resolved.showWelcome,
-      welcome: { ...free.welcome, gm: resolved.welcome?.gm, players: resolved.welcome?.players },
-      feed: { ...free.feed, showTime: resolved.feed?.showTime },
-      images: resolved.images,
-      sounds: resolved.sounds,
-      timerSounds: resolved.timerSounds
-    };
-  } catch (error) {
-    failProvider(error);
-    return free;
-  }
+  const base = freeConfiguration(stored, defaults);
+  const resolved = premium.invoke("resolveConfiguration", [clone(stored), clone(defaults)],
+    freeConfiguration, (value) => validPremiumFields(value, defaults));
+  // A faulty extension cannot alter free settings or the saved input.
+  return applyPremiumFields(base, resolved);
+}
+
+export function mergePremiumConfiguration(stored, proposed) {
+  const base = freeConfigurationUpdate(stored, proposed);
+  const resolved = premium.invoke("mergeConfiguration", [clone(stored), clone(proposed)],
+    freeConfigurationUpdate, (value) => validPremiumFields(value, stored));
+  return applyPremiumFields(base, resolved);
 }

@@ -839,9 +839,9 @@ test("expired Premium makes existing custom timer selections use a built-in sign
     }
   });
   const tool = new TimerTool({ volumeController: {} });
-  const { registerPremiumProvider } = await import("../dmicher-spotlight-tools/scripts/premium-provider.js");
+  const { registerPremiumFixture } = await import("./fixtures/premium.mjs");
   assert.equal(tool.getSoundSource(TIMER_SOUND.custom), "https://example.test/timer.ogg");
-  registerPremiumProvider(null);
+  registerPremiumFixture(null);
   assert.equal(tool.getSoundSource(TIMER_SOUND.custom), tool.getSoundSource(TIMER_SOUND.signal1));
   assert.equal(tool.getSoundSource(TIMER_SOUND.breakCustom), tool.getSoundSource(TIMER_SOUND.signal1));
   assert.equal(tool.getSoundBaseVolume(TIMER_SOUND.custom), 1);

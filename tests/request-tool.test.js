@@ -1,4 +1,4 @@
-import { registerPremiumProvider } from "../dmicher-spotlight-tools/scripts/premium-provider.js";
+import { registerPremiumFixture } from "./fixtures/premium.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { installPremiumFixture } from "./fixtures/premium.mjs";
@@ -656,20 +656,22 @@ test("a delayed satellite check controls both the first welcome and its Premium 
     globalThis.game = {
       user:gm,
       users:{filter:predicate => allUsers.filter(predicate)},
-      modules:new Map([["dmicher-premium",{active:true,api:{readyPromise}}]]),
+      modules:new Map(),
       settings:{get:(_namespace,key) => key === "requestConfiguration"
         ? {chatEnabled:true,welcome:{gm:welcomeEnabled,players:welcomeEnabled,showPremiumStatus:true}} : ""},
       i18n:{localize:key => key,format:key => key}
     };
     installTechnicalChatFixture();
-    registerPremiumProvider(null);
+    let active = false;
+    const provider = registerPremiumFixture({ readyPromise, isActive: () => active });
     const tool = new RequestTool();
     const first = tool.createWelcomeMessage(player.id);
     const concurrent = tool.requestWelcome(player.id);
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(created.length, 0);
     assert.equal(tool.welcomedUsers.has(player.id), false);
-    registerPremiumProvider({isActive:() => true,resolveConfiguration:raw => raw});
+    active = true;
+    provider.notifyChanged();
     complete();
     await Promise.all([first, concurrent]);
     assert.equal(created.length, welcomeEnabled ? 1 : 0);

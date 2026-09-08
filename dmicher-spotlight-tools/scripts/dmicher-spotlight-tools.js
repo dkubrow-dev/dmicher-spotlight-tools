@@ -1,6 +1,6 @@
 import { MODULE_ID } from "./config.js";
 import { generics } from "./generics.js";
-import { PREMIUM_API_VERSION, getPremiumStatus, registerPremiumProvider, notifyPremiumChanged, subscribePremiumChanges, waitForPremiumReady } from "./premium-provider.js";
+import { getPremiumStatus, subscribePremiumChanges, waitForPremiumReady } from "./premium-provider.js";
 import { activateTechnicalChat, registerTechnicalChat, synchronizeTechnicalIdentity } from "./technical-chat.js";
 import {
   installHotbarMacroCleanup,
@@ -86,18 +86,17 @@ Hooks.once("init", () => {
   spotlightControls.registerControls();
   stopwatchTool.registerHooks();
 
-  subscribePremiumChanges(() => {
+  const unsubscribePremium = subscribePremiumChanges((status) => {
+    Hooks.callAll("dmicherSpotlightPremiumChanged", status);
     if (!game.ready) return;
     requestTool.notifyConfigurationChanged();
     if (Number(game.user?.role) === 4) {
       void synchronizeTechnicalIdentity().catch((error) => console.warn(`${MODULE_ID} | Unable to synchronize Premium chat settings`, error));
     }
   });
+  globalThis.addEventListener?.("pagehide", unsubscribePremium, { once: true });
   game.modules.get(MODULE_ID).api = {
     apiVersion: 1,
-    premiumApiVersion: PREMIUM_API_VERSION,
-    registerPremiumProvider,
-    notifyPremiumChanged,
     getPremiumStatus,
     openRequestSettings,
     openRequestMasterSettings,

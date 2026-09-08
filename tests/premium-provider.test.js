@@ -3,9 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { MODULE_ID, REQUEST_TYPES } from "../dmicher-spotlight-tools/scripts/config.js";
 import {
-  getPremiumStatus, isPremiumActive, notifyPremiumChanged,
-  registerPremiumProvider, subscribePremiumChanges, waitForPremiumReady
+  getPremiumStatus, isPremiumActive, openPremiumSettings,
+  subscribePremiumChanges, waitForPremiumReady
 } from "../dmicher-spotlight-tools/scripts/premium-provider.js";
+import { registerPremiumFixture, notifyPremiumFixtureChanged } from "./fixtures/premium.mjs";
 import {
   createDefaultRequestConfiguration, getRequestConfiguration, getStoredRequestConfiguration,
   getRequestImage, getRequestSound, getRequestBaseVolume, mergeRequestConfigurationUpdate,
@@ -43,8 +44,8 @@ function customConfiguration() {
   stored.timerSounds.timer = { custom: true, url: "https://example.test/timer.ogg", volume: 0.4 };
   return stored;
 }
-test.beforeEach(() => registerPremiumProvider(null));
-test.afterEach(() => registerPremiumProvider(null));
+test.beforeEach(() => registerPremiumFixture(null));
+test.afterEach(() => registerPremiumFixture(null));
 
 test("the free base forces only Premium defaults and never rewrites stored preferences", () => {
   const stored = installWorld(customConfiguration());
@@ -76,17 +77,17 @@ test("Premium changes apply dynamically and restore saved resources after access
   let changes = 0;
   const unsubscribe = subscribePremiumChanges(() => { changes += 1; });
   try {
-    registerPremiumProvider({ isActive: () => active, resolveConfiguration: (raw) => raw });
+    registerPremiumFixture({ isActive: () => active, resolveConfiguration: (raw) => raw });
     assert.equal(isPremiumActive(), true);
     assert.equal(isTechnicalChatEnabled(), false);
     assert.equal(getRequestImage("common"), stored.images.common.url);
     assert.equal(getRequestConfiguration().feed.showTime, false);
     active = false;
-    notifyPremiumChanged();
+    notifyPremiumFixtureChanged();
     assert.equal(isTechnicalChatEnabled(), true);
     assert.equal(getRequestImage("common"), REQUEST_TYPES.common.image);
     active = true;
-    notifyPremiumChanged();
+    notifyPremiumFixtureChanged();
     assert.equal(getRequestSound("common"), stored.sounds.common.url);
     assert.deepEqual(getRequestConfiguration().welcome, stored.welcome);
     assert.equal(changes, 3);
@@ -96,7 +97,7 @@ test("Premium changes apply dynamically and restore saved resources after access
 test("a satellite cannot overwrite common options or mutate their stored input", () => {
   const stored = installWorld(customConfiguration());
   const snapshot = structuredClone(stored);
-  registerPremiumProvider({
+  registerPremiumFixture({
     isActive: () => true,
     resolveConfiguration(raw, defaults) {
       raw.feed.enabled = true;
@@ -138,7 +139,7 @@ test("legacy welcome choices migrate to both audiences without changing free def
   assert.deepEqual(migrated.welcome, { gm: false, players: false, showPremiumStatus: true });
   installWorld(migrated);
   assert.equal(getRequestConfiguration().welcome.gm, true);
-  registerPremiumProvider({ isActive: () => true, resolveConfiguration: (raw) => raw });
+  registerPremiumFixture({ isActive: () => true, resolveConfiguration: (raw) => raw });
   assert.equal(getRequestConfiguration().welcome.players, false);
   const partial = normalizeRequestConfiguration({ showWelcome: false, welcome: { gm: true } });
   assert.equal(partial.welcome.gm, true);
@@ -148,13 +149,13 @@ test("legacy welcome choices migrate to both audiences without changing free def
 test("throwing and asynchronous providers fall back to free configuration", (t) => {
   t.mock.method(console, "warn", () => undefined);
   installWorld(customConfiguration());
-  registerPremiumProvider({ isActive: () => true, resolveConfiguration: () => { throw new Error("unavailable"); } });
+  registerPremiumFixture({ isActive: () => true, resolveConfiguration: () => { throw new Error("unavailable"); } });
   assert.equal(getRequestConfiguration().chatEnabled, true);
   assert.equal(isPremiumActive(), false);
-  registerPremiumProvider({ isActive: () => true, resolveConfiguration: async (raw) => raw });
+  registerPremiumFixture({ isActive: () => true, resolveConfiguration: async (raw) => raw });
   assert.equal(getRequestConfiguration().images.common.custom, false);
   assert.equal(isPremiumActive(), false);
-  registerPremiumProvider({ isActive: () => { throw new Error("expired"); }, resolveConfiguration: (raw) => raw });
+  registerPremiumFixture({ isActive: () => { throw new Error("expired"); }, resolveConfiguration: (raw) => raw });
   assert.equal(getRequestConfiguration().feed.showTime, true);
 });
 
@@ -167,11 +168,11 @@ test("version status uses the requested audience-specific text and can be hidden
   const player = buildWelcomeMessageContent(false);
   assert.ok(player.includes(messages.FreePlayer));
   assert.doesNotMatch(player, /href="https:\/\/boosty\.to/);
-  registerPremiumProvider({ isActive: () => true, resolveConfiguration: (raw) => raw });
+  registerPremiumFixture({ isActive: () => true, resolveConfiguration: (raw) => raw });
   assert.ok(buildWelcomeMessageContent(true).includes(messages.PremiumActive));
   assert.ok(buildWelcomeMessageContent(false).includes(messages.PremiumActive));
   assert.doesNotMatch(buildWelcomeMessageContent(true), /href="https:\/\/boosty\.to/);
-  registerPremiumProvider(null);
+  registerPremiumFixture(null);
   stored.welcome.showPremiumStatus = false;
   assert.doesNotMatch(buildWelcomeMessageContent(true), /dmicher-request-welcome-support|dmicher-request-welcome-divider/);
 });
@@ -179,12 +180,12 @@ test("version status uses the requested audience-specific text and can be hidden
 test("rejected asynchronous provider methods cannot create unhandled rejections", async (t) => {
   t.mock.method(console, "warn", () => undefined);
   installWorld(customConfiguration());
-  registerPremiumProvider({
+  registerPremiumFixture({
     isActive: async () => { throw new Error("asynchronous activity failure"); },
     resolveConfiguration: (raw) => raw
   });
   assert.equal(getRequestConfiguration().chatEnabled, true);
-  registerPremiumProvider({
+  registerPremiumFixture({
     isActive: () => true,
     resolveConfiguration: async () => { throw new Error("asynchronous configuration failure"); }
   });
@@ -192,14 +193,12 @@ test("rejected asynchronous provider methods cannot create unhandled rejections"
   await new Promise((resolve) => setImmediate(resolve));
 });
 
-test("startup ignores a missing or inactive satellite and shares one pending check", async () => {
+test("startup ignores a missing bridge provider and shares one pending check", async () => {
   installWorld();
-  await waitForPremiumReady(1);
-  game.modules.set("dmicher-premium", {active:false, api:{readyPromise:new Promise(() => {})}});
   await waitForPremiumReady(1);
   let complete;
   const readyPromise = new Promise((resolve) => { complete = resolve; });
-  game.modules.set("dmicher-premium", {active:true, api:{readyPromise}});
+  registerPremiumFixture({ isActive: () => false, readyPromise });
   const first = waitForPremiumReady();
   assert.equal(first, waitForPremiumReady());
   let started = false;
@@ -213,12 +212,116 @@ test("startup ignores a missing or inactive satellite and shares one pending che
 
 test("failed or stuck satellite startup cannot block the free base indefinitely", async () => {
   installWorld();
-  game.modules.set("dmicher-premium", {active:true, api:{readyPromise:Promise.reject(new Error("startup failed"))}});
+  registerPremiumFixture({ isActive: () => false, readyPromise: Promise.reject(new Error("startup failed")) });
   await waitForPremiumReady();
   const readyPromise = new Promise(() => {});
-  game.modules.set("dmicher-premium", {active:true, api:{readyPromise}});
+  registerPremiumFixture({ isActive: () => false, readyPromise });
   const bounded = waitForPremiumReady(1);
   await bounded;
   assert.equal(waitForPremiumReady(), bounded);
   assert.equal(getRequestConfiguration().chatEnabled, true);
+});
+
+test("configuration extensions can delegate to the free implementation without changing free fields", () => {
+  const stored = installWorld(customConfiguration());
+  const proposed = createDefaultRequestConfiguration();
+  proposed.feed.enabled = true;
+  proposed.welcome.showPremiumStatus = true;
+  const snapshot = structuredClone({ stored, proposed });
+  registerPremiumFixture({
+    resolveConfiguration(raw, defaults, base) {
+      const free = base(raw, defaults);
+      assert.equal(free.chatEnabled, true);
+      return { ...raw, chatEnabled: false };
+    },
+    mergeConfiguration(raw, next, base) {
+      const free = base(raw, next);
+      assert.equal(free.chatEnabled, raw.chatEnabled);
+      next.feed.enabled = false;
+      next.welcome.showPremiumStatus = false;
+      raw.images.common.url = "https://example.test/mutated.webp";
+      return next;
+    }
+  });
+  assert.equal(getRequestConfiguration().chatEnabled, false);
+  const merged = mergeRequestConfigurationUpdate(stored, proposed);
+  assert.equal(merged.chatEnabled, true);
+  assert.equal(merged.feed.enabled, true);
+  assert.equal(merged.welcome.showPremiumStatus, true);
+  assert.deepEqual({ stored, proposed }, snapshot);
+});
+
+test("a malformed merge preserves saved Premium fields and quarantines this extension until notification", (t) => {
+  t.mock.method(console, "warn", () => undefined);
+  const stored = installWorld(customConfiguration());
+  const proposed = createDefaultRequestConfiguration();
+  let broken = true;
+  registerPremiumFixture({ mergeConfiguration: (_raw, next) => broken ? { ...next, images: {} } : next });
+  const fallback = mergeRequestConfigurationUpdate(stored, proposed);
+  assert.equal(fallback.chatEnabled, stored.chatEnabled);
+  assert.deepEqual(fallback.images, stored.images);
+  assert.equal(isPremiumActive(), false);
+  assert.equal(getRequestConfiguration().chatEnabled, true);
+  broken = false;
+  notifyPremiumFixtureChanged();
+  assert.equal(isPremiumActive(), true);
+  assert.equal(mergeRequestConfigurationUpdate(stored, proposed).chatEnabled, true);
+});
+
+test("Premium settings are opened through the bridge and remain available without a grant", () => {
+  installWorld();
+  assert.equal(openPremiumSettings(), null);
+  const application = {};
+  let opened = 0;
+  registerPremiumFixture({ isActive: () => false, openSettings: () => { opened += 1; return application; } });
+  assert.equal(getPremiumStatus().active, false);
+  assert.equal(getPremiumStatus().settingsAvailable, true);
+  assert.equal(openPremiumSettings(), application);
+  assert.equal(opened, 1);
+});
+
+const malformedResources = [
+  (value) => { value.images = null; return value; },
+  (value) => { value.images.extra = value; return value; },
+  (value) => { value.sounds.common.extra = value.sounds; return value; },
+  (value) => { value.timerSounds.extra = { invalid: 1n }; return value; }
+];
+
+test("malformed or unserializable resolve results use free defaults without losing stored preferences", (t) => {
+  t.mock.method(console, "warn", () => undefined);
+  for (const damage of malformedResources) {
+    const stored = installWorld(customConfiguration());
+    const snapshot = structuredClone(stored);
+    registerPremiumFixture({ resolveConfiguration: damage });
+    let effective;
+    assert.doesNotThrow(() => { effective = getRequestConfiguration(); });
+    assert.equal(effective.chatEnabled, true);
+    assert.equal(effective.feed.showTime, true);
+    assert.deepEqual(effective.images, createDefaultRequestConfiguration().images);
+    assert.deepEqual(effective.sounds, createDefaultRequestConfiguration().sounds);
+    assert.deepEqual(effective.timerSounds, createDefaultRequestConfiguration().timerSounds);
+    assert.deepEqual(stored, snapshot);
+    assert.equal(isPremiumActive(), false);
+  }
+});
+
+test("malformed or unserializable merge results preserve saved paid values and accept free changes", (t) => {
+  t.mock.method(console, "warn", () => undefined);
+  for (const damage of malformedResources) {
+    const stored = installWorld(customConfiguration());
+    const proposed = createDefaultRequestConfiguration();
+    proposed.feed.enabled = true;
+    const snapshot = structuredClone({ stored, proposed });
+    registerPremiumFixture({ mergeConfiguration: (_stored, next) => damage(next) });
+    let merged;
+    assert.doesNotThrow(() => { merged = mergeRequestConfigurationUpdate(stored, proposed); });
+    assert.equal(merged.chatEnabled, stored.chatEnabled);
+    assert.equal(merged.feed.showTime, stored.feed.showTime);
+    assert.equal(merged.feed.enabled, true);
+    assert.deepEqual(merged.images, stored.images);
+    assert.deepEqual(merged.sounds, stored.sounds);
+    assert.deepEqual(merged.timerSounds, stored.timerSounds);
+    assert.deepEqual({ stored, proposed }, snapshot);
+    assert.equal(isPremiumActive(), false);
+  }
 });

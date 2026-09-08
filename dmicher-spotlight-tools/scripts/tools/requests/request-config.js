@@ -6,7 +6,7 @@ import {
   SETTINGS,
   normalizeRequestType
 } from "../../config.js";
-import { isPremiumActive, resolvePremiumConfiguration } from "../../premium-provider.js";
+import { mergePremiumConfiguration, resolvePremiumConfiguration } from "../../premium-provider.js";
 
 export const REQUEST_LIMIT_TYPES = Object.freeze(["common", "urgent"]);
 export const REQUEST_RESOURCE_TYPES = Object.freeze(Object.keys(REQUEST_TYPES));
@@ -84,21 +84,10 @@ export function getRequestConfiguration() {
   ));
 }
 
-export function mergeRequestConfigurationUpdate(previous, proposed, premiumActive = isPremiumActive()) {
+export function mergeRequestConfigurationUpdate(previous, proposed) {
   const stored = normalizeRequestConfiguration(previous);
   const next = normalizeRequestConfiguration(proposed);
-  const premium = premiumActive ? next : stored;
-  return normalizeRequestConfiguration({
-    ...next,
-    chatEnabled: premium.chatEnabled,
-    soundsEnabled: premium.soundsEnabled,
-    showWelcome: premium.showWelcome,
-    welcome: { ...next.welcome, gm: premium.welcome.gm, players: premium.welcome.players },
-    feed: { ...next.feed, showTime: premium.feed.showTime },
-    images: premium.images,
-    sounds: premium.sounds,
-    timerSounds: premium.timerSounds
-  });
+  return normalizeRequestConfiguration(mergePremiumConfiguration(stored, next));
 }
 
 export function getActiveRequestState() {
