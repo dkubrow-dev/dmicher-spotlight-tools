@@ -1,4 +1,5 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
+import { generics } from "../../generics.js";
 import {
   applyChatMessageMode,
   confirmDialog,
@@ -759,32 +760,28 @@ export class PollTool {
       return;
     }
 
-    card.querySelector("[data-poll-response-option]")?.parentElement?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-poll-response-option]");
-      if (!button) return;
-      event.preventDefault();
-      void this.answerRequest(message, {
-        status: POLL_RESPONSE_STATUS.answered,
-        value: button.dataset.pollResponseOption
-      });
-    });
-
-    card.querySelector("[data-poll-cancel]")?.addEventListener("click", (event) => {
-      event.preventDefault();
-      void this.answerRequest(message, {
-        status: POLL_RESPONSE_STATUS.cancelled,
-        value: null
-      });
-    });
-
-    card.querySelector("[data-poll-response-form]")?.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const value = this.collectFormResponse(event.currentTarget, requestData.type);
-      if (value === null) return;
-      void this.answerRequest(message, {
-        status: POLL_RESPONSE_STATUS.answered,
-        value
-      });
+    const authorize = ({ message: current, user }) => current.getFlag(MODULE_ID, FLAGS.pollRequest)?.userId === user?.id;
+    generics.chat.bindActions({
+      moduleId: MODULE_ID, message, root: card, key: "poll-response",
+      actions: [{
+        selector: "[data-poll-response-option]", authorize,
+        handle: ({ message: current, control }) => this.answerRequest(current, {
+          status: POLL_RESPONSE_STATUS.answered, value: control.dataset.pollResponseOption
+        })
+      }, {
+        selector: "[data-poll-cancel]", authorize,
+        handle: ({ message: current }) => this.answerRequest(current, {
+          status: POLL_RESPONSE_STATUS.cancelled, value: null
+        })
+      }, {
+        selector: "[data-poll-response-form]", event: "submit", authorize,
+        handle: ({ message: current, control }) => {
+          const currentRequest = current.getFlag(MODULE_ID, FLAGS.pollRequest);
+          const value = this.collectFormResponse(control, currentRequest.type);
+          if (value === null) return;
+          return this.answerRequest(current, { status: POLL_RESPONSE_STATUS.answered, value });
+        }
+      }]
     });
   }
 

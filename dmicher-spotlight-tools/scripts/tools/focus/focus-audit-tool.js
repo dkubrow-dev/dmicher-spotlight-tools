@@ -1,4 +1,5 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
+import { generics } from "../../generics.js";
 import { createTechnicalChatMessages, isTechnicalUser } from "../../technical-chat.js";
 import {
   confirmDialog,
@@ -307,7 +308,7 @@ export class FocusAuditTool {
       }
       return;
     }
-    if (message.getFlag(MODULE_ID, FLAGS.technical)) return;
+    if (message.getFlag(MODULE_ID, FLAGS.technical) || generics.chat.isTechnicalMessage(message)) return;
     if (message.getFlag(MODULE_ID, FLAGS.pollRequest)) return;
     if (message.getFlag(MODULE_ID, FLAGS.readinessRequest)) return;
     if (message.getFlag(MODULE_ID, FLAGS.request)) return;

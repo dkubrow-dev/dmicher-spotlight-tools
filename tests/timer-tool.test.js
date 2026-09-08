@@ -3,6 +3,7 @@ import test from "node:test";
 import { installPremiumFixture } from "./fixtures/premium.mjs";
 test.beforeEach(() => installPremiumFixture());
 import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
+import { MockElement } from "./fixtures/chat-dom.mjs";
 
 class MockApplicationV2 {}
 
@@ -121,6 +122,43 @@ function createTimer(overrides = {}) {
     ...overrides
   };
 }
+
+test("timer chat watch bindings do not multiply and recheck current visibility", () => {
+  installGame();
+  globalThis.HTMLElement = MockElement;
+  game.user = { id: "player", role: 1 };
+  game.users.set(game.user.id, game.user);
+  game.messages = new Map();
+  const tool = new TimerTool();
+  const root = new MockElement();
+  const card = new MockElement();
+  const button = new MockElement();
+  button.dataset.timerAction = "watch";
+  root.queries.set("[data-timer-chat-card]", card);
+  card.queries.set("[data-timer-action='watch']", button);
+  const timer = createTimer({ id: "watched", visibility: TIMER_VISIBILITY.public });
+  tool.getTimer = (id) => id === timer.id ? timer : undefined;
+  let refreshes = 0;
+  tool.timerWindows.set(timer.id, { rendered: true, bringToFront() {}, setDisplayStyle() {}, refreshTime() { refreshes++; } });
+  const message = {
+    id: "watch-card", visible: true, isContentVisible: true,
+    getFlag: (_namespace, key) => key === "timer" ? { kind: "started", id: timer.id } : undefined
+  };
+  game.messages.set(message.id, message);
+  tool.renderChatMessage(message, root);
+  tool.renderChatMessage(message, root);
+  assert.equal(card.listenerSets.get("click").size, 1);
+  const click = () => card.listeners.get("click")({ target: button, preventDefault() {} });
+  click();
+  assert.equal(refreshes, 1);
+  timer.visibility = TIMER_VISIBILITY.private;
+  const warnings = [];
+  ui.notifications.warn = (message) => warnings.push(message);
+  click();
+  assert.equal(refreshes, 1);
+  assert.equal(warnings.length, 1, "the timer owner checks current access after the chat interaction");
+  globalThis.HTMLElement = class {};
+});
 
 test("custom timer playback multiplies launch, world, and client levels", async () => {
   const { values } = installGame();

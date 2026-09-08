@@ -3,6 +3,8 @@ import { generics } from "./generics.js";
 
 export const { escapeHTML, createSerialTaskQueue } = generics.utilities;
 export const { getRenderedElement, runAfterApplicationLifecycle } = generics.windows;
+export const { getChatMessageClass, getChatMessageRenderHook, buildChatSpeaker, applyChatMessageMode,
+  getMessageAuthorId, getMessageAuthorName } = generics.chat;
 export const openSingletonApplication = (application, createApplication) =>
   generics.windows.openSingletonApplication(application, createApplication, { moduleId: MODULE_ID });
 
@@ -78,10 +80,6 @@ export function getFoundryGeneration() {
   return Number(game.release?.generation ?? String(game.version ?? "").split(".")[0]);
 }
 
-export function getChatMessageRenderHook() {
-  return getFoundryGeneration() >= 13 ? "renderChatMessageHTML" : "renderChatMessage";
-}
-
 export function getUserSettingScope() {
   return getFoundryGeneration() >= 13 ? "user" : "client";
 }
@@ -92,51 +90,8 @@ export function setGamePaused(paused, { broadcast = true } = {}) {
     : game.togglePause(paused, broadcast);
 }
 
-export function getChatMessageClass() {
-  return CONFIG.ChatMessage.documentClass ?? foundry.documents.ChatMessage;
-}
-
-export function buildChatSpeaker({ alias = "", actor = null, token = null, scene = null } = {}) {
-  const normalizeId = (value) => value === null || value === undefined || value === ""
-    ? null
-    : String(value);
-  return {
-    scene: normalizeId(scene),
-    actor: normalizeId(actor),
-    token: normalizeId(token),
-    alias: String(alias ?? "")
-  };
-}
-
-export function applyChatMessageMode(messageData, ChatMessageClass = getChatMessageClass()) {
-  if (typeof ChatMessageClass.applyMode === "function") {
-    return ChatMessageClass.applyMode(messageData);
-  }
-  return ChatMessageClass.applyRollMode?.(messageData, game.settings.get("core", "rollMode"));
-}
-
 export function getMacroClass() {
   return CONFIG.Macro.documentClass ?? foundry.documents.Macro;
-}
-
-export function getMessageAuthorId(message, fallback = "") {
-  const author = message?.author;
-  const legacyUser = message?.user;
-  return String(
-    author?.id
-    ?? (typeof author === "string" ? author : undefined)
-    ?? legacyUser?.id
-    ?? (typeof legacyUser === "string" ? legacyUser : undefined)
-    ?? message?._source?.author
-    ?? message?._source?.user
-    ?? fallback
-    ?? ""
-  );
-}
-
-export function getMessageAuthorName(message) {
-  const authorId = getMessageAuthorId(message);
-  return String(message?.author?.name ?? game.users.get(authorId)?.name ?? "");
 }
 
 export function getModeratorUserIds() {

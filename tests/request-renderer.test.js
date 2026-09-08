@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { MockElement } from "./fixtures/chat-dom.mjs";
 
 import { FLAGS, MODULE_ID } from "../dmicher-spotlight-tools/scripts/config.js";
 import { applyChatPortrait, getChatDisplayPortrait, renderChatPortrait } from "../dmicher-spotlight-tools/scripts/chat-portrait.js";
@@ -9,48 +10,6 @@ import {
   getRequestAnchorId,
   renderRequestChatMessage
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-message.js";
-
-class MockClassList {
-  values = new Set();
-
-  add(...names) {
-    for (const name of names) this.values.add(name);
-  }
-
-  contains(name) {
-    return this.values.has(name);
-  }
-}
-
-class MockElement {
-  constructor() {
-    this.dataset = {};
-    this.classList = new MockClassList();
-    this.childNodes = [];
-    this.hidden = false;
-    this.listeners = new Map();
-    this.queries = new Map();
-    this.attributes = new Map();
-    this.textContent = "";
-    this.id = "";
-  }
-
-  addEventListener(type, listener) {
-    this.listeners.set(type, listener);
-  }
-
-  querySelector(selector) {
-    return this.queries.get(selector) ?? null;
-  }
-
-  setAttribute(name, value) {
-    this.attributes.set(name, value);
-  }
-
-  append(...nodes) {
-    this.childNodes.push(...nodes);
-  }
-}
 
 function createRequestDom() {
   const root = new MockElement();
@@ -98,6 +57,7 @@ function installFoundryGlobals() {
   globalThis.CONST = { USER_ROLES: { ASSISTANT: 3 } };
   globalThis.game = {
     user: { id: "player-1", role: 1 },
+    messages: new Map(),
     i18n: {
       localize: (key) => key,
       format: (key, data = {}) => key + ":" + JSON.stringify(data),
@@ -132,12 +92,14 @@ test("request renderer accepts the jQuery-like wrapper supplied by v12", () => {
   };
   const message = {
     id: "message-42",
+    visible: true, isContentVisible: true,
     getFlag(namespace, key) {
       assert.equal(namespace, MODULE_ID);
       return key === FLAGS.request ? requestData : null;
     }
   };
   const resolutions = [];
+  game.messages.set(message.id, message);
 
   renderRequestChatMessage(message, { 0: dom.root, length: 1 }, {
     resolveRequest: (...args) => resolutions.push(args)
@@ -168,11 +130,12 @@ test("request renderer also accepts the raw HTMLElement supplied by v13 and v14"
   const requestData = { urgency: "stop", authorId: "other-user" };
   const message = {
     id: "message-raw",
+    visible: true, isContentVisible: true,
     getFlag(_namespace, key) {
       return key === FLAGS.request ? requestData : null;
     }
   };
-
+  game.messages.set(message.id, message);
   renderRequestChatMessage(message, dom.root, { resolveRequest() {} });
 
   assert.equal(dom.card.id, getRequestAnchorId(message.id));
@@ -211,11 +174,17 @@ test("welcome internal actions remain buttons and only Boosty uses an external l
     welcome.queries.set('[data-request-welcome-action="master-settings"]', masterSettings);
     welcome.queries.set('[data-request-welcome-action="help"]', help);
     welcome.queries.set('[data-request-welcome-action="thanks"]', thanks);
+    for (const [element, action] of [[settings, "settings"], [masterSettings, "master-settings"], [help, "help"], [thanks, "thanks"]]) {
+      element.dataset.requestWelcomeAction = action;
+    }
     const message = {
+      id: "welcome",
+      visible: true, isContentVisible: true,
       getFlag(_namespace, key) {
         return key === FLAGS.requestWelcome ? { userId: "player-1" } : null;
       }
     };
+    game.messages.set(message.id, message);
     const calls = [];
     renderRequestChatMessage(message, wrap(root), {
       resolveRequest() {},
@@ -228,7 +197,8 @@ test("welcome internal actions remain buttons and only Boosty uses an external l
     for (const [element, expected] of [[settings, "settings"], [masterSettings, "master-settings"], [help, "help"], [thanks, "thanks"]]) {
       let prevented = false;
       let stopped = false;
-      element.listeners.get("click")({
+      welcome.listeners.get("click")({
+        target: element,
         preventDefault: () => { prevented = true; },
         stopPropagation: () => { stopped = true; }
       });
@@ -247,16 +217,22 @@ test("saved legacy welcome anchors are replaced before interaction", () => {
   legacyAnchor.tagName = "A";
   legacyAnchor.textContent = "settings";
   legacyAnchor.className = "legacy";
-  legacyAnchor.replaceWith = (replacement) => { legacyAnchor.replacement = replacement; };
+  legacyAnchor.replaceWith = (replacement) => {
+    legacyAnchor.replacement = replacement;
+    welcome.queries.set('[data-request-welcome-action="settings"]', replacement);
+  };
   root.queries.set(".dmicher-request-card", null);
   root.queries.set(".dmicher-request-technical", null);
   root.queries.set(".dmicher-request-welcome", welcome);
   welcome.queries.set('[data-request-welcome-action="settings"]', legacyAnchor);
   const message = {
+    id: "legacy-welcome",
+    visible: true, isContentVisible: true,
     getFlag(_namespace, key) {
       return key === FLAGS.requestWelcome ? { userId: "player-1" } : null;
     }
   };
+  game.messages.set(message.id, message);
   let opened = false;
 
   renderRequestChatMessage(message, root, {
@@ -269,8 +245,65 @@ test("saved legacy welcome anchors are replaced before interaction", () => {
   assert.equal(replacement.type, "button");
   assert.equal(replacement.dataset.requestWelcomeAction, "settings");
   assert.equal(replacement.classList.contains("dmicher-inline-link"), true);
-  replacement.listeners.get("click")({ preventDefault() {}, stopPropagation() {} });
+  welcome.listeners.get("click")({ target: replacement, preventDefault() {}, stopPropagation() {} });
   assert.equal(opened, true);
+});
+
+test("request actions rebind once and reject stale, concealed or newly unauthorized cards", () => {
+  installFoundryGlobals();
+  const dom = createRequestDom();
+  let requestData = { urgency: "speak", authorId: game.user.id };
+  const message = {
+    id: "changing-request", visible: true, isContentVisible: true,
+    getFlag: (_namespace, key) => key === FLAGS.request ? requestData : undefined
+  };
+  game.messages.set(message.id, message);
+  const resolutions = [];
+  const callbacks = { resolveRequest: (...args) => resolutions.push(args) };
+  renderRequestChatMessage(message, dom.root, callbacks);
+  renderRequestChatMessage(message, dom.root, callbacks);
+  const click = (button) => dom.actions.listeners.get("click")({ target: button, preventDefault() {} });
+  assert.equal(dom.actions.listenerSets.get("click").size, 1);
+  click(dom.cancelButton);
+  assert.deepEqual(resolutions, [[message, "cancel"]]);
+
+  click(dom.grantButton);
+  assert.equal(resolutions.length, 1, "a player cannot grant even through a directly dispatched click");
+  requestData = { ...requestData, authorId: "another-player" };
+  click(dom.cancelButton);
+  assert.equal(resolutions.length, 1, "authorization uses current flags");
+  game.user.role = 4;
+  message.isContentVisible = false;
+  click(dom.grantButton);
+  assert.equal(resolutions.length, 1, "a concealed message does not execute controls");
+  message.isContentVisible = true;
+  game.messages.delete(message.id);
+  click(dom.grantButton);
+  assert.equal(resolutions.length, 1, "deleted documents cannot execute their old DOM");
+});
+
+test("request double clicks share one pending resolution and allow a later attempt", async () => {
+  installFoundryGlobals();
+  const dom = createRequestDom();
+  const message = {
+    id: "pending-request", visible: true, isContentVisible: true,
+    getFlag: (_namespace, key) => key === FLAGS.request ? { urgency: "speak", authorId: game.user.id } : undefined
+  };
+  game.messages.set(message.id, message);
+  let complete;
+  let calls = 0;
+  renderRequestChatMessage(message, dom.root, {
+    resolveRequest: () => { calls++; return new Promise((resolve) => { complete = resolve; }); }
+  });
+  const click = () => dom.actions.listeners.get("click")({ target: dom.cancelButton, preventDefault() {} });
+  click();
+  click();
+  assert.equal(calls, 1);
+  complete();
+  await new Promise((resolve) => setImmediate(resolve));
+  click();
+  assert.equal(calls, 2);
+  complete();
 });
 
 test("request portrait integrations use the saved snapshot and player fallback", () => {
@@ -370,6 +403,7 @@ test("dnd5e portrait rendering switches media type and follows a finite fallback
           : listener;
         this.listeners.set(type, registered);
       },
+      removeEventListener(type) { this.listeners.delete(type); },
       toggleAttribute(name, enabled) {
         if (enabled) this.attributes.add(name);
         else this.attributes.delete(name);

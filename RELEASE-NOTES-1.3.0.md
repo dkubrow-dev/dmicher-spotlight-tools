@@ -1,5 +1,7 @@
 # dmicher Spotlight Tools 1.3.0
 
+Технический пользователь, скрытый НПС, приватная доставка уведомлений, общая обработка интерактивных карточек и отображение портретов перенесены в `generics.chat`. Идентификаторы, имя информатора, настройки и старые флаги сообщений сохраняются. Заявки, опросы, тексты, категории уведомлений и правила отображения остаются в Spotlight. Информаторы других модулей dmicher также исключаются из участников и получателей; обычные пользователи и реплики настоящих НПС остаются обычным чатом. Для обновления нужны согласованные сборки Spotlight 1.3.0 и Generics 1.0.0; после установки следует перезапустить мир для регистрации общего сокета.
+
 Рабочая пересборка: общий код вынесен в обязательный бесплатный `dmicher-generics` 1.0.0 / API 1. Его нужно установить и включить вместе со Spotlight; Premium остаётся необязательным. Прежние настройки темы и пользовательские функции Spotlight сохраняются. Перед публичным распространением этой пересборки необходимо опубликовать Generics; текущая работа не публикует релизы.
 
 Development rebuild: the free `dmicher-generics` 1.0.0 / API 1 module is now required for shared window styles and helpers. Existing Spotlight settings and user features remain available; Premium is still optional. Publish Generics before publicly distributing this rebuild; this work does not publish releases.

@@ -16,6 +16,7 @@ import {
 import { renderChatPortrait } from "../../chat-portrait.js";
 import { getRequestConfiguration, getRequestImage } from "./request-config.js";
 import { isPremiumActive } from "../../premium-provider.js";
+import { generics } from "../../generics.js";
 
 export function getGrantActionKey(type) {
   return normalizeRequestType(type) === "stop" ? "Requests.Chat.TakeFloor" : "Requests.Chat.GiveFloor";
@@ -96,16 +97,25 @@ export function renderRequestChatMessage(message, html, {
 
   if (message.getFlag(MODULE_ID, FLAGS.requestWelcome)) {
     const welcome = root.querySelector(".dmicher-request-welcome");
-    activateWelcomeAction(welcome, "settings", openSettings);
-    activateWelcomeAction(welcome, "master-settings", openMasterSettings);
-    activateWelcomeAction(welcome, "help", openHelp);
-    activateWelcomeAction(welcome, "thanks", openThankAuthor);
+    const callbacks = { settings: openSettings, "master-settings": openMasterSettings, help: openHelp, thanks: openThankAuthor };
+    for (const action of Object.keys(callbacks)) prepareWelcomeAction(welcome, action);
+    if (welcome) generics.chat.bindActions({
+      moduleId: MODULE_ID, message, root: welcome, key: "request-welcome",
+      actions: Object.entries(callbacks).map(([action, callback]) => ({
+        selector: `[data-request-welcome-action="${action}"]`,
+        authorize: ({ message: current }) => Boolean(current.getFlag(MODULE_ID, FLAGS.requestWelcome)),
+        handle: ({ event }) => {
+          event.stopPropagation();
+          return callback?.();
+        }
+      }))
+    });
   }
 
   renderChatPortrait(message, root);
 }
 
-function activateWelcomeAction(welcome, action, callback) {
+function prepareWelcomeAction(welcome, action) {
   let control = welcome?.querySelector(`[data-request-welcome-action="${action}"]`);
   if (!control) return;
   if (String(control.tagName ?? "").toLowerCase() === "a") {
@@ -118,11 +128,6 @@ function activateWelcomeAction(welcome, action, callback) {
     control.replaceWith(button);
     control = button;
   }
-  control.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    callback?.();
-  });
 }
 
 export function buildTechnicalMessageLines(resolutionData) {
@@ -212,11 +217,19 @@ function activateRequestMessageActions(message, html, requestData, resolveReques
   if (cancelButton) cancelButton.hidden = !mayCancel;
   if (grantButton) grantButton.hidden = !mayGrant;
   if (mayCancel || mayGrant) actions.classList.add("is-available");
-  actions.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-request-action]");
-    if (!button) return;
-    event.preventDefault();
-    void resolveRequest(message, button.dataset.requestAction);
+  generics.chat.bindActions({
+    moduleId: MODULE_ID, message, root: actions, key: "request-resolution",
+    actions: [{
+      selector: "[data-request-action]",
+      authorize: ({ message: current, user, control }) => {
+        const currentRequest = current.getFlag(MODULE_ID, FLAGS.request);
+        if (!currentRequest) return false;
+        const action = control.dataset.requestAction;
+        return action === "grant" ? isModerator(user)
+          : action === "cancel" && (isModerator(user) || currentRequest.authorId === user?.id);
+      },
+      handle: ({ message: current, control }) => resolveRequest(current, control.dataset.requestAction)
+    }]
   });
 }
 

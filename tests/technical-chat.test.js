@@ -129,6 +129,32 @@ test("renaming the user preserves its identity and repairs actor visibility and 
   assert.deepEqual(Object.values(fixture.created).map((list) => list.length), [0, 0, 0]);
 });
 
+test("Spotlight adopts its legacy identity into Generics without replacing IDs or legacy flags", async () => {
+  const fixture = installWorld({ empty: false });
+  const original = fixture.getIdentityState();
+  const user = game.users.get(original.userId);
+  const actor = game.actors.get(original.actorId);
+  const folder = game.folders.get(original.folderId);
+  for (const document of [user, actor, folder]) {
+    assert.equal(document.getFlag("dmicher-generics", "managedIdentity"), undefined);
+    document.flags[MODULE_ID].unrelatedSetting = "preserved";
+  }
+  const restored = await synchronizeTechnicalIdentity();
+  assert.equal(restored.user, user);
+  assert.equal(restored.actor, actor);
+  assert.equal(restored.folder, folder);
+  assert.deepEqual(fixture.getIdentityState(), original);
+  for (const document of [user, actor, folder]) {
+    assert.deepEqual(document.getFlag("dmicher-generics", "managedIdentity"), {
+      version: 1, ownerId: MODULE_ID, key: "informer"
+    });
+    assert.equal(document.getFlag(MODULE_ID, "informerIdentity"), true);
+    assert.equal(document.getFlag(MODULE_ID, "unrelatedSetting"), "preserved");
+  }
+  assert.equal(isTechnicalUser(user), true);
+  assert.deepEqual(Object.values(fixture.created).map((list) => list.length), [0, 0, 0]);
+});
+
 test("deleting the user or actor recreates only that document with the saved identifier", async () => {
   const fixture = installWorld({ empty: false });
   const original = fixture.getIdentityState();
@@ -297,6 +323,37 @@ test("public technical notifications become private copies for every human, excl
   const fixture = installWorld({ empty: false });
   const messages = await createTechnicalChatMessages({ content: "Timer finished", whisper: [] });
   assert.deepEqual(messages.map((message) => message.whisper), [[fixture.gm.id], [fixture.player.id]]);
+});
+
+test("Spotlight excludes another module's managed user but includes humans playing ordinary NPCs", async () => {
+  const fixture = installWorld({ empty: false });
+  const otherInformer = await CONFIG.User.documentClass.create({
+    _id: "other-module-informer", name: "Scene Informer", role: 1, active: false,
+    flags: { "dmicher-generics": { managedIdentity: {
+      version: 1, ownerId: "dmicher-master-screen", key: "scene-informer"
+    } } }
+  });
+  const npc = await CONFIG.Actor.documentClass.create({
+    _id: "ordinary-npc", name: "Innkeeper", type: "npc", ownership: { default: 0, player: 3 }
+  });
+  const npcPlayer = await CONFIG.User.documentClass.create({
+    _id: "npc-player", name: "NPC Player", role: 1, active: true, character: npc.id
+  });
+  assert.equal(isTechnicalUser(otherInformer), true);
+  assert.equal(isTechnicalUser(fixture.gm), false);
+  assert.equal(isTechnicalUser(fixture.player), false);
+  assert.equal(isTechnicalUser(npcPlayer), false);
+  assert.equal(isTechnicalUser(npc), false);
+  const messages = await createTechnicalChatMessages({ content: "A session event", whisper: [] });
+  assert.deepEqual(messages.map((message) => message.whisper), [[fixture.gm.id], [fixture.player.id], [npcPlayer.id]]);
+  const selected = await createTechnicalChatMessages({
+    content: "A selected event", whisper: [otherInformer.id, npcPlayer.id, fixture.player.id]
+  });
+  assert.deepEqual(selected.map((message) => message.whisper), [[npcPlayer.id], [fixture.player.id]]);
+  assert.equal(npc.name, "Innkeeper");
+  assert.deepEqual(npc.ownership, { default: 0, player: 3 });
+  assert.equal(otherInformer.name, "Scene Informer");
+  assert.equal(otherInformer.getFlag(MODULE_ID, "informerIdentity"), undefined);
 });
 
 test("disabled chat or disabled notification category creates neither bot nor messages", async () => {

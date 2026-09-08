@@ -6,6 +6,7 @@ import {
   TIMER_SOUND_SOURCES
 } from "../../config.js";
 import { createTechnicalChatMessages, isTechnicalChatEnabled } from "../../technical-chat.js";
+import { generics } from "../../generics.js";
 import {
   confirmDialog,
   createSerialTaskQueue,
@@ -688,16 +689,19 @@ export class TimerTool {
 
     const heading = card.querySelector("[data-timer-chat-heading]");
     const details = card.querySelector("[data-timer-chat-details]");
-    const button = card.querySelector("[data-timer-action='watch']");
     const label = card.querySelector("[data-timer-action-label='watch']");
 
     if (heading) heading.textContent = localize("Timers.Chat.StartedTitle");
     if (details && timer) details.textContent = this.getTimerDetailsText(timer);
     if (label) label.textContent = localize("Timers.Chat.Watch");
 
-    button?.addEventListener("click", (event) => {
-      event.preventDefault();
-      this.openTimerWindow(timer?.id ?? timerData.id, { force: true });
+    generics.chat.bindActions({
+      moduleId: MODULE_ID, message, root: card, key: "timer-watch",
+      actions: [{
+        selector: "[data-timer-action='watch']",
+        authorize: ({ message: current }) => current.getFlag(MODULE_ID, FLAGS.timer)?.kind === "started",
+        handle: ({ message: current }) => this.openTimerWindow(current.getFlag(MODULE_ID, FLAGS.timer).id, { force: true })
+      }]
     });
   }
 

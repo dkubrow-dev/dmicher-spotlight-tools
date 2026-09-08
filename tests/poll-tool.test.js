@@ -3,6 +3,7 @@ import test from "node:test";
 import { installPremiumFixture } from "./fixtures/premium.mjs";
 test.beforeEach(() => installPremiumFixture());
 import { installTechnicalChatFixture } from "./fixtures/technical-chat.mjs";
+import { MockElement } from "./fixtures/chat-dom.mjs";
 
 class MockApplicationV2 {}
 class TestCollection extends Array {
@@ -129,6 +130,53 @@ function installMessageRecorder() {
   };
   return created;
 }
+
+test("poll chat actions use current recipients and form controls through the shared binding", () => {
+  installGame();
+  globalThis.HTMLElement = MockElement;
+  game.user = game.users.get("player");
+  const tool = new PollTool({});
+  const root = new MockElement();
+  const card = new MockElement();
+  const interaction = new MockElement();
+  const option = new MockElement();
+  const form = new MockElement();
+  option.dataset.pollResponseOption = "yes";
+  form.dataset.pollResponseForm = "";
+  root.queries.set("[data-poll-request]", card);
+  card.queries.set("[data-poll-interaction]", interaction);
+  card.queries.set("[data-poll-response-option]", option);
+  card.queries.set("[data-poll-response-form]", form);
+  let data = { runId: "run", userId: "player", type: POLL_TYPE.buttons, name: "Question", question: "Ready?" };
+  const message = {
+    id: "interactive-poll", visible: true, isContentVisible: true,
+    getFlag: (_namespace, key) => key === FLAGS.pollRequest ? data : undefined
+  };
+  game.messages.push(message);
+  const responses = [];
+  tool.answerRequest = (current, response) => responses.push({ current, response });
+  tool.collectFormResponse = (control, type) => {
+    assert.equal(control, form, "the matched form, rather than the delegated card, provides the values");
+    assert.equal(type, POLL_TYPE.checkbox, "the current message defines the response type");
+    return ["yes"];
+  };
+  tool.renderChatMessage(message, root);
+  tool.renderChatMessage(message, root);
+  assert.equal(card.listenerSets.get("click").size, 1);
+  card.listeners.get("click")({ target: option, preventDefault() {} });
+  assert.equal(responses.length, 1);
+  assert.deepEqual(responses[0], { current: message, response: { status: "answered", value: "yes" } });
+
+  data = { ...data, type: POLL_TYPE.checkbox };
+  card.listeners.get("submit")({ target: form, currentTarget: card, preventDefault() {} });
+  assert.deepEqual(responses[1].response.value, ["yes"]);
+  data = { ...data, userId: "gm" };
+  card.listeners.get("click")({ target: option, preventDefault() {} });
+  assert.equal(responses.length, 2, "a stale recipient cannot respond after the message changes");
+  tool.renderChatMessage(message, root);
+  assert.equal(interaction.hidden, true);
+  globalThis.HTMLElement = class {};
+});
 
 test("disabled technical chat does not reserve a poll or start its timer", async () => {
   const { getState } = installGame();
