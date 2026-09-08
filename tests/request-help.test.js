@@ -8,7 +8,7 @@ for (const language of ["ru", "en"]) {
   const localize = (key) => key.split(".").reduce((value, part) => value?.[part], locale);
   test(`${language}: concise operational help includes common footer and every settings target`, () => {
     const content = buildSpotlightHelp({ language, localize });
-    assert.deepEqual(content.footer, ["author", "thanks", "premium"]);
+    assert.deepEqual(content.footer, ["author", "thanks", "modules"]);
     const pages = new Map(content.pages.map((page) => [page.id, page]));
     assert.equal(pages.size, content.pages.length);
     for (const page of pages.values()) {
