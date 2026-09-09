@@ -1,7 +1,7 @@
 {
   "id": "dmicher-spotlight-tools",
-  "title": "dmicher 🛠️ Spotlight Tools | Приспособы фокуса",
-  "description": "Dmicher Spotlight Tools is a small, system-agnostic tool set for gaming on Foundry VTT: player requests, timers, breaks, stopwatch events, polls, player statuses, and focus audit for the GM.",
+  "title": "dmicher 🎥 Spotlight Tools | Приспособы фокуса",
+  "description": "dmicher 🎥 Spotlight Tools is a small, system-agnostic tool set for gaming on Foundry VTT: player requests, timers, breaks, stopwatch events, polls, player statuses, and focus audit for the GM.",
   "version": "1.3.0",
   "authors": [
     {

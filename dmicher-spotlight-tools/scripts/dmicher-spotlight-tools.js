@@ -1,7 +1,6 @@
 import { MODULE_ID } from "./config.js";
 import { generics } from "./generics.js";
 import { getPremiumStatus, subscribePremiumChanges, waitForPremiumReady } from "./premium-provider.js";
-import { activateTechnicalChat, registerTechnicalChat, synchronizeTechnicalIdentity } from "./technical-chat.js";
 import {
   installHotbarMacroCleanup,
   synchronizeCurrentUserHotbarMacroMetadata
@@ -48,14 +47,12 @@ const spotlightControls = new SpotlightControls({
 });
 
 Hooks.once("init", () => {
-  registerTechnicalChat();
   registerThemeSetting();
   focusAuditTool.registerSettings();
   pollTool.registerSettings();
   requestVolumeController.registerSetting();
   requestTool.registerSettings();
   registerRequestSettings({
-    synchronizeChatIdentity: synchronizeTechnicalIdentity,
     submitRequest: requestTool.submitRequest,
     onRequestDragStart: requestHotbar.onRequestDragStart,
     volumeController: requestVolumeController,
@@ -90,9 +87,6 @@ Hooks.once("init", () => {
     Hooks.callAll("dmicherSpotlightPremiumChanged", status);
     if (!game.ready) return;
     requestTool.notifyConfigurationChanged();
-    if (Number(game.user?.role) === 4) {
-      void synchronizeTechnicalIdentity().catch((error) => console.warn(`${MODULE_ID} | Unable to synchronize Premium chat settings`, error));
-    }
   });
   globalThis.addEventListener?.("pagehide", unsubscribePremium, { once: true });
   game.modules.get(MODULE_ID).api = {
@@ -126,12 +120,6 @@ Hooks.once("init", () => {
 Hooks.once("ready", async () => {
   applySpotlightTheme();
   await waitForPremiumReady();
-  try {
-    await activateTechnicalChat();
-  } catch (error) {
-    console.error(`${MODULE_ID} | Unable to initialize the technical chat identity`, error);
-    ui.notifications.error(error.message);
-  }
   void migrateLegacyClientRequestSettings().catch((error) => {
     console.error(`${MODULE_ID} | Unable to migrate legacy request settings`, error);
   });

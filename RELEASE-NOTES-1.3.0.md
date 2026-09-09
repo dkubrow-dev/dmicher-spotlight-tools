@@ -1,4 +1,4 @@
-# dmicher Spotlight Tools 1.3.0
+# dmicher 🎥 Spotlight Tools 1.3.0
 
 Справка переведена на общий интерфейс Generics: раскрываемое дерево, изменяемая ширина меню и закреплённые внизу страницы автора, благодарностей и «Модули dmicher». Последняя кратко описывает все пять компонентов комплекта; содержание остаётся в Spotlight. Краткие страницы на русском и английском описывают действия за столом. Вопросики возле настроек мастера, личных карточек, громкости и аудита открывают соответствующую страницу и раздел, в том числе для временно недоступных премиальных полей. Справка доступна также игрокам.
 
@@ -8,7 +8,9 @@ Help now uses the Generics interface: a collapsible tree, resizable navigation a
 
 The updated Generics removes question-icon underlines and overlays each U/I/B corner while preserving button size and separate help actions. Right-button dragging moves a snapped window group; Save in shared appearance settings leaves the window open. Spotlight Help describes these behaviors in both languages.
 
-Технический пользователь, скрытый НПС, приватная доставка уведомлений, общая обработка интерактивных карточек и отображение портретов перенесены в `generics.chat`. Идентификаторы, имя информатора, настройки и старые флаги сообщений сохраняются. Заявки, опросы, тексты, категории уведомлений и правила отображения остаются в Spotlight. Информаторы других модулей dmicher также исключаются из участников и получателей; обычные пользователи и реплики настоящих НПС остаются обычным чатом. Для обновления нужны согласованные сборки Spotlight 1.3.0 и Generics 1.0.0; после установки следует перезапустить мир для регистрации общего сокета.
+Приветствие и владение общим Информатором перенесены в Generics. Spotlight больше не создаёт и не обслуживает собственную техническую личность: новые сообщения использует общий Информатор, а прежние документы и история остаются в мире без миграции. Настройка приветствия находится в Generics и доступна без Premium. Заявки, опросы, тексты, категории уведомлений и правила отображения остаются в Spotlight. Информаторы исключаются из участников и получателей; обычные пользователи и реплики настоящих НПС остаются обычным чатом. Нужны согласованные сборки Spotlight 1.3.0 и Generics 1.0.0; после установки перезапустите мир.
+
+Generics now owns the shared Informer and the welcome message. Spotlight uses that sender for new messages; previous documents and chat history remain without migration. Configure the welcome in Generics, without requiring Premium. Requests, polls, message content, audiences and display settings remain in Spotlight. The welcome lists every active dmicher module and links to available help and Foundry settings.
 
 Рабочая пересборка: общий код вынесен в обязательный бесплатный `dmicher-generics` 1.0.0 / API 1. Его нужно установить и включить вместе со Spotlight; Premium остаётся необязательным. Прежние настройки темы и пользовательские функции Spotlight сохраняются. Перед публичным распространением этой пересборки необходимо опубликовать Generics; текущая работа не публикует релизы.
 
@@ -24,7 +26,7 @@ This release pins its manifest to [Spotlight 1.3.0](https://github.com/dkubrow-d
 
 ## Русский
 
-Выпуск 1.3.0 входит в общий комплект с dmicher Premium 1.3.0 и dmicher licence server 1.3.0.
+Выпуск 1.3.0 входит в общий комплект с dmicher 💳 Premium 1.3.0 и dmicher licence server 1.3.0.
 
 - Базовый модуль остаётся бесплатным: заявки, лента, таймеры, перерывы, опросы, статусы игроков и контроль внимания мастером доступны с Generics, без сателлита Premium.
 - Подключение активного модуля `dmicher-premium` с действующей лицензией открывает премиальные настройки: показ времени в ленте, общий вывод в чат, изображения и звуки мира, отдельное отключение приветствий мастеру и игрокам.
@@ -38,7 +40,7 @@ This release pins its manifest to [Spotlight 1.3.0](https://github.com/dkubrow-d
 
 ## English
 
-Version 1.3.0 is released together with dmicher Premium 1.3.0 and dmicher licence server 1.3.0.
+Version 1.3.0 is released together with dmicher 💳 Premium 1.3.0 and dmicher licence server 1.3.0.
 
 - The base module remains free: requests, Request Feed, timers, breaks, polls, player statuses, and the Game Master's focus audit remain available with Generics and without the Premium satellite.
 - Enabling `dmicher-premium` with a valid license unlocks Premium settings: feed timestamps, global chat output, world images and sounds, and separate switches for Game Master and player welcomes.

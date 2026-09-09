@@ -15,7 +15,6 @@ import {
 } from "../../utils.js";
 import { renderChatPortrait } from "../../chat-portrait.js";
 import { getRequestConfiguration, getRequestImage } from "./request-config.js";
-import { isPremiumActive } from "../../premium-provider.js";
 import { generics } from "../../generics.js";
 
 export function getGrantActionKey(type) {
@@ -48,31 +47,6 @@ export function buildRequestMessageContent(type, text, style, image = getRequest
     </section>`;
 }
 
-export function buildWelcomeMessageContent(includeHelp) {
-  const moduleRecord = game.modules?.get?.(MODULE_ID);
-  const moduleTitle = String(moduleRecord?.title ?? localize("Title"));
-  const moduleVersion = String(moduleRecord?.version ?? moduleRecord?.manifest?.version ?? "");
-  const masterSettingsLink = `<span class="dmicher-inline-link-tail"><button type="button" class="dmicher-inline-link" data-request-welcome-action="master-settings">${escapeHTML(localize("Requests.Welcome.MasterSettingsLink"))}</button>${escapeHTML(localize("Requests.Welcome.DisableAfter"))}</span>`;
-  const help = includeHelp
-    ? `<p>${escapeHTML(localize("Requests.Welcome.HelpBefore"))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="help">${escapeHTML(localize("Requests.Welcome.HelpLink"))}</button>${escapeHTML(localize("Requests.Welcome.HelpAfter"))} ${escapeHTML(localize("Requests.Welcome.DisableBefore"))} ${masterSettingsLink}</p>`
-    : "";
-  const configuration = getRequestConfiguration();
-  const status = isPremiumActive()
-    ? escapeHTML(localize("Requests.Welcome.PremiumActive"))
-    : includeHelp
-      ? `${escapeHTML(localize("Requests.Welcome.FreeMasterBefore"))} <a href="https://boosty.to/dmicher" target="_blank" rel="noopener noreferrer">Boosty</a>.`
-      : escapeHTML(localize("Requests.Welcome.FreePlayer"));
-  const support = configuration.welcome.showPremiumStatus
-    ? `<p class="dmicher-request-welcome-support">${status}</p>`
-    : "";
-  return `
-    <section class="dmicher-technical-card dmicher-request-welcome">
-      <p>${escapeHTML(format("Requests.Welcome.MainBefore", { module: moduleTitle, version: moduleVersion }))} <button type="button" class="dmicher-inline-link" data-request-welcome-action="settings">${escapeHTML(localize("Requests.Welcome.MenuLink"))}</button>${escapeHTML(localize("Requests.Welcome.MainAfter"))}</p>
-      ${help}
-      ${support ? `<hr class="dmicher-request-welcome-divider">${support}` : ""}
-    </section>`;
-}
-
 export function renderRequestChatMessage(message, html, {
   resolveRequest,
   openSettings,
@@ -95,39 +69,7 @@ export function renderRequestChatMessage(message, html, {
     if (technicalMessage) renderTechnicalMessageContent(technicalMessage, resolutionData);
   }
 
-  if (message.getFlag(MODULE_ID, FLAGS.requestWelcome)) {
-    const welcome = root.querySelector(".dmicher-request-welcome");
-    const callbacks = { settings: openSettings, "master-settings": openMasterSettings, help: openHelp, thanks: openThankAuthor };
-    for (const action of Object.keys(callbacks)) prepareWelcomeAction(welcome, action);
-    if (welcome) generics.chat.bindActions({
-      moduleId: MODULE_ID, message, root: welcome, key: "request-welcome",
-      actions: Object.entries(callbacks).map(([action, callback]) => ({
-        selector: `[data-request-welcome-action="${action}"]`,
-        authorize: ({ message: current }) => Boolean(current.getFlag(MODULE_ID, FLAGS.requestWelcome)),
-        handle: ({ event }) => {
-          event.stopPropagation();
-          return callback?.();
-        }
-      }))
-    });
-  }
-
   renderChatPortrait(message, root);
-}
-
-function prepareWelcomeAction(welcome, action) {
-  let control = welcome?.querySelector(`[data-request-welcome-action="${action}"]`);
-  if (!control) return;
-  if (String(control.tagName ?? "").toLowerCase() === "a") {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = control.className;
-    button.classList.add("dmicher-inline-link");
-    button.dataset.requestWelcomeAction = action;
-    button.textContent = control.textContent;
-    control.replaceWith(button);
-    control = button;
-  }
 }
 
 export function buildTechnicalMessageLines(resolutionData) {

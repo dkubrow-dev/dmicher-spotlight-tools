@@ -1,12 +1,12 @@
 {
   "DMICHERSPOTLIGHTTOOLS": {
-    "Title": "dmicher Spotlight Tools",
+    "Title": "dmicher 🎥 Spotlight Tools",
     "Hints": {
       "ClickOrDragHotbarMacro": "Click to use; drag to the hotbar to create a macro"
     },
     "Support": {
       "Thanks": {
-        "MenuName": "dmicher Spotlight Tools - Say Thanks",
+        "MenuName": "dmicher 🎥 Spotlight Tools - Say Thanks",
         "MenuLabel": "Say thanks to the author",
         "MenuHint": "Open dmicher's Boosty page.",
         "PopupBlocked": "Could not open the Boosty page. Check the browser popup blocker."
@@ -15,7 +15,7 @@
     "Settings": {
       "Theme": {
         "Name": "Module window theme",
-        "Hint": "Choose the light or dark theme for dmicher Spotlight Tools windows.",
+        "Hint": "Choose the light or dark theme for dmicher 🎥 Spotlight Tools windows.",
         "Dark": "Dark",
         "Light": "Light"
       }
@@ -24,7 +24,7 @@
       "Informer": "Informer",
       "Heading": "Chat",
       "Enabled": "Post messages to chat",
-      "IdentityWarning": "On save: enabling creates a technical user; disabling deletes it.",
+      "IdentityWarning": "The shared Generics Informer sends messages. Disabling Spotlight chat does not delete it.",
       "Polls": "Notify about poll responses",
       "Timers": "Announce timer starts and breaks",
       "Disabled": "Module chat output is disabled in Game Master Settings.",
@@ -53,8 +53,8 @@
         "DefaultText": "Environment action. Pay attention to the scene."
       },
       "Settings": {
-        "WindowTitle": "dmicher Spotlight Tools — Request Settings",
-        "MenuName": "dmicher Spotlight Tools — Request Settings",
+        "WindowTitle": "dmicher 🎥 Spotlight Tools — Request Settings",
+        "MenuName": "dmicher 🎥 Spotlight Tools — Request Settings",
         "MenuLabel": "Open Request Settings",
         "MenuHint": "Configure the text and appearance of your requests.",
         "Intro": "Configure the text and appearance of your requests. Click an image to submit a request, or drag it to the hotbar.",
@@ -81,10 +81,10 @@
         "SaveError": "Could not save request settings."
       },
       "MasterSettings": {
-        "WindowTitle": "dmicher Spotlight Tools — Game Master Settings",
-        "MenuName": "dmicher Spotlight Tools — Game Master Settings",
+        "WindowTitle": "dmicher 🎥 Spotlight Tools — Game Master Settings",
+        "MenuName": "dmicher 🎥 Spotlight Tools — Game Master Settings",
         "MenuLabel": "Game Master Settings",
-        "MenuHint": "Configure the world-wide Request Feed, Chat, Request Anti-Spam Limits, Images, Sounds, and Welcome Message blocks.",
+        "MenuHint": "Configure the world-wide Request Feed, Chat, Request Anti-Spam Limits, Images and Sounds blocks.",
         "Forbidden": "Game Master settings are available only to a Game Master or Assistant."
       },
       "Chat": {
@@ -218,31 +218,9 @@
         "ReloadNow": "Reload",
         "ReloadLater": "Later"
       },
-      "Welcome": {
-        "Heading": "Welcome message",
-        "Show": "Show welcome message",
-        "MainBefore": "The module \"{module}\" ({version}) is active. Use the",
-        "MenuLink": "game menu",
-        "MainAfter": " to configure request macros and drag them to the hotbar.",
-        "HelpBefore": "Use the",
-        "HelpLink": "help",
-        "HelpAfter": " to learn about every module feature.",
-        "DisableBefore": "Common and Premium module options are available in",
-        "MasterSettingsLink": "Game Master Settings",
-        "DisableAfter": ".",
-        "FreeBefore": "The base module is free. You can support the author and purchase Premium",
-        "SupportLink": "at this link",
-        "FreeAfter": ".",
-        "ShowGM": "Show welcome to Game Masters",
-        "ShowPlayers": "Show welcome to players",
-        "ShowPremiumStatus": "Show Premium status",
-        "FreeMasterBefore": "The free version of the module is in use. You can purchase a Premium subscription on",
-        "FreePlayer": "The free version of the module is in use.",
-        "PremiumActive": "The Premium version is in use. With special thanks to you from dmicher abathur kubrow"
-      },
       "Help": {
-        "WindowTitle": "dmicher Spotlight Tools — Help",
-        "MenuName": "dmicher Spotlight Tools — Help",
+        "WindowTitle": "dmicher 🎥 Spotlight Tools — Help",
+        "MenuName": "dmicher 🎥 Spotlight Tools — Help",
         "MenuLabel": "Open help",
         "MenuHint": "Instructions for every module tool.",
         "Contents": "Contents",

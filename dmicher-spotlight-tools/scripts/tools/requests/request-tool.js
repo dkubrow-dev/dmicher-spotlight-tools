@@ -8,8 +8,7 @@ import {
   SPEECH_GRANTED_SOUND,
   normalizeRequestType
 } from "../../config.js";
-import { createTechnicalChatMessages, isTechnicalChatEnabled, isTechnicalUser, synchronizeTechnicalIdentity } from "../../technical-chat.js";
-import { waitForPremiumReady } from "../../premium-provider.js";
+import { createTechnicalChatMessages, isTechnicalUser } from "../../technical-chat.js";
 import { applyChatPortrait, renderChatPortrait } from "../../chat-portrait.js";
 import {
   buildChatSpeaker,
@@ -45,7 +44,6 @@ import {
 import {
   buildRequestMessageContent,
   buildTechnicalMessageLines,
-  buildWelcomeMessageContent,
   renderRequestChatMessage
 } from "./request-message.js";
 import { getRequestStyle, getRequestText } from "./request-settings.js";
@@ -59,7 +57,6 @@ export class RequestTool {
     this.resolvingRequests = new Set();
     this.deletingMessageIds = new Set();
     this.shownNotifications = new Set();
-    this.welcomedUsers = new Set();
     this.runStateTask = createSerialTaskQueue();
     this.configurationListeners = new Set();
     this.stateListeners = new Set();
@@ -69,7 +66,6 @@ export class RequestTool {
     this.renderChatMessage = this.renderChatMessage.bind(this);
     this.handleChatMessageDeleted = this.handleChatMessageDeleted.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
-    this.handleUserConnected = this.handleUserConnected.bind(this);
     this.activeRequests = new ActiveRequestsController({
       resolveRequest: this.resolveRequest,
       submitRequest: this.submitRequest,
@@ -89,7 +85,6 @@ export class RequestTool {
     Hooks.on("ChatPortraitReplaceData", applyChatPortrait);
     Hooks.on("dnd5e.renderChatMessage", renderChatPortrait);
     Hooks.on("deleteChatMessage", this.handleChatMessageDeleted);
-    Hooks.on("userConnected", this.handleUserConnected);
   }
 
   activate() {
@@ -100,7 +95,6 @@ export class RequestTool {
       this.focusAuditTool?.rebuildRequestsFromEntries?.(this.state.entries);
     }
     void this.preloadAssets();
-    window.setTimeout(() => void this.requestWelcome(game.user.id), 250);
   }
 
   subscribeConfiguration(listener) {
@@ -277,7 +271,6 @@ export class RequestTool {
       if (!entry) throw new Error(localize("Requests.Chat.SubmitError"));
 
       if (configuration.chatEnabled) {
-        await synchronizeTechnicalIdentity();
         const ChatMessageClass = getChatMessageClass();
         const message = await ChatMessageClass.create({
           author: user.id,
@@ -479,9 +472,6 @@ export class RequestTool {
       case "requestFeedback":
         if (payload.userId === game.user.id) this.showFeedback(payload);
         break;
-      case "requestWelcome":
-        if (isPrimaryModerator()) void this.createWelcomeMessage(payload.userId);
-        break;
     }
   }
 
@@ -570,41 +560,6 @@ export class RequestTool {
   hasActiveModerator() {
     return Boolean(game.users?.some?.((user) => user.active && isModerator(user))
       ?? game.users?.find?.((user) => user.active && isModerator(user)));
-  }
-
-  handleUserConnected(user, connected) {
-    if (!user?.id || isTechnicalUser(user)) return;
-    if (!connected) {
-      this.welcomedUsers.delete(user.id);
-      return;
-    }
-    if (isPrimaryModerator()) void this.createWelcomeMessage(user.id);
-  }
-
-  async requestWelcome(userId) {
-    await waitForPremiumReady();
-    const user = game.users.get(userId);
-    if (!user || !isTechnicalChatEnabled() || !getRequestConfiguration().welcome[isModerator(user) ? "gm" : "players"]) return;
-    if (isPrimaryModerator()) return this.createWelcomeMessage(userId);
-    if (this.hasActiveModerator()) game.socket.emit(SOCKET_CHANNEL, { action: "requestWelcome", userId });
-  }
-
-  async createWelcomeMessage(userId) {
-    await waitForPremiumReady();
-    if (!isPrimaryModerator() || !isTechnicalChatEnabled() || this.welcomedUsers.has(userId)) return;
-    const user = game.users.get(userId);
-    if (!user || isTechnicalUser(user) || !getRequestConfiguration().welcome[isModerator(user) ? "gm" : "players"]) return;
-    this.welcomedUsers.add(userId);
-    try {
-      await createTechnicalChatMessages({
-        content: buildWelcomeMessageContent(isModerator(user)),
-        whisper: [user.id],
-        flags: { [MODULE_ID]: { [FLAGS.requestWelcome]: { userId, createdAt: Date.now() } } }
-      });
-    } catch (error) {
-      this.welcomedUsers.delete(userId);
-      console.warn(`${MODULE_ID} | Unable to create request welcome message`, error);
-    }
   }
 
   async initializeStateFromLegacyMessages() {

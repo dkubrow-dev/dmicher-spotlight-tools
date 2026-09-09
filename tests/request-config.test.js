@@ -25,8 +25,8 @@ test("fresh-world request configuration matches the 1.3 free policy", () => {
   assert.equal(configuration.feed.enabled, true);
   assert.equal(configuration.feed.showToPlayers, true);
   assert.equal(configuration.feed.showTime, true);
-  assert.equal(configuration.showWelcome, true);
-  assert.deepEqual(configuration.welcome, { gm: true, players: true, showPremiumStatus: true });
+  assert.equal(Object.hasOwn(configuration, "showWelcome"), false);
+  assert.equal(Object.hasOwn(configuration, "welcome"), false);
   assert.equal(configuration.blockWhenEnvironment, true);
   assert.equal(configuration.limits.common.mode, REQUEST_LIMIT_MODES.none);
   assert.equal(configuration.limits.urgent.mode, REQUEST_LIMIT_MODES.count);

@@ -13,7 +13,6 @@ import {
   normalizeRequestConfiguration
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-config.js";
 import { isTechnicalChatEnabled } from "../dmicher-spotlight-tools/scripts/technical-chat.js";
-import { buildWelcomeMessageContent } from "../dmicher-spotlight-tools/scripts/tools/requests/request-message.js";
 
 const ru = JSON.parse(readFileSync(new URL("../dmicher-spotlight-tools/lang/ru.json", import.meta.url), "utf8"));
 function localize(key) { return key.split(".").reduce((value, part) => value?.[part], ru) ?? key; }
@@ -35,7 +34,6 @@ function customConfiguration() {
   const stored = createDefaultRequestConfiguration();
   stored.chatEnabled = false;
   stored.soundsEnabled = false;
-  stored.welcome = { gm: false, players: false, showPremiumStatus: false };
   stored.feed = { enabled: false, showToPlayers: false, showTime: false };
   stored.chatNotifications = { polls: false, timers: false };
   stored.blockWhenEnvironment = false;
@@ -55,7 +53,6 @@ test("the free base forces only Premium defaults and never rewrites stored prefe
   assert.equal(effective.chatEnabled, true);
   assert.equal(effective.soundsEnabled, true);
   assert.equal(effective.feed.showTime, true);
-  assert.deepEqual(effective.welcome, { gm: true, players: true, showPremiumStatus: false });
   assert.equal(effective.feed.enabled, false);
   assert.equal(effective.feed.showToPlayers, false);
   assert.equal(effective.blockWhenEnvironment, false);
@@ -89,7 +86,6 @@ test("Premium changes apply dynamically and restore saved resources after access
     active = true;
     notifyPremiumFixtureChanged();
     assert.equal(getRequestSound("common"), stored.sounds.common.url);
-    assert.deepEqual(getRequestConfiguration().welcome, stored.welcome);
     assert.equal(changes, 3);
   } finally { unsubscribe(); }
 });
@@ -103,7 +99,6 @@ test("a satellite cannot overwrite common options or mutate their stored input",
       raw.feed.enabled = true;
       raw.chatNotifications.polls = true;
       raw.limits = {};
-      raw.welcome.showPremiumStatus = true;
       defaults.images.common.url = "https://example.test/changed.webp";
       return raw;
     }
@@ -111,7 +106,6 @@ test("a satellite cannot overwrite common options or mutate their stored input",
   const effective = getRequestConfiguration();
   assert.equal(effective.feed.enabled, false);
   assert.equal(effective.chatNotifications.polls, false);
-  assert.equal(effective.welcome.showPremiumStatus, false);
   assert.deepEqual(effective.limits, snapshot.limits);
   assert.deepEqual(stored, snapshot);
 });
@@ -120,30 +114,14 @@ test("a free settings save preserves locked values while accepting common change
   const stored = customConfiguration();
   const submitted = createDefaultRequestConfiguration();
   submitted.feed.showToPlayers = true;
-  submitted.welcome.showPremiumStatus = true;
   const merged = mergeRequestConfigurationUpdate(stored, submitted);
   assert.equal(merged.chatEnabled, false);
   assert.equal(merged.soundsEnabled, false);
   assert.equal(merged.feed.showTime, false);
   assert.equal(merged.feed.showToPlayers, true);
-  assert.equal(merged.welcome.gm, false);
-  assert.equal(merged.welcome.players, false);
-  assert.equal(merged.welcome.showPremiumStatus, true);
   assert.deepEqual(merged.images, stored.images);
   assert.deepEqual(merged.sounds, stored.sounds);
   assert.deepEqual(merged.timerSounds, stored.timerSounds);
-});
-
-test("legacy welcome choices migrate to both audiences without changing free defaults", () => {
-  const migrated = normalizeRequestConfiguration({ showWelcome: false });
-  assert.deepEqual(migrated.welcome, { gm: false, players: false, showPremiumStatus: true });
-  installWorld(migrated);
-  assert.equal(getRequestConfiguration().welcome.gm, true);
-  registerPremiumFixture({ isActive: () => true, resolveConfiguration: (raw) => raw });
-  assert.equal(getRequestConfiguration().welcome.players, false);
-  const partial = normalizeRequestConfiguration({ showWelcome: false, welcome: { gm: true } });
-  assert.equal(partial.welcome.gm, true);
-  assert.equal(partial.welcome.players, false);
 });
 
 test("throwing and asynchronous providers fall back to free configuration", (t) => {
@@ -157,24 +135,6 @@ test("throwing and asynchronous providers fall back to free configuration", (t) 
   assert.equal(isPremiumActive(), false);
   registerPremiumFixture({ isActive: () => { throw new Error("expired"); }, resolveConfiguration: (raw) => raw });
   assert.equal(getRequestConfiguration().feed.showTime, true);
-});
-
-test("version status uses the requested audience-specific text and can be hidden for free", () => {
-  const stored = installWorld();
-  const messages = ru.DMICHERSPOTLIGHTTOOLS.Requests.Welcome;
-  const gm = buildWelcomeMessageContent(true);
-  assert.ok(gm.includes(messages.FreeMasterBefore));
-  assert.match(gm, /href="https:\/\/boosty\.to\/dmicher"/);
-  const player = buildWelcomeMessageContent(false);
-  assert.ok(player.includes(messages.FreePlayer));
-  assert.doesNotMatch(player, /href="https:\/\/boosty\.to/);
-  registerPremiumFixture({ isActive: () => true, resolveConfiguration: (raw) => raw });
-  assert.ok(buildWelcomeMessageContent(true).includes(messages.PremiumActive));
-  assert.ok(buildWelcomeMessageContent(false).includes(messages.PremiumActive));
-  assert.doesNotMatch(buildWelcomeMessageContent(true), /href="https:\/\/boosty\.to/);
-  registerPremiumFixture(null);
-  stored.welcome.showPremiumStatus = false;
-  assert.doesNotMatch(buildWelcomeMessageContent(true), /dmicher-request-welcome-support|dmicher-request-welcome-divider/);
 });
 
 test("rejected asynchronous provider methods cannot create unhandled rejections", async (t) => {
@@ -226,7 +186,6 @@ test("configuration extensions can delegate to the free implementation without c
   const stored = installWorld(customConfiguration());
   const proposed = createDefaultRequestConfiguration();
   proposed.feed.enabled = true;
-  proposed.welcome.showPremiumStatus = true;
   const snapshot = structuredClone({ stored, proposed });
   registerPremiumFixture({
     resolveConfiguration(raw, defaults, base) {
@@ -238,7 +197,6 @@ test("configuration extensions can delegate to the free implementation without c
       const free = base(raw, next);
       assert.equal(free.chatEnabled, raw.chatEnabled);
       next.feed.enabled = false;
-      next.welcome.showPremiumStatus = false;
       raw.images.common.url = "https://example.test/mutated.webp";
       return next;
     }
@@ -247,7 +205,6 @@ test("configuration extensions can delegate to the free implementation without c
   const merged = mergeRequestConfigurationUpdate(stored, proposed);
   assert.equal(merged.chatEnabled, true);
   assert.equal(merged.feed.enabled, true);
-  assert.equal(merged.welcome.showPremiumStatus, true);
   assert.deepEqual({ stored, proposed }, snapshot);
 });
 

@@ -20,8 +20,6 @@ export function createDefaultRequestConfiguration() {
     chatNotifications: { polls: true, timers: true },
     soundsEnabled: true,
     blockWhenEnvironment: true,
-    showWelcome: true,
-    welcome: { gm: true, players: true, showPremiumStatus: true },
     feed: {
       enabled: true,
       showToPlayers: true,
@@ -106,12 +104,6 @@ export function normalizeRequestConfiguration(value) {
     },
     soundsEnabled: normalizeBoolean(source.soundsEnabled, defaults.soundsEnabled),
     blockWhenEnvironment: normalizeBoolean(source.blockWhenEnvironment, defaults.blockWhenEnvironment),
-    showWelcome: normalizeBoolean(source.showWelcome, defaults.showWelcome),
-    welcome: {
-      gm: normalizeBoolean(source.welcome?.gm, normalizeBoolean(source.showWelcome, true)),
-      players: normalizeBoolean(source.welcome?.players, normalizeBoolean(source.showWelcome, true)),
-      showPremiumStatus: normalizeBoolean(source.welcome?.showPremiumStatus, true)
-    },
     feed: {
       enabled: normalizeBoolean(source.feed?.enabled, defaults.feed.enabled),
       showToPlayers: normalizeBoolean(source.feed?.showToPlayers, defaults.feed.showToPlayers),

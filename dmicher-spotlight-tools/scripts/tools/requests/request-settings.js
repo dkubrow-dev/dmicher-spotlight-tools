@@ -323,12 +323,6 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
           },
           soundsEnabled: formData.has("soundsEnabled"),
           blockWhenEnvironment: formData.has("blockWhenEnvironment"),
-          showWelcome: previous.showWelcome,
-          welcome: {
-            gm: formData.has("showWelcomeGM"),
-            players: formData.has("showWelcomePlayers"),
-            showPremiumStatus: formData.has("showPremiumStatus")
-          },
           feed: {
             enabled: formData.has("feedEnabled"),
             showToPlayers: formData.has("feedShowToPlayers"),
@@ -385,7 +379,6 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       }
 
       for (const [key, value] of settingUpdates) await game.settings.set(MODULE_ID, key, value);
-      if (this.isMasterSettings) await actions.synchronizeChatIdentity?.();
       ui.notifications.info(localize("Requests.Settings.Saved"));
       await this.render({ force: true });
       if (feedVisibilityChanged) await this.offerReload();
@@ -659,10 +652,6 @@ function prepareMasterSettingsContext(configuration) {
     chatTimerNotifications: configuration.chatNotifications.timers,
     soundsEnabled: configuration.soundsEnabled,
     blockWhenEnvironment: configuration.blockWhenEnvironment,
-    showWelcome: configuration.showWelcome,
-    showWelcomeGM: configuration.welcome.gm,
-    showWelcomePlayers: configuration.welcome.players,
-    showPremiumStatus: configuration.welcome.showPremiumStatus,
     premiumActive: premium.active,
     premiumState: localize(premium.active ? "Premium.Active" : "Premium.Free"),
     premiumHint: localize(premium.active ? "Premium.EnabledHint" : "Premium.LockedHint"),

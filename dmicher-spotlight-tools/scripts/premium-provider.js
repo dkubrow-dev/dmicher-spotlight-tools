@@ -23,8 +23,6 @@ function applyPremiumFields(base, selected) {
     ...base,
     chatEnabled: selected.chatEnabled,
     soundsEnabled: selected.soundsEnabled,
-    showWelcome: selected.showWelcome,
-    welcome: { ...base.welcome, gm: selected.welcome.gm, players: selected.welcome.players },
     feed: { ...base.feed, showTime: selected.feed.showTime },
     images: clone(selected.images),
     sounds: clone(selected.sounds),
@@ -35,8 +33,8 @@ function applyPremiumFields(base, selected) {
 function freeConfiguration(stored, defaults) {
   return applyPremiumFields(clone(stored), {
     ...defaults,
-    chatEnabled: true, soundsEnabled: true, showWelcome: true,
-    welcome: { gm: true, players: true }, feed: { showTime: true }
+    chatEnabled: true, soundsEnabled: true,
+    feed: { showTime: true }
   });
 }
 
@@ -46,9 +44,8 @@ function freeConfigurationUpdate(stored, proposed) {
 
 const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 function validPremiumFields(value, expected) {
-  if (!isRecord(value) || !isRecord(value.welcome) || !isRecord(value.feed)) return false;
-  if (![value.chatEnabled, value.soundsEnabled, value.showWelcome,
-    value.welcome.gm, value.welcome.players, value.feed.showTime].every((item) => typeof item === "boolean")) return false;
+  if (!isRecord(value) || !isRecord(value.feed)) return false;
+  if (![value.chatEnabled, value.soundsEnabled, value.feed.showTime].every((item) => typeof item === "boolean")) return false;
   const validResources = ["images", "sounds", "timerSounds"].every((group) => isRecord(value[group])
     && Object.keys(expected[group]).every((key) => {
       const resource = value[group][key];

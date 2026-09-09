@@ -6,7 +6,6 @@ import { FLAGS, MODULE_ID } from "../dmicher-spotlight-tools/scripts/config.js";
 import { applyChatPortrait, getChatDisplayPortrait, renderChatPortrait } from "../dmicher-spotlight-tools/scripts/chat-portrait.js";
 import {
   buildRequestMessageContent,
-  buildWelcomeMessageContent,
   getRequestAnchorId,
   renderRequestChatMessage
 } from "../dmicher-spotlight-tools/scripts/tools/requests/request-message.js";
@@ -142,111 +141,6 @@ test("request renderer also accepts the raw HTMLElement supplied by v13 and v14"
   assert.equal(dom.cancelButton.hidden, false);
   assert.equal(dom.grantButton.hidden, false);
   assert.equal(dom.actions.classList.contains("is-available"), true);
-});
-
-test("welcome internal actions remain buttons and only Boosty uses an external link", () => {
-  installFoundryGlobals();
-  const content = buildWelcomeMessageContent(true);
-  assert.match(content, /Manifest Title/);
-  assert.match(content, /1\.2\.0/);
-  assert.match(content, /<a href="https:\/\/boosty\.to\/dmicher" target="_blank" rel="noopener noreferrer">Boosty<\/a>/);
-  assert.match(content, /<button type="button"[^>]+data-request-welcome-action="settings"/);
-  assert.match(content, /<button type="button"[^>]+data-request-welcome-action="master-settings"/);
-  assert.match(content, /<button type="button"[^>]+data-request-welcome-action="help"/);
-  assert.doesNotMatch(content, /data-request-welcome-action="thanks"/);
-  assert.match(content, /<hr class="dmicher-request-welcome-divider">/);
-  assert.match(content, /<p class="dmicher-request-welcome-support">/);
-  assert.equal((content.match(/class="dmicher-inline-link-tail"/g) ?? []).length, 1);
-  assert.ok(content.indexOf("dmicher-request-welcome-divider") < content.indexOf("dmicher-request-welcome-support"));
-  assert.doesNotMatch(buildWelcomeMessageContent(false), /data-request-welcome-action="master-settings"/);
-
-  for (const wrap of [(root) => ({ 0: root, length: 1 }), (root) => root]) {
-    const root = new MockElement();
-    const welcome = new MockElement();
-    const settings = new MockElement();
-    const masterSettings = new MockElement();
-    const help = new MockElement();
-    const thanks = new MockElement();
-    root.queries.set(".dmicher-request-card", null);
-    root.queries.set(".dmicher-request-technical", null);
-    root.queries.set(".dmicher-request-welcome", welcome);
-    welcome.queries.set('[data-request-welcome-action="settings"]', settings);
-    welcome.queries.set('[data-request-welcome-action="master-settings"]', masterSettings);
-    welcome.queries.set('[data-request-welcome-action="help"]', help);
-    welcome.queries.set('[data-request-welcome-action="thanks"]', thanks);
-    for (const [element, action] of [[settings, "settings"], [masterSettings, "master-settings"], [help, "help"], [thanks, "thanks"]]) {
-      element.dataset.requestWelcomeAction = action;
-    }
-    const message = {
-      id: "welcome",
-      visible: true, isContentVisible: true,
-      getFlag(_namespace, key) {
-        return key === FLAGS.requestWelcome ? { userId: "player-1" } : null;
-      }
-    };
-    game.messages.set(message.id, message);
-    const calls = [];
-    renderRequestChatMessage(message, wrap(root), {
-      resolveRequest() {},
-      openSettings: () => calls.push("settings"),
-      openMasterSettings: () => calls.push("master-settings"),
-      openHelp: () => calls.push("help"),
-      openThankAuthor: () => calls.push("thanks")
-    });
-
-    for (const [element, expected] of [[settings, "settings"], [masterSettings, "master-settings"], [help, "help"], [thanks, "thanks"]]) {
-      let prevented = false;
-      let stopped = false;
-      welcome.listeners.get("click")({
-        target: element,
-        preventDefault: () => { prevented = true; },
-        stopPropagation: () => { stopped = true; }
-      });
-      assert.equal(prevented, true);
-      assert.equal(stopped, true);
-      assert.equal(calls.at(-1), expected);
-    }
-  }
-});
-
-test("saved legacy welcome anchors are replaced before interaction", () => {
-  installFoundryGlobals();
-  const root = new MockElement();
-  const welcome = new MockElement();
-  const legacyAnchor = new MockElement();
-  legacyAnchor.tagName = "A";
-  legacyAnchor.textContent = "settings";
-  legacyAnchor.className = "legacy";
-  legacyAnchor.replaceWith = (replacement) => {
-    legacyAnchor.replacement = replacement;
-    welcome.queries.set('[data-request-welcome-action="settings"]', replacement);
-  };
-  root.queries.set(".dmicher-request-card", null);
-  root.queries.set(".dmicher-request-technical", null);
-  root.queries.set(".dmicher-request-welcome", welcome);
-  welcome.queries.set('[data-request-welcome-action="settings"]', legacyAnchor);
-  const message = {
-    id: "legacy-welcome",
-    visible: true, isContentVisible: true,
-    getFlag(_namespace, key) {
-      return key === FLAGS.requestWelcome ? { userId: "player-1" } : null;
-    }
-  };
-  game.messages.set(message.id, message);
-  let opened = false;
-
-  renderRequestChatMessage(message, root, {
-    resolveRequest() {},
-    openSettings: () => { opened = true; }
-  });
-
-  const replacement = legacyAnchor.replacement;
-  assert.ok(replacement);
-  assert.equal(replacement.type, "button");
-  assert.equal(replacement.dataset.requestWelcomeAction, "settings");
-  assert.equal(replacement.classList.contains("dmicher-inline-link"), true);
-  welcome.listeners.get("click")({ target: replacement, preventDefault() {}, stopPropagation() {} });
-  assert.equal(opened, true);
 });
 
 test("request actions rebind once and reject stale, concealed or newly unauthorized cards", () => {

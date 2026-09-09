@@ -443,7 +443,7 @@ const requestConfiguration = registeredSettings.get("dmicher-spotlight-tools.req
 assert.equal(requestConfiguration.default.feed.enabled, true);
 assert.equal(requestConfiguration.default.feed.showToPlayers, true);
 assert.equal(requestConfiguration.default.feed.showTime, true);
-assert.equal(requestConfiguration.default.showWelcome, true);
+assert.equal(Object.hasOwn(requestConfiguration.default, "showWelcome"), false);
 assert.equal(requestConfiguration.default.soundsEnabled, true);
 assert.equal(requestConfiguration.default.blockWhenEnvironment, true);
 assert.equal(requestConfiguration.default.limits.common.mode, "none");

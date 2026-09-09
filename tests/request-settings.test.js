@@ -102,8 +102,6 @@ test("free master settings preserve locked Premium values while saving common vi
   previous.chatEnabled = false;
   previous.soundsEnabled = false;
   previous.feed.showTime = false;
-  previous.welcome.gm = false;
-  previous.welcome.players = false;
   previous.images.common = { custom: true, url: "https://example.test/saved.webp" };
   previous.sounds.common = { custom: true, url: "https://example.test/saved.ogg", volume: 0.3 };
   const writes = [];
@@ -144,7 +142,6 @@ test("free master settings preserve locked Premium values while saving common vi
     ["chatPollNotifications", "on"],
     ["chatTimerNotifications", "on"],
     ["blockWhenEnvironment", "on"],
-    ["showPremiumStatus", "on"],
     ["feedEnabled", "on"],
     ["commonLimitMode", "none"],
     ["commonLimitCount", "1"],
@@ -192,5 +189,5 @@ test("free master settings preserve locked Premium values while saving common vi
     }
   ]);
   assert.equal(reloadOffers, 1);
-  assert.equal(identitySynchronizations, 1);
+  assert.equal(identitySynchronizations, 0);
 });

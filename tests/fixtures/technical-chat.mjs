@@ -17,14 +17,14 @@ export function installTechnicalChatFixture({ empty = false } = {}) {
   const originalSet = game.settings.set?.bind(game.settings);
   let identity = empty ? {} : { userId: "informer-user", actorId: "informer-actor", folderId: "informer-folder", name: "Informer" };
   game.settings.get = (namespace, key, ...args) => {
-    if (namespace === MODULE_ID && key === SETTINGS.technicalChatIdentity) return structuredClone(identity);
+    if (namespace === "dmicher-generics" && key === "informerIdentity") return structuredClone(identity);
     if (namespace === MODULE_ID && key === SETTINGS.requestConfiguration) {
       try { return originalGet(namespace, key, ...args) ?? {}; } catch { return {}; }
     }
     return originalGet(namespace, key, ...args);
   };
   game.settings.set = async (namespace, key, value) => {
-    if (namespace === MODULE_ID && key === SETTINGS.technicalChatIdentity) { identity = structuredClone(value); return value; }
+    if (namespace === "dmicher-generics" && key === "informerIdentity") { identity = structuredClone(value); return value; }
     return originalSet?.(namespace, key, value);
   };
   let humans;
@@ -40,7 +40,7 @@ export function installTechnicalChatFixture({ empty = false } = {}) {
   const documentClass = (type, collection) => class {
     static TYPES = ["character", "npc"];
     static async create(data) {
-      const id = data._id ?? `informer-${type.toLowerCase()}`;
+      const id = data._id ?? `informer-${type.toLowerCase()}-${created[type].length}`;
       const doc = {
         ...structuredClone(data), id,
         getFlag(namespace, key) { return this.flags?.[namespace]?.[key]; },
@@ -64,8 +64,14 @@ export function installTechnicalChatFixture({ empty = false } = {}) {
   CONFIG.Actor = { documentClass: documentClass("Actor", game.actors) };
   CONFIG.Folder = { documentClass: documentClass("Folder", game.folders) };
   if (!empty) {
-    const flags = { [MODULE_ID]: { informerIdentity: true } };
-    void CONFIG.Folder.documentClass.create({ _id: identity.folderId, type: "Actor", name: MODULE_ID, flags });
+    const descriptor = { version: 1, ownerId: "dmicher-generics", key: "informer" };
+    const flags = { "dmicher-generics": { managedIdentity: descriptor } };
+    void CONFIG.Folder.documentClass.create({ _id: "dmicher-folder", type: "Actor", name: "dmicher modules", flags: {
+      "dmicher-generics": { managedIdentityFolder: { ...descriptor, path: "dmicher modules" } }
+    } });
+    void CONFIG.Folder.documentClass.create({ _id: identity.folderId, type: "Actor", name: "generic", folder: "dmicher-folder", flags: {
+      "dmicher-generics": { ...flags["dmicher-generics"], managedIdentityFolder: { ...descriptor, path: "dmicher modules/generic" } }
+    } });
     void CONFIG.Actor.documentClass.create({ _id: identity.actorId, type: "npc", name: "Informer", img: INFORMER_PORTRAIT,
       folder: identity.folderId, ownership: { default: 0 }, prototypeToken: { texture: { src: INFORMER_PORTRAIT } }, flags });
     const permissions = Object.fromEntries(Object.keys(CONST.USER_PERMISSIONS).map((key) => [key, key === "MESSAGE_WHISPER"]));

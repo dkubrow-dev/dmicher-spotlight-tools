@@ -1,6 +1,6 @@
 {
   "id": "dmicher-smoke-world",
-  "title": "Dmicher Spotlight Tools Smoke Test",
+  "title": "dmicher 🎥 Spotlight Tools Smoke Test",
   "description": "Isolated world fixture for installed Foundry compatibility tests.",
   "system": "dmicher-smoke-system",
   "coreVersion": "13.351",

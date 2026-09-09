@@ -5,7 +5,7 @@
 
 ## Приспособы фокуса
 
-Модуль «Приспособы фокуса Дмичера» - набор инструментов для Foundry VTT, не зависящих от игровых систем и предназначенных для контроля фокуса внимания (спотлайта) за игровым столом.
+Модуль «dmicher 🎥 Приспособы фокуса» - набор инструментов для Foundry VTT, не зависящих от игровых систем и предназначенных для контроля фокуса внимания (спотлайта) за игровым столом.
 Модуль позволяет организовать последовательность заявок игроков, проконтролировать время, оставшееся до запланированных мастером событий, провести проверку готовности или другой опрос, организовать перерыв и проследить за тем, кто из игроков долгое время остаётся вне фокуса внимания.
 
 Поддерживаются Foundry VTT версий 13 и 14.
@@ -14,13 +14,13 @@
 
 Help is available to GMs and players. Pages follow table actions: give someone a turn, notice a quiet participant, check readiness and announce a break. Expand navigation sections and drag the divider to resize the menu. Author, thanks and dmicher modules remain at its bottom; the last page briefly describes all five suite components. Settings pages explain GM options, personal cards, volume and audit thresholds; each question icon shows a hint and opens the relevant description. U/I/B question icons overlay the button corner without changing the setting. Russian and English content and links remain in Spotlight; Generics provides the shared help interface.
 
-В текущей рабочей сборке общий код и оформление окон выделены в обязательный бесплатный модуль **dmicher Generics 1.0.0 (API 1)**. Установите и включите `dmicher-generics` вместе со Spotlight. Его манифест для этого выпуска: [Generics 1.0.0](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json). Тема, настройки и возможности Spotlight сохраняются; Premium по-прежнему необязателен. Новая зависимость пока готовится локально и должна быть опубликована до распространения этой сборки Spotlight. Для разработки расположите репозитории `dmicher-generics` и `dmicher-spotlight-tools` рядом: тесты используют настоящий общий код из соседнего репозитория.
+В текущей рабочей сборке общий код и оформление окон выделены в обязательный бесплатный модуль **dmicher 🧰 Generics 1.0.0 (API 1)**. Установите и включите `dmicher-generics` вместе со Spotlight. Его манифест для этого выпуска: [Generics 1.0.0](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json). Тема, настройки и возможности Spotlight сохраняются; Premium по-прежнему необязателен. Новая зависимость пока готовится локально и должна быть опубликована до распространения этой сборки Spotlight. Для разработки расположите репозитории `dmicher-generics` и `dmicher-spotlight-tools` рядом: тесты используют настоящий общий код из соседнего репозитория.
 
-The current development build requires the free **dmicher Generics 1.0.0 / API 1** module for shared styles and window helpers. Install and enable it alongside Spotlight using the [Generics 1.0.0 manifest](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json); Premium remains optional. The dependency is a local development build and must be published before distributing this updated Spotlight build. Tests expect the Generics repository next to the Spotlight repository.
+The current development build requires the free **dmicher 🧰 Generics 1.0.0 / API 1** module for shared styles and window helpers. Install and enable it alongside Spotlight using the [Generics 1.0.0 manifest](https://github.com/dkubrow-dev/dmicher-generics/releases/download/1.0.0/module.json); Premium remains optional. The dependency is a local development build and must be published before distributing this updated Spotlight build. Tests expect the Generics repository next to the Spotlight repository.
 
 Инфраструктура технического чата также находится в `generics.chat`: создание и восстановление информатора, приватные копии сообщений, общий учёт по ID, обработка кнопок и портретов. Spotlight сохраняет настройку личности и прежние идентификаторы, тексты, заявки, категории уведомлений и правила отображения. Другие технические пользователи dmicher исключаются из участников, а обычные НПС остаются игровыми персонажами. После обновления согласованных сборок Generics и Spotlight перезапустите мир, чтобы Foundry зарегистрировал сокет общего модуля.
 
-Technical chat infrastructure also uses `generics.chat`: informer provisioning and recovery, private message copies, tracked IDs, control bindings and portraits. Spotlight retains its identity setting and existing IDs, request rules, text, notification categories and display preferences. Other dmicher technical users are excluded from participants; ordinary NPCs remain game characters. Restart the world after updating both development builds so Foundry registers the shared module socket.
+Technical messages use `generics.chat.informer`: Generics owns the shared Informer in `dmicher modules/generic`, while Spotlight owns request rules, text, notification categories, display preferences and tracked message IDs. Old service documents are not migrated or deleted. Polls, requests and timers retain their private delivery behavior.
 
 Для базовых функций не нужны сторонние модули или внешние библиотеки: инфраструктуру предоставляет Generics. Необязательный `dmicher-premium` отвечает только за премиальные возможности и проверку доступа. Если появляются интеграции со сторонними инструментами, мастер явно выбирает их в настройках; установка стороннего модуля сама по себе не меняет исполнитель. Общие стили, поведение окон и контракты dmicher развиваются в Generics.
 
@@ -53,7 +53,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/m
 Запустите свою копию Foundry VTT и перейдите в главное меню.
 Выберите пункт "Модули".
 Нажмите кнопку "Установить модуль".
-В поле поиска введите "dmicher", выберите модуль "dmicher 🛠️ Spotlight Tools | Приспособы фокуса" и нажмите кнопку "Установить".
+В поле поиска введите "dmicher", выберите модуль "dmicher 🎥 Spotlight Tools | Приспособы фокуса" и нажмите кнопку "Установить".
 
 ### После установки модуля
 Зайдите в любой игровой мир.
@@ -225,12 +225,12 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/m
 
 ## Spotlight Tools
 
-The "dmicher Spotlight Tools" module is a system-agnostic toolset for Foundry VTT, designed to help control the focus of attention (spotlight) at the game table.
+The "dmicher 🎥 Spotlight Tools" module is a system-agnostic toolset for Foundry VTT, designed to help control the focus of attention (spotlight) at the game table.
 The module helps organize the sequence of player requests, track time remaining until events planned by the Game Master, run readiness checks or other polls, organize breaks, and notice which players have been outside the spotlight for a long time.
 
 Foundry VTT versions 13 and 14 are supported.
 
-The 1.3 base module remains free. The [dmicher-premium](https://boosty.to/dmicher) satellite with confirmed access enables changing time display, global game chat, world images and sounds, and separate Game Master/player welcome switches. Free mode uses built-in resources with time, chat, and both welcomes enabled. Anti-spam, feed visibility, poll/timer notifications, and personal settings stay free. Version status can also be hidden for free. Previous Premium settings are preserved when access expires and restored when it returns.
+The 1.3 base module remains free. The [dmicher-premium](https://boosty.to/dmicher) satellite with confirmed access enables changing time display, global game chat, world images and sounds. Free mode uses built-in resources with time and chat enabled. Anti-spam, feed visibility, poll/timer notifications and personal settings stay free. Previous Premium settings are preserved when access expires and restored when it returns. The shared welcome is configured for free in Generics.
 
 ## How to install the module?
 
@@ -249,7 +249,7 @@ Click "Install" next to the field.
 Start your Foundry VTT copy and go to the Setup screen.
 Choose "Add-on Modules".
 Click "Install Module".
-Enter "dmicher" in the search field, choose "dmicher 🛠️ Spotlight Tools | Приспособы фокуса", and click "Install".
+Enter "dmicher" in the search field, choose "dmicher 🎥 Spotlight Tools | Приспособы фокуса", and click "Install".
 
 ### After installing the module
 Open any game world.
@@ -281,7 +281,7 @@ The module is localized in Russian and English.
 
 The Request Settings window is a personal, tab-free window. Players see Regular and Urgent requests; Game Masters and Assistants also see Environment. Click an image to submit a request or drag it to the hotbar. Each type has user-specific plain text, color, CSS font size, underline, italic, bold, and alignment controls.
 
-World-wide options live in the separate Game Master Settings window, available to Game Masters and Assistants from the matching Game Settings button. The Module Window Theme setting is placed before the module submenu buttons. Game Master Settings contains Request Feed, Request Anti-spam Limits, Images, Sounds, and Welcome in that order.
+World-wide options live in the separate Game Master Settings window, available to Game Masters and Assistants from the matching Game Settings button. The Module Window Theme setting is placed before the module submenu buttons. Game Master Settings contains Request Feed, Request Anti-spam Limits, Images and Sounds in that order.
 
 A newly configured world starts with these defaults:
 
@@ -291,7 +291,7 @@ A newly configured world starts with these defaults:
 - Urgent requests allow one active request per player and start a 10-minute timeout when the floor is granted;
 - an active Environment request blocks every new request, including another Environment request;
 - standard images and sounds are used, and request sounds are enabled;
-- the welcome message is enabled.
+- the shared welcome is managed independently in Generics.
 
 Request Feed is a right-sidebar tab placed after Combat and before Scenes. It shows the queue, portraits, types, players, characters, and time. Authors can cancel their own requests; moderators can cancel any request or grant the floor. Its footer contains submit-or-drag request controls, Request Settings, Active Requests, and—when at least one timeout is configured—a moderator-only Reset Timers button. When Request Feed is enabled, Game Masters and Assistants always see it; Show Request Feed to players separately controls access for regular players and is enabled by default. Hiding the tab from players does not disable the queue or submission through Request Settings and macros. Changing global feed enablement or player visibility requires rebuilding the sidebar, so the module offers to reload the client.
 
@@ -303,7 +303,7 @@ Active Requests works independently from chat. It shows the portrait or token an
 
 The module adds Requests and Timers sliders to Playlists → User Volume Controls. Request volume is the per-type base volume multiplied by the user's Requests volume. Timer audio also applies the user's Timers slider and any signal-specific levels. Foundry's global mute takes precedence over every module sound.
 
-Private welcomes show the exact installed module `title` and version. The game menu, Help, and Game Master Settings links open inside Foundry. Premium can disable Game Master and player welcomes independently. With version status enabled, free Game Masters receive a Boosty subscription link while players see only the free status; confirmed Premium shows the author's thanks to both. The Show Premium Status setting is free and can be disabled regardless of subscription.
+Generics sends a private welcome from the shared Informer on loading. It lists every active dmicher module and its installed version, with available Help actions and a Game Settings button. Configure the welcome in Foundry Settings under Generics; the switch is free and does not disable Spotlight chat. A player joining later receives a welcome, while a GM reconnect does not resend it to existing players.
 
 Detailed interactive Help opens from Game Settings and from the first button in the Spotlight Tools canvas controls.
 

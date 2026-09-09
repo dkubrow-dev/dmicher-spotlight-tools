@@ -56,11 +56,8 @@ test("manifest and localization files are internally consistent", () => {
   const en = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "en.json"), "utf8"));
   const ru = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "ru.json"), "utf8"));
   assert.deepEqual(flattenKeys(en), flattenKeys(ru));
-  const enWelcome = en.DMICHERSPOTLIGHTTOOLS.Requests.Welcome.MainBefore;
-  const ruWelcome = ru.DMICHERSPOTLIGHTTOOLS.Requests.Welcome.MainBefore;
-  assert.match(enWelcome, /"\{module\}" \(\{version\}\)/);
-  assert.ok(ruWelcome.includes("\u00ab{module}\u00bb ({version})"));
-  assert.doesNotMatch(enWelcome + ruWelcome, /DMICHERSPOTLIGHTTOOLS\.Title/);
+  assert.equal(Object.hasOwn(en.DMICHERSPOTLIGHTTOOLS.Requests, "Welcome"), false);
+  assert.equal(Object.hasOwn(ru.DMICHERSPOTLIGHTTOOLS.Requests, "Welcome"), false);
 });
 
 test("installed Foundry smoke fixtures target the supported version range", () => {
@@ -210,18 +207,6 @@ test("poll template macro thumbnails keep a usable size across Foundry versions"
   assert.match(template, /<img[^>]+alt="\{\{macroTitle\}\}"[^>]+data-poll-template-drag/);
   assert.equal(en.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "Macro");
   assert.equal(ru.DMICHERSPOTLIGHTTOOLS.Polls.Manager.Columns.Macro, "\u041c\u0430\u043a\u0440\u043e\u0441");
-});
-
-test("welcome support is visually separated and uses internal master settings action", () => {
-  const stylesheet = fs.readFileSync(path.join(MODULE_ROOT, "styles", "dmicher-spotlight-tools.css"), "utf8");
-  const requestTool = fs.readFileSync(path.join(MODULE_ROOT, "scripts", "tools", "requests", "request-tool.js"), "utf8");
-  const ru = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "lang", "ru.json"), "utf8")).DMICHERSPOTLIGHTTOOLS;
-  assert.match(stylesheet, /\.dmicher-request-welcome-divider\s*\{[\s\S]*?border-top:[\s\S]*?\}/);
-  assert.match(stylesheet, /\.dmicher-request-welcome-support\s*\{[\s\S]*?font-size:\s*var\(--font-size-12\)/);
-  assert.match(stylesheet, /\.dmicher-request-welcome \.dmicher-inline-link-tail\s*\{[\s\S]*?white-space:\s*nowrap/);
-  assert.match(requestTool, /openMasterSettings:[\s\S]*?openRequestMasterSettings/);
-  assert.doesNotMatch(requestTool, /fetch\(|XMLHttpRequest/);
-  assert.equal(`${ru.Requests.Welcome.DisableBefore} ${ru.Requests.Welcome.MasterSettingsLink}${ru.Requests.Welcome.DisableAfter}`, "Общие и премиальные параметры модуля доступны в настройках мастера.");
 });
 
 test("window tables keep one continuous row divider", () => {

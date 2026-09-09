@@ -31,7 +31,7 @@ test("personal and Game Master request settings use separate templates", () => {
   assert.match(master, /name="feedShowToPlayers"[^>]*feedShowToPlayers/);
   assert.match(master, /Requests\.Resources\.ImagesHeading/);
   assert.match(master, /Requests\.Resources\.SoundsHeading/);
-  assert.match(master, /Requests\.Welcome\.Heading/);
+  assert.doesNotMatch(master, /Requests\.Welcome\.Heading/);
   assert.match(master, /#each imageResources/);
   assert.match(master, /#each soundResources/);
   assert.doesNotMatch(master, /timerSoundTypes|data-custom-timer-sound|customSoundChecked|disabledText/);
