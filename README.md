@@ -8,7 +8,7 @@
 Модуль «Приспособы фокуса Дмичера» - набор инструментов для Foundry VTT, не зависящих от игровых систем и предназначенных для контроля фокуса внимания (спотлайта) за игровым столом.
 Модуль позволяет организовать последовательность заявок игроков, проконтролировать время, оставшееся до запланированных мастером событий, провести проверку готовности или другой опрос, организовать перерыв и проследить за тем, кто из игроков долгое время остаётся вне фокуса внимания.
 
-Поддерживаются Foundry VTT версий 13 и 14.
+Поддерживаются Foundry VTT версий 13 и 14. В версии 1.3.1 исправлен запуск ленты, скрытой от игроков: мастер и ассистент продолжают видеть её.
 
 Базовая версия 1.3 остаётся бесплатной. Сателлит [dmicher-premium](https://boosty.to/dmicher) с подтверждённым доступом включает изменение показа времени, общего вывода в чат, изображений и звуков мира, а также отдельные выключатели приветствий мастеру и игрокам. Без Premium используются встроенные ресурсы, время, чат и оба приветствия включены. Антиспам, видимость ленты, уведомления опросов/таймеров и личные настройки остаются бесплатными. Показ статуса версии можно отключить бесплатно. Прежние премиальные настройки сохраняются при потере доступа и возвращаются при его восстановлении.
 
@@ -21,7 +21,7 @@
 Нажмите на кнопку "Установить модуль".
 Внизу окна введите в поле "Ссылка манифеста" ссылку:
 ```
-https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/module.json
+https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.1/module.json
 ```
 Нажмите на кнопку "Установить" рядом с полем.
 
@@ -204,7 +204,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/
 The "dmicher Spotlight Tools" module is a system-agnostic toolset for Foundry VTT, designed to help control the focus of attention (spotlight) at the game table.
 The module helps organize the sequence of player requests, track time remaining until events planned by the Game Master, run readiness checks or other polls, organize breaks, and notice which players have been outside the spotlight for a long time.
 
-Foundry VTT versions 13 and 14 are supported.
+Foundry VTT versions 13 and 14 are supported. Version 1.3.1 fixes startup of a feed hidden from players: the GM and assistant can still see it.
 
 The 1.3 base module remains free. The [dmicher-premium](https://boosty.to/dmicher) satellite with confirmed access enables changing time display, global game chat, world images and sounds, and separate Game Master/player welcome switches. Free mode uses built-in resources with time, chat, and both welcomes enabled. Anti-spam, feed visibility, poll/timer notifications, and personal settings stay free. Version status can also be hidden for free. Previous Premium settings are preserved when access expires and restored when it returns.
 
@@ -217,7 +217,7 @@ Choose "Add-on Modules".
 Click "Install Module".
 At the bottom of the window, enter this link in the "Manifest URL" field:
 ```
-https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/latest/download/module.json
+https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.1/module.json
 ```
 Click "Install" next to the field.
 
