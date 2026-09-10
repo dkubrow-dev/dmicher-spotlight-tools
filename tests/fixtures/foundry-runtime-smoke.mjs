@@ -3,6 +3,7 @@ import { installTechnicalChatFixture } from "./technical-chat.mjs";
 
 const generation = Number(process.argv[2]);
 assert.ok([12, 13, 14].includes(generation), "expected Foundry generation 12, 13, or 14");
+const feedScenario = process.argv[3] ? JSON.parse(process.argv[3]) : null;
 
 class TestCollection extends Map {
   constructor(items = []) {
@@ -190,6 +191,15 @@ const intervalCallbacks = [];
 const registeredSettings = new Map();
 const registeredMenus = new Map();
 const settingValues = new Map();
+if (feedScenario) {
+  settingValues.set("dmicher-spotlight-tools.requestConfiguration", {
+    feed: {
+      enabled: feedScenario.enabled,
+      showToPlayers: feedScenario.showToPlayers,
+      showTime: feedScenario.showTime
+    }
+  });
+}
 const invalidScopes = [];
 const socketListeners = new Map();
 const audioPreloads = [];
@@ -255,7 +265,7 @@ const settings = {
     if (!allowedScopes.has(config.scope)) invalidScopes.push({ namespace, key, scope: config.scope });
     const id = `${namespace}.${key}`;
     registeredSettings.set(id, config);
-    settingValues.set(id, structuredClone(config.default));
+    if (!settingValues.has(id)) settingValues.set(id, structuredClone(config.default));
   },
 
   registerMenu(namespace, key, config) {
@@ -278,7 +288,7 @@ const settings = {
 const currentUser = {
   id: "gm-1",
   name: "GM",
-  role: CONST.USER_ROLES.GAMEMASTER,
+  role: feedScenario?.role ?? CONST.USER_ROLES.GAMEMASTER,
   active: true,
   hotbar: {},
   can: () => true,
@@ -289,8 +299,8 @@ const moduleRecord = { id: "dmicher-spotlight-tools", api: null };
 globalThis.game = {
   release: { generation },
   version: `${generation}.999`,
-  user: currentUser,
-  users: new TestCollection([currentUser]),
+  user: null,
+  users: undefined,
   messages: new TestCollection(),
   macros: new TestCollection(),
   modules: new TestCollection([moduleRecord]),
@@ -405,14 +415,24 @@ assert.equal(hooks.count("ready"), 1);
 hooks.call("init");
 assert.equal(invalidScopes.length, 0);
 assert.ok(moduleRecord.api);
-assert.ok(CONFIG.ui.requests);
+// Foundry prepares User documents after init and before setup, then creates the UI.
+assert.equal(game.user, null);
+assert.equal(CONFIG.ui.requests, undefined, "request feed waits for the current User document");
+game.users = new TestCollection([currentUser]);
+game.user = currentUser;
+hooks.call("setup");
+const expectFeed = !feedScenario || (feedScenario.enabled
+  && (feedScenario.showToPlayers || currentUser.role >= CONST.USER_ROLES.ASSISTANT));
+assert.equal(Boolean(CONFIG.ui.requests), expectFeed, "feed class registration follows the current user role");
 if (generation === 12) {
   assert.equal(CONFIG.ui.requests.usesHandlebarsApplicationMixin, undefined);
   assert.equal(hooks.count("renderSidebar"), 1);
 } else {
-  assert.equal(CONFIG.ui.requests.usesHandlebarsApplicationMixin, true);
+  if (expectFeed) assert.equal(CONFIG.ui.requests.usesHandlebarsApplicationMixin, true);
   assert.equal(hooks.count("renderSidebar"), 0);
-  assert.deepEqual(Object.keys(CONFIG.ui.sidebar.TABS), ["chat", "combat", "requests", "scenes"]);
+  assert.deepEqual(Object.keys(CONFIG.ui.sidebar.TABS), expectFeed
+    ? ["chat", "combat", "requests", "scenes"]
+    : ["chat", "combat", "scenes"]);
 }
 assert.equal(sidebarClasses.has("dmicher-request-feed-enabled"), false);
 assert.equal(sidebarClasses.has("dmicher-request-feed-enabled-v12"), generation === 12);
@@ -442,6 +462,23 @@ assert.equal(requestConfiguration.default.limits.urgent.mode, "count");
 assert.equal(requestConfiguration.default.limits.urgent.count, 1);
 assert.equal(requestConfiguration.default.limits.urgent.timeoutMode, "grant");
 assert.equal(requestConfiguration.default.limits.urgent.timeoutDuration, 10 * 60 * 1000);
+
+if (feedScenario) {
+  assert.deepEqual(settingValues.get("dmicher-spotlight-tools.requestConfiguration"), {
+    feed: {
+      enabled: feedScenario.enabled,
+      showToPlayers: feedScenario.showToPlayers,
+      showTime: feedScenario.showTime
+    }
+  }, "setup preserves stored feed settings, including explicit false values");
+  if (expectFeed) {
+    const context = await new CONFIG.ui.requests()._prepareContext({});
+    assert.equal(context.moderator, currentUser.role >= CONST.USER_ROLES.ASSISTANT);
+    assert.equal(context.showTime, true, "free mode shows time independently of stored Premium preference");
+  }
+  process.stdout.write(JSON.stringify({ generation, ...feedScenario, feedRegistered: Boolean(CONFIG.ui.requests), setupCompleted: true }));
+  process.exit(0);
+}
 
 const feedApplication = new CONFIG.ui.requests();
 if (generation === 12) assert.ok(feedApplication instanceof MockLegacySidebarTab);
@@ -505,6 +542,7 @@ assert.ok(requestTextSetting, "request text setting was not registered");
 process.stdout.write(JSON.stringify({
   generation,
   apiInstalled: Boolean(moduleRecord.api),
+  setupCompleted: true,
   readyCompleted: true,
   invalidScopes,
   chatRenderHook: expectedChatHook,

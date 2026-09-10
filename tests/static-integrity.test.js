@@ -28,9 +28,10 @@ function flattenKeys(value, prefix = "", output = []) {
 
 test("manifest and localization files are internally consistent", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(MODULE_ROOT, "module.json"), "utf8"));
-  assert.equal(manifest.version, "1.3.0");
-  assert.match(manifest.download, /\/1\.3\.0\/dmicher-spotlight-tools-1\.3\.0\.zip$/);
-  assert.match(manifest.changelog, /\/tag\/1\.3\.0$/);
+  assert.equal(manifest.version, "1.3.1");
+  assert.equal(manifest.manifest, "https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.1/module.json");
+  assert.match(manifest.download, /\/1\.3\.1\/dmicher-spotlight-tools-1\.3\.1\.zip$/);
+  assert.match(manifest.changelog, /\/tag\/1\.3\.1$/);
   assert.equal(manifest.compatibility.minimum, "13");
   assert.equal(manifest.compatibility.verified, "14");
 

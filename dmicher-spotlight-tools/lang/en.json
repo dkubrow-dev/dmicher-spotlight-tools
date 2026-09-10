@@ -911,7 +911,7 @@
                   },
                   "ShowToPlayers": {
                     "Label": "Show Request Feed to players",
-                    "Description": "When enabled, regular players receive the tab; when disabled, it remains available only to Game Masters and Assistants. It is enabled by default, including for existing worlds without this setting."
+                    "Description": "When enabled, everyone can see the feed. When disabled, the GM and assistant still see it, while players and trusted players do not. Enable must be on; Show time does not change feed visibility. Reload the world page after saving."
                   },
                   "ReloadPrompt": {
                     "Label": "Reload prompt",
