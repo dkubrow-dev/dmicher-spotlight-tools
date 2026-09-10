@@ -13,7 +13,9 @@ const manifestBytes = fs.readFileSync(path.join(source, "module.json"));
 const manifest = JSON.parse(manifestBytes);
 const version = manifest.version;
 validateReleaseManifest(manifest);
-const output = path.resolve(repo, "..", "artifacts", moduleId, version);
+const variant = process.env.DMICHER_RELEASE_VARIANT ?? "";
+assert.ok(!variant || /^[a-z0-9][a-z0-9._-]{0,63}$/i.test(variant), "Invalid release artifact variant");
+const output = path.resolve(repo, "..", "artifacts", moduleId, version, variant);
 const archiveName = moduleId + "-" + version + ".zip";
 const targets = [
   "C:/Users/dscherkasov/AppData/Local/FoundryVTT/Data/modules/dmicher-spotlight-tools",

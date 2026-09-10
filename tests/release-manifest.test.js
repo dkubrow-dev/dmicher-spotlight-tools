@@ -7,13 +7,15 @@ const sourceManifest = JSON.parse(fs.readFileSync(new URL("../dmicher-spotlight-
 
 test("release validation accepts the source manifest and rejects unpinned or foreign release URLs", () => {
   validateReleaseManifest(sourceManifest);
+  const version = sourceManifest.version;
+  const otherVersion = (Number(version.split(".")[0]) + 1) + ".0.0";
   for (const [field, value] of [
-    ["manifest", sourceManifest.manifest.replace("download/1.3.0", "latest/download")],
-    ["manifest", sourceManifest.manifest.replace("/1.3.0/", "/1.2.0/")],
+    ["manifest", sourceManifest.manifest.replace("download/" + version, "latest/download")],
+    ["manifest", sourceManifest.manifest.replace("/" + version + "/", "/" + otherVersion + "/")],
     ["manifest", sourceManifest.manifest.replace("dkubrow-dev", "another-owner")],
-    ["download", sourceManifest.download.replace("/1.3.0/", "/1.2.0/")],
-    ["download", "https://another.example/1.3.0/dmicher-spotlight-tools-1.3.0.zip"],
-    ["changelog", sourceManifest.changelog.replace("/1.3.0", "/latest")]
+    ["download", sourceManifest.download.replace("/" + version + "/", "/" + otherVersion + "/")],
+    ["download", "https://another.example/" + version + "/dmicher-spotlight-tools-" + version + ".zip"],
+    ["changelog", sourceManifest.changelog.replace("/" + version, "/latest")]
   ]) {
     assert.throws(() => validateReleaseManifest({ ...sourceManifest, [field]: value }), /exact release/);
   }

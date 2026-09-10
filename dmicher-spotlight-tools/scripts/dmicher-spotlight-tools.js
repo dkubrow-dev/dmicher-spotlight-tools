@@ -64,15 +64,6 @@ Hooks.once("init", () => {
     openActiveRequests: () => requestTool.openActiveRequestsWindow()
   });
   registerThankAuthorMenu();
-  configureRequestFeed({
-    activeRequests: requestTool.activeRequests,
-    actions: {
-      submitRequest: requestTool.submitRequest,
-      onRequestDragStart: requestHotbar.onRequestDragStart,
-      openSettings: () => openRequestSettings(),
-      openManagement: () => requestTool.openActiveRequestsWindow()
-    }
-  });
   timerTool.registerSettings();
   timerTool.registerHooks();
   requestTool.registerHooks();
@@ -115,6 +106,19 @@ Hooks.once("init", () => {
     capabilities: ["openHelp", "openActiveRequests", "openFocusAudit", "openTimers", "openPolls", "openStopwatch"]
   });
   Hooks.callAll("dmicherSpotlightReady", game.modules.get(MODULE_ID).api);
+});
+
+// Users are available during setup; register role-specific tabs before Foundry creates the UI.
+Hooks.once("setup", () => {
+  configureRequestFeed({
+    activeRequests: requestTool.activeRequests,
+    actions: {
+      submitRequest: requestTool.submitRequest,
+      onRequestDragStart: requestHotbar.onRequestDragStart,
+      openSettings: () => openRequestSettings(),
+      openManagement: () => requestTool.openActiveRequestsWindow()
+    }
+  });
 });
 
 Hooks.once("ready", async () => {

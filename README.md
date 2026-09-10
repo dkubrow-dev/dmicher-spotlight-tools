@@ -8,7 +8,7 @@
 Модуль «dmicher 🎥 Приспособы фокуса» - набор инструментов для Foundry VTT, не зависящих от игровых систем и предназначенных для контроля фокуса внимания (спотлайта) за игровым столом.
 Модуль позволяет организовать последовательность заявок игроков, проконтролировать время, оставшееся до запланированных мастером событий, провести проверку готовности или другой опрос, организовать перерыв и проследить за тем, кто из игроков долгое время остаётся вне фокуса внимания.
 
-Поддерживаются Foundry VTT версий 13 и 14.
+Поддерживаются Foundry VTT версий 13 и 14. В версии 1.3.1 исправлен запуск ленты, скрытой от игроков: мастер и ассистент продолжают видеть её.
 
 Справка доступна мастеру и игрокам. Страницы сгруппированы по игровым действиям: дать слово, заметить молчащего игрока, проверить готовность, объявить перерыв. Раскрывайте разделы меню и меняйте его ширину перетаскиванием границы. Внизу всегда доступны автор, благодарности и «Модули dmicher» — краткое описание пяти компонентов комплекта. В разделе настроек описаны параметры мастера, личных карточек, громкости и пороги аудита; значок вопроса возле поля показывает подсказку и открывает точное описание. У кнопок U/I/B вопрос расположен поверх угла и не меняет настройку. Тексты и ссылки на русском и английском находятся в Spotlight, общий интерфейс справки — в Generics.
 
@@ -45,7 +45,7 @@ Extension inputs are isolated and only declared paid fields are accepted. Missin
 Нажмите на кнопку "Установить модуль".
 Внизу окна введите в поле "Ссылка манифеста" ссылку:
 ```
-https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/module.json
+https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.1/module.json
 ```
 Нажмите на кнопку "Установить" рядом с полем.
 
@@ -228,7 +228,7 @@ https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/m
 The "dmicher 🎥 Spotlight Tools" module is a system-agnostic toolset for Foundry VTT, designed to help control the focus of attention (spotlight) at the game table.
 The module helps organize the sequence of player requests, track time remaining until events planned by the Game Master, run readiness checks or other polls, organize breaks, and notice which players have been outside the spotlight for a long time.
 
-Foundry VTT versions 13 and 14 are supported.
+Foundry VTT versions 13 and 14 are supported. Version 1.3.1 fixes startup of a feed hidden from players: the GM and assistant can still see it.
 
 The 1.3 base module remains free. The [dmicher-premium](https://boosty.to/dmicher) satellite with confirmed access enables changing time display, global game chat, world images and sounds. Free mode uses built-in resources with time and chat enabled. Anti-spam, feed visibility, poll/timer notifications and personal settings stay free. Previous Premium settings are preserved when access expires and restored when it returns. The shared welcome is configured for free in Generics.
 
@@ -241,7 +241,7 @@ Choose "Add-on Modules".
 Click "Install Module".
 At the bottom of the window, enter this link in the "Manifest URL" field:
 ```
-https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.0/module.json
+https://github.com/dkubrow-dev/dmicher-spotlight-tools/releases/download/1.3.1/module.json
 ```
 Click "Install" next to the field.
 
@@ -437,3 +437,9 @@ npm run release:verify
 Перед деплоем просмотрите точные каталоги, обновления и удаления из dry-run. Команда deploy отклоняет изменившийся план. Разрешены только установки этого модуля в AppData и каталогах Foundry 13/14 на E:. Сборка содержит только устанавливаемый модуль; проверка сравнивает состав и SHA256 исходников, ZIP и всех трёх установок. Команды не публикуют файлы в интернет. Локальный каталог `.sources/` хранит прежние материалы разработки и не входит в Git.
 
 Inspect the dry-run targets, updates, and removals before deployment. Deploy rejects stale plans. Only this module's AppData and E: Foundry 13/14 installations are allowed. The ZIP contains installable module files only; verification compares source, ZIP, and all three installations by file list and SHA256. These commands do not publish files online. The local `.sources/` directory retains historical development material and is excluded from Git.
+
+### Артефакты разработки Ширмы / Master screen development artifacts
+
+При сборке, проверке и локальном деплое из ветки dev-masterscreen-0.0.1 задайте переменную окружения DMICHER_RELEASE_VARIANT=dev-masterscreen-0.0.1. Артефакты попадут в artifacts/dmicher-spotlight-tools/1.3.1/dev-masterscreen-0.0.1/; самостоятельный релиз 1.3.1 сохранится в родительской папке.
+
+Set DMICHER_RELEASE_VARIANT=dev-masterscreen-0.0.1 when building, verifying or deploying this development branch. Its artifacts go into artifacts/dmicher-spotlight-tools/1.3.1/dev-masterscreen-0.0.1/, preserving the standalone 1.3.1 release in the parent folder.
