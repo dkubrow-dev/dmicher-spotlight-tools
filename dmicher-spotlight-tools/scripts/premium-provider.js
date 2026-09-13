@@ -9,6 +9,11 @@ const premium = generics.premium.forModule(MODULE_ID, {
   apiVersion: PREMIUM_API_VERSION,
   methods: ["resolveConfiguration", "mergeConfiguration"]
 });
+// An additive capability: an older provider can still supply saved custom URLs.
+const soundPicker = generics.premium.forModule(MODULE_ID, {
+  apiVersion: PREMIUM_API_VERSION,
+  methods: ["resolveSoundPickerOptions"]
+});
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 export const waitForPremiumReady = (timeoutMs = 50_000) => premium.waitUntilReady(timeoutMs);
@@ -16,6 +21,15 @@ export const getPremiumStatus = () => premium.getStatus();
 export const isPremiumActive = () => getPremiumStatus().active;
 export const openPremiumSettings = () => premium.openSettings();
 export const subscribePremiumChanges = (listener) => premium.subscribe(listener);
+
+export function getPremiumSoundPickerOptions(current = "") {
+  const path = String(current ?? "").trim().slice(0, 2048);
+  const options = soundPicker.invoke("resolveSoundPickerOptions", [path], () => null,
+    (value) => value === null || (value?.type === "audio" && value.current === path));
+  // Only the documented options cross this boundary; no callbacks or permission
+  // overrides supplied by an extension are passed to Foundry.
+  return options && { type: "audio", current: options.current };
+}
 
 // These fields belong to Spotlight's configuration contract, not to Generics.
 function applyPremiumFields(base, selected) {

@@ -2,6 +2,7 @@
 
 ## Русский
 
+- В Premium свой звук заявки, таймера и перерыва можно выбрать или загрузить через штатное окно файлов Foundry. Поле принимает путь к файлу и прямую внешнюю ссылку. Перед сохранением проверяется воспроизведение; права загрузки определяет Foundry.
 - В «Плейлисты → Управление громкостью» убраны значки вопроса у строк «Заявки» и «Таймеры». Ползунки и их поведение сохранены; описания настроек остаются в справке.
 - Исправлена видимость ленты заявок при выключенном «Показывать ленту заявок игрокам»: после запуска мира лента доступна мастеру и ассистенту, а игрокам скрыта.
 - Флаг «Включить» по-прежнему управляет лентой для всех. Премиальный показ времени не меняет права просмотра.
@@ -11,6 +12,7 @@
 
 ## English
 
+- Premium request, timer and break sounds can be selected or uploaded through Foundry's native file browser. The field accepts a file path or direct external URL. Playback is checked before saving; Foundry controls upload permissions.
 - Requests and Timers in Playlists → Volume controls no longer display question icons. Slider behavior and the corresponding help descriptions remain available.
 - Fixed Request Feed visibility when “Show Request Feed to players” is disabled: the feed is available to the GM and assistant after world startup and remains hidden from players.
 - “Enable” still controls the feed for everyone. The Premium timestamp option does not change visibility permissions.

@@ -117,9 +117,15 @@
           <span>{{toggleLabel}}</span>
         </label>
         <label class="dmicher-settings-field">
-          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.Url"}}</span>
-          <input type="url" name="{{prefix}}Url" value="{{url}}" maxlength="2048"
-            placeholder="{{placeholder}}" {{#unless custom}}disabled{{/unless}}>
+          <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.SoundPath"}}</span>
+          <span class="dmicher-sound-path-controls">
+            <input type="text" name="{{prefix}}Url" value="{{url}}" maxlength="2048"
+              placeholder="{{placeholder}}" {{#unless custom}}disabled{{/unless}}>
+            <button type="button" data-sound-file-picker data-resource-prefix="{{prefix}}"
+              aria-label="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.BrowseSound'}}"
+              title="{{localize 'DMICHERSPOTLIGHTTOOLS.Requests.Resources.BrowseSound'}}"
+              {{#unless custom}}disabled{{/unless}}><i class="fa-solid fa-folder-open" aria-hidden="true"></i></button>
+          </span>
         </label>
         <label class="dmicher-volume-field">
           <span>{{localize "DMICHERSPOTLIGHTTOOLS.Requests.Resources.BaseVolume"}}</span>

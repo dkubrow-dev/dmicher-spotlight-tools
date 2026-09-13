@@ -8,7 +8,7 @@ import {
   TIMER_SOUND_SOURCES
 } from "../../config.js";
 import { getThemedWindowClasses } from "../../theme.js";
-import { getPremiumStatus, openPremiumSettings } from "../../premium-provider.js";
+import { getPremiumSoundPickerOptions, getPremiumStatus, openPremiumSettings } from "../../premium-provider.js";
 import {
   canUseRequest,
   confirmDialog,
@@ -183,6 +183,9 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       for (const button of form.querySelectorAll("[data-sound-preview]")) {
         button.addEventListener("click", () => void this.toggleSoundPreview(button, form));
       }
+      for (const button of form.querySelectorAll("[data-sound-file-picker]")) {
+        button.addEventListener("click", () => void this.openSoundPicker(button, form));
+      }
       if (!this.isMasterSettings) this.startTimeoutTicking();
     });
   }
@@ -195,11 +198,48 @@ class RequestSettingsApplication extends HandlebarsApplicationMixin(ApplicationV
       url.required = toggle.checked;
       if (!toggle.checked) url.value = "";
     }
+    const picker = form.querySelector('[data-sound-file-picker][data-resource-prefix="' + prefix + '"]');
+    if (picker) picker.disabled = !toggle.checked || !getPremiumSoundPickerOptions();
     if (toggle.dataset.disableResourceControls !== "true") return;
     const volume = form.elements[prefix + "Volume"];
     const preview = form.querySelector('[data-sound-preview][data-resource-prefix="' + prefix + '"]');
     if (volume) volume.disabled = !toggle.checked;
     if (preview) preview.disabled = !toggle.checked;
+  }
+
+  async openSoundPicker(button, form) {
+    if (!this.isMasterSettings || !isModerator()) return;
+    const prefix = button.dataset.resourcePrefix;
+    const input = form.elements[prefix + "Url"];
+    const toggle = form.elements[prefix + "Custom"];
+    if (!input || !toggle?.checked || !this.rendered || !this.element?.contains(form)) return;
+    const options = getPremiumSoundPickerOptions(input.value);
+    if (!options) {
+      ui.notifications.warn(localize("Premium.LockedHint"));
+      return;
+    }
+    if (game.user?.can?.("FILES_BROWSE") === false) {
+      ui.notifications.warn(localize("Requests.Resources.FileBrowseForbidden"));
+      return;
+    }
+    try {
+      const Picker = foundry.applications.apps.FilePicker.implementation;
+      const picker = new Picker({
+        ...options,
+        callback: (path) => {
+          // A native picker can outlive this render, the custom toggle or access.
+          // Do not let its late result change a replacement or closed form.
+          if (!this.rendered || !this.element?.contains(form) || !toggle.checked || !isModerator()
+            || !getPremiumSoundPickerOptions(input.value)) return;
+          input.value = path;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+      await picker.browse();
+    } catch (error) {
+      console.error(`${MODULE_ID} | Audio file picker failed`, error);
+      ui.notifications.error(localize("Requests.Resources.FilePickerFailed"));
+    }
   }
 
   updateLimitCount(select) {
@@ -709,7 +749,7 @@ async function validateResource(url, kind) {
     const response = await fetch(url, {
       method: "GET",
       mode: "cors",
-      credentials: "omit",
+      credentials: "same-origin",
       signal: controller.signal
     });
     if (!response.ok) throw error;
