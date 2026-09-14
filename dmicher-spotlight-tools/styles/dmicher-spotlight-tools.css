@@ -2526,17 +2526,6 @@
 }
 .dmicher-premium-summary p { margin: 0.35rem 0; font-size: 0.85em; }
 .dmicher-premium-summary button { margin-top: 0.35rem; }
-.dmicher-premium-badge {
-  display: inline-block;
-  margin-left: 0.45rem;
-  padding: 0.05rem 0.4rem;
-  border: 1px solid currentColor;
-  border-radius: 0.4rem;
-  color: var(--dmicher-text-muted);
-  font-size: 0.72em;
-  line-height: 1.5;
-  white-space: nowrap;
-}
 .dmicher-settings-section[disabled] .dmicher-resource-row { opacity: 0.65; }
 
 .dmicher-request-master-settings-form .dmicher-sound-path-controls {
