@@ -62,6 +62,50 @@ test("world sources and reads need no scene and never seed preparation", () => {
   for (const fn of FUNCTIONS) assert.equal(api.functions({ type: fn.ownerTypes[0], id: "template" }).some((candidate) => candidate.id === fn.id), true);
 });
 
+test("binding revision checks validate the owner without cloning preparation or writing settings", async () => {
+  const {api,writes}=setup();
+  assert.equal(api.getBindingsRevision(owner),0);
+  await api.saveBindings(owner,{subscriptions:[subscription()]},{expectedRevision:0});
+  const before=writes.length;
+  api.readBindings=()=>assert.fail("Revision checks must not copy the complete preparation");
+  assert.equal(api.getBindingsRevision(owner),1);
+  assert.throws(()=>api.getBindingsRevision({type:"polls",id:"missing"}),/no longer exists/);
+  assert.equal(writes.length,before);
+});
+
+test("Spotlight subscription limits count disabled self rows and use only Spotlight grants", async () => {
+  const {api,values}=setup();
+  const rows=Array.from({length:8},(_,index)=>({...subscription(),id:`s${index}`,enabled:false}));
+  await api.saveBindings(owner,{subscriptions:rows},{expectedRevision:0});
+  assert.deepEqual(api.getAutomationLimits(),{scriptSteps:16,subscriptions:8,actions:4,chainHandlers:8});
+  await assert.rejects(api.saveBindings(owner,{subscriptions:[...rows,{...subscription(),id:"ninth"}]},{expectedRevision:1}),/8/);
+  premium=generics.premium.registerProvider({apiVersion:1,hasAccess:id=>id === "dmicher-master-screen",extensions:[{
+    moduleId:"dmicher-master-screen",apiVersion:1,methods:{resolveAutomationLimits:()=>({scriptSteps:null,subscriptions:null,actions:null,chainHandlers:null})}
+  }]});
+  assert.equal(api.getAutomationLimits().subscriptions,8);
+  premium.dispose();
+  premium=generics.premium.registerProvider({apiVersion:1,hasAccess:id=>id === MODULE,extensions:[{
+    moduleId:MODULE,apiVersion:1,methods:{resolveAutomationLimits:()=>({scriptSteps:null,subscriptions:null,actions:null,chainHandlers:null})}
+  }]});
+  const saved=await api.saveBindings(owner,{subscriptions:[...rows,{...subscription(),id:"ninth"}]},{expectedRevision:1});
+  assert.equal(saved.subscriptions.length,9);
+  premium.dispose();
+  assert.equal(api.readBindings(owner).subscriptions.length,9);
+  await api.saveBindings(owner,{subscriptions:saved.subscriptions.map(row=>({...row,enabled:true}))},{expectedRevision:2});
+  await assert.rejects(api.saveBindings(owner,{subscriptions:[...saved.subscriptions,{...subscription(),id:"tenth"}]},{expectedRevision:3}),/8/);
+  await api.saveBindings(owner,{subscriptions:rows},{expectedRevision:3});
+  assert.equal(values.get("automationBindings")["requests:requests"].subscriptions.length,8);
+});
+
+test("Premium Spotlight preparation accepts more than the former hundred-subscription cap", async () => {
+  const {api}=setup();
+  premium=generics.premium.registerProvider({apiVersion:1,hasAccess:()=>true,extensions:[{moduleId:MODULE,apiVersion:1,
+    methods:{resolveAutomationLimits:()=>({scriptSteps:null,subscriptions:null,actions:null,chainHandlers:null})}}]});
+  const saved=await api.saveBindings(owner,{subscriptions:Array.from({length:101},(_,index)=>({...subscription(),id:`sub-${index}`}))},{expectedRevision:0});
+  assert.equal(saved.subscriptions.length,101);premium.dispose();
+  assert.equal(api.readBindings(owner).subscriptions.length,101);
+});
+
 test("every source event exposes independent bilingual labels without changing its ID", () => {
   const { api } = setup();
   const sources = api.sources();

@@ -30,6 +30,16 @@ export function authorizePremiumAutomation(operation) {
     (value) => typeof value === "boolean") === true;
 }
 
+const automationLimits = generics.premium.forModule(MODULE_ID, {
+  apiVersion: PREMIUM_API_VERSION, methods: ["resolveAutomationLimits"]
+});
+const freeAutomationLimits = () => ({ scriptSteps: 16, subscriptions: 8, actions: 4, chainHandlers: 8 });
+export function getAutomationLimits() {
+  const limits = automationLimits.invoke("resolveAutomationLimits", [], freeAutomationLimits,
+    value => value && Object.entries(freeAutomationLimits()).every(([key, limit]) => value[key] === null || value[key] === limit));
+  return Object.fromEntries(Object.keys(freeAutomationLimits()).map(key => [key, limits[key]]));
+}
+
 export function getPremiumSoundPickerOptions(current = "") {
   const path = String(current ?? "").trim().slice(0, 2048);
   const options = soundPicker.invoke("resolveSoundPickerOptions", [path], () => null,

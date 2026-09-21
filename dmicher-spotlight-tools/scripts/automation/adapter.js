@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../config.js";
 import { isModerator, isPrimaryModerator } from "../utils.js";
-import { authorizePremiumAutomation } from "../premium-provider.js";
+import { authorizePremiumAutomation, getAutomationLimits } from "../premium-provider.js";
 import { EVENTS, EVENT_LABELS, FUNCTIONS, normalizeOwner, OWNER_LABELS } from "./catalog.js";
 import { registerAutomationEvents, activateAutomationEvents, subscribeAutomation, isAutomationAuthority } from "./events.js";
 import { compareActiveRequestEntries } from "../tools/requests/request-config.js";
@@ -43,6 +43,7 @@ export class SpotlightAutomation {
     return functions;
   }
   subscribe(listener) { return subscribeAutomation(listener); }
+  getAutomationLimits() { return getAutomationLimits(); }
   canExecute(id) {
     const fn = FUNCTIONS.find((item) => item.id === id);
     return Boolean(fn && (!fn.premium || authorizePremiumAutomation(id.slice("spotlight.".length))));
@@ -59,6 +60,10 @@ export class SpotlightAutomation {
     const all = game.settings.get(MODULE_ID, "automationBindings") ?? {};
     return clone(all[`${owner.type}:${owner.id}`] ?? { revision: 0, subscriptions: [], registeredMacroUuids: [] });
   }
+  getBindingsRevision(owner) {
+    owner = this.validateOwner(owner);
+    return game.settings.get(MODULE_ID, "automationBindings")?.[`${owner.type}:${owner.id}`]?.revision ?? 0;
+  }
   saveBindings(owner, data, { expectedRevision } = {}) {
     if (!isModerator()) return Promise.reject(new Error("Moderator required"));
     // All preparation writes go through the elected moderator, so the revision
@@ -71,7 +76,11 @@ export class SpotlightAutomation {
       owner = this.validateOwner(owner);
       const current = this.readBindings(owner);
       if (expectedRevision !== current.revision) throw new Error("Automation revision conflict");
-      if (!Array.isArray(data?.subscriptions) || data.subscriptions.length > 100) throw new Error("Invalid subscriptions");
+      if (!Array.isArray(data?.subscriptions)) throw new Error("Invalid subscriptions");
+      const limit = this.getAutomationLimits().subscriptions;
+      if (limit !== null && data.subscriptions.length > limit && data.subscriptions.length > current.subscriptions.length) {
+        throw new Error(game.i18n?.lang === "ru" ? `Без Premium доступно до ${limit} подписок на инструмент.` : `Without Premium, a tool supports up to ${limit} subscriptions.`);
+      }
       const ids = new Set();
       const subscriptions = data.subscriptions.map((row) => {
         if (!row.id || ids.has(row.id)) throw new Error("Unique subscription ID required");

@@ -1,6 +1,10 @@
 > *README написан на русском и английском языках. Английскую версию ищите ниже.*
 > *The README is written in both Russian and English. The English version is below.*
 
+Автоматизация инструментов: бесплатно до 8 подписок каждого владельца и 16 шагов скрипта; отключённые и собственные подписки учитываются. Сохранённый длинный скрипт без Premium блокируется целиком, данные не удаляются. Общий бесплатный каскад ограничен 8 обработчиками. Лицензия проверяется для Спотлайта независимо от Ширмы.
+
+Tool automation allows 8 subscriptions per owner and 16 steps per script for free; disabled and self-subscriptions count. Without Premium, an oversized saved script is blocked in full without deleting preparation. A free causal cascade allows 8 handlers. Spotlight uses its own entitlement independently of Master Screen.
+
 # Русская версия
 
 ## Приспособы фокуса

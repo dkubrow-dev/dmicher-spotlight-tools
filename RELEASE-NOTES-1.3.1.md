@@ -1,5 +1,8 @@
 # dmicher Spotlight Tools 1.3.1
 
+- Подписки инструментов учитывают бесплатные квоты: 8 на владельца и 16 шагов на скрипт. Все строки, включая выключенные, занимают места; сохранённые превышения не удаляются. Скрипт длиннее 16 шагов блокируется целиком. Premium снимает квоты через собственное право Спотлайта; один бесплатный причинный каскад содержит до 8 обработчиков мира и сцены.
+- Tool subscriptions enforce free quotas of 8 per owner and 16 steps per script. Every saved entry, including disabled entries, occupies a slot; excess preparation is retained. Scripts over 16 steps are blocked in full. Spotlight's own Premium entitlement removes quotas; a free causal cascade admits up to 8 world/scene handlers.
+
 ## Русский
 
 - Рабочая ветка Ширмы: добавлены мировые события и операции заявок, опросов, таймеров, перерыва, секундомера и аудита фокуса. Точки «Автоматизация» используют общий редактор Ширмы; подписки работают без сцены и сохраняются у своего инструмента с ревизией. Без Ширмы ручные функции остаются доступными.
