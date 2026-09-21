@@ -462,6 +462,18 @@
   width: 0.72rem;
 }
 
+.dmicher-automation-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.dmicher-automation-tabs button { flex: 0 1 auto; width: auto; }
+.dmicher-automation-tabs [aria-selected="true"] { font-weight: bold; }
+.dmicher-automation-panel { min-width: 0; }
+.dmicher-automation-placeholder fieldset { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.dmicher-automation-original[hidden], .dmicher-automation-panel[hidden] { display: none; }
+
 .dmicher-indicator-good {
   --dmicher-indicator-color: #3aa657;
 }

@@ -1,5 +1,16 @@
 {
   "DMICHERSPOTLIGHTTOOLS": {
+    "Automation": {
+      "Title": "Automation",
+      "Content": "Settings",
+      "ActiveRequests": "Active requests",
+      "Unavailable": "Automation is available when dmicher Master Screen is active. Spotlight's manual tools remain available. These examples do not create subscriptions.",
+      "Example": "Subscription example",
+      "Signal": "Signal",
+      "SignalExample": "Tool event → script",
+      "AddSubscription": "Add subscription",
+      "Close": "Close"
+    },
     "Title": "dmicher 🎥 Spotlight Tools",
     "Hints": {
       "ClickOrDragHotbarMacro": "Click to use; drag to the hotbar to create a macro"
@@ -113,7 +124,7 @@
         "AddError": "Could not add the request to the hotbar."
       },
       "Active": {
-        "WindowTitle": "Active Requests",
+        "WindowTitle": "Request Management",
         "Heading": "Active Requests",
         "Summary": "Total requests - {total}, urgent - {urgent}",
         "Empty": "There are no active requests yet.",

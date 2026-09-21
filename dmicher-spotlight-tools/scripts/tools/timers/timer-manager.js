@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { createAutomationDraft, openAutomation } from "../../automation/ui.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import {
   TIMER_KIND,
@@ -122,6 +123,14 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
       this.activateForm();
       this.activateTable();
       this.refreshTimes();
+      this.element.querySelector("[data-timer-action='automation']")?.addEventListener("click", () => {
+        const template = this.getEditingTemplate();
+        const owner = template?.kind === TIMER_KIND.break
+          ? { type: "break", id: "break" }
+          : { type: "timers", id: this.editingTemplateId || (this.automationDraftId ??= foundry.utils.randomID()) };
+        this.automationDraft ??= createAutomationDraft(owner, { saved: Boolean(template) || owner.type === "break" });
+        openAutomation(owner, this.automationDraft?.host);
+      });
     });
   }
 
@@ -341,6 +350,8 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
   }
 
   resetForm() {
+    this.automationDraft = null;
+    this.automationDraftId = null;
     this.editingTemplateId = "";
     this.formDraft = null;
     this.defaultDeadlineBase = Date.now();
@@ -348,6 +359,8 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
   }
 
   editTemplate(templateId) {
+    this.automationDraft = null;
+    this.automationDraftId = null;
     const template = this.timerTool.getTimerTemplate(templateId);
     if (!template) {
       ui.notifications.warn(localize("Timers.Templates.NotFound"));
@@ -393,7 +406,10 @@ export class TimerManagerApplication extends HandlebarsApplicationMixin(Applicat
     const templateId = this.editingTemplateId;
     if (button) button.disabled = true;
     try {
-      await this.timerTool.saveTimerTemplate(this.collectFormInput(form), templateId);
+      const saved = await this.timerTool.saveTimerTemplate(this.collectFormInput(form), templateId);
+      await this.automationDraft?.commit(saved.kind === TIMER_KIND.break ? { type: "break", id: "break" } : { type: "timers", id: saved.id });
+      this.automationDraft = null;
+      this.automationDraftId = null;
       this.editingTemplateId = "";
       this.formDraft = null;
       this.defaultDeadlineBase = Date.now();

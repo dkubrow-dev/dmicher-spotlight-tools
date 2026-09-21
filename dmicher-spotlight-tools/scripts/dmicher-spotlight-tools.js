@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./config.js";
+import { SpotlightAutomation } from "./automation/adapter.js";
 import { generics } from "./generics.js";
 import { getPremiumStatus, subscribePremiumChanges, waitForPremiumReady } from "./premium-provider.js";
 import {
@@ -36,6 +37,7 @@ const requestHotbar = new RequestHotbar(requestTool.submitRequest);
 const stopwatchTool = new StopwatchTool();
 const timerTool = new TimerTool({ volumeController: requestVolumeController });
 const pollTool = new PollTool({ timerTool });
+const automation = new SpotlightAutomation({ requestTool, pollTool, timerTool, stopwatchTool, focusAuditTool });
 const spotlightControls = new SpotlightControls({
   openHelp: () => openRequestHelp(),
   openRequests: () => requestTool.openActiveRequestsWindow(),
@@ -47,6 +49,8 @@ const spotlightControls = new SpotlightControls({
 });
 
 Hooks.once("init", () => {
+  automation.registerSettings();
+  stopwatchTool.registerSettings();
   registerThemeSetting();
   focusAuditTool.registerSettings();
   pollTool.registerSettings();
@@ -82,6 +86,7 @@ Hooks.once("init", () => {
   globalThis.addEventListener?.("pagehide", unsubscribePremium, { once: true });
   game.modules.get(MODULE_ID).api = {
     apiVersion: 1,
+    automation,
     getPremiumStatus,
     openRequestSettings,
     openRequestMasterSettings,
@@ -122,6 +127,7 @@ Hooks.once("setup", () => {
 });
 
 Hooks.once("ready", async () => {
+  automation.activate();
   applySpotlightTheme();
   await waitForPremiumReady();
   void migrateLegacyClientRequestSettings().catch((error) => {

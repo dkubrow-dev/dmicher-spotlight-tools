@@ -36,6 +36,16 @@ Extension inputs are isolated and only declared paid fields are accepted. Missin
 
 Базовая версия 1.3 остаётся бесплатной. Сателлит [dmicher-premium](https://boosty.to/dmicher) с подтверждённым доступом включает изменение показа времени, общего вывода в чат, изображений и звуков мира, а также отдельные выключатели приветствий мастеру и игрокам. Без Premium используются встроенные ресурсы, время, чат и оба приветствия включены. Антиспам, видимость ленты, уведомления опросов/таймеров и личные настройки остаются бесплатными. Показ статуса версии можно отключить бесплатно. Прежние премиальные настройки сохраняются при потере доступа и возвращаются при его восстановлении.
 
+## Автоматизация инструментов / Tool automation
+
+В рабочей ветке Ширмы инструменты Спотлайта предоставляют мировые события и функции: заявки, опросы, таймеры, перерыв, секундомер и аудит фокуса. Подписки настраиваются через Ширму и действуют без открытой сцены. Каждая подписка содержит один обычный блок скрипта; подготовка и явно зарегистрированные макросы сохраняются у инструмента с ревизией. Изменения шаблонов опроса и таймера сначала остаются в черновике до сохранения шаблона. Без активной Ширмы точки настройки показывают пояснение, а ручные инструменты продолжают работать.
+
+Автоматизацию исполняет один избранный полный мастер. События возникают после подтверждённых операций и переходов показателей; открытие окна и загрузка мира не повторяют прежние события. Остановка мировой автоматизации немедленно отменяет ожидания, в том числе на паузе; продолжение разрешает новые события. Макросы доступны только после явной регистрации у инструмента. Заявки НПС, автоматические операции секундомера и запрос Информатора об актуальности внимания требуют Premium при исполнении. Ручной секундомер остаётся бесплатным.
+
+In the Master Screen development branch, Spotlight exposes world events and operations for requests, polls, timers, breaks, the stopwatch and focus audit. Master Screen edits and runs subscriptions even without an open scene. Each subscription contains one ordinary script block; preparation and explicitly registered macros belong to the tool and use revision checks. Poll and timer template edits remain drafts until the template is saved. Without an active Master Screen, the integration points explain the missing editor and manual tools continue to work.
+
+One elected full GM executes automation. Confirmed operations and indicator transitions emit events; opening a window or loading the world does not replay past events. Stopping world automation immediately cancels pending work, including while paused; resuming permits new events. Only explicitly registered macros may run. NPC requests, automated stopwatch operations and Informer attention prompts require Premium at execution time. The manual stopwatch remains free.
+
 ## Как установить модуль?
 
 ### Вариант 1: установка через манифест

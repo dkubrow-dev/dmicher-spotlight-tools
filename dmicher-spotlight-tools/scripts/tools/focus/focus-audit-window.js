@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { openAutomation } from "../../automation/ui.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import { i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import { openFocusAuditSettings } from "./focus-audit-settings.js";
@@ -81,6 +82,11 @@ export class FocusAuditApplication extends HandlebarsApplicationMixin(Applicatio
   }
 
   activateListeners() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = localize("Automation.Title");
+    button.addEventListener("click", () => openAutomation({ type: "focus", id: "focus" }));
+    this.element.querySelector(".dmicher-tool-action-bar")?.append(button);
     this.element.querySelector("[data-focus-action='reset-all']")?.addEventListener("click", () => {
       void this.focusAuditTool.confirmResetAll();
     });

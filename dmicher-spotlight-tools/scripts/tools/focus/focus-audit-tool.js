@@ -1,4 +1,5 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
+import { FocusAutomationObserver } from "../../automation/focus-observer.js";
 import { generics } from "../../generics.js";
 import { createTechnicalChatMessages, isTechnicalUser } from "../../technical-chat.js";
 import {
@@ -44,6 +45,7 @@ export class FocusAuditTool {
     this.handleUserConnected = this.handleUserConnected.bind(this);
     this.handleChatMessageCreated = this.handleChatMessageCreated.bind(this);
     this.receiveSocketMessage = this.receiveSocketMessage.bind(this);
+    this.automationObserver = new FocusAutomationObserver(this);
   }
 
   registerSettings() {
@@ -69,11 +71,14 @@ export class FocusAuditTool {
     Hooks.on("renderPlayerList", this.renderPlayers);
     Hooks.on("userConnected", this.handleUserConnected);
     Hooks.on("createChatMessage", this.handleChatMessageCreated);
+    Hooks.on("updateUser", () => this.automationObserver.observe());
   }
 
   activate() {
     this.state = normalizeFocusAuditState(game.settings.get(MODULE_ID, SETTINGS.focusAuditState));
     this.thresholds = normalizeAuditThresholds(game.settings.get(MODULE_ID, SETTINGS.focusAuditThresholds));
+    this.automationObserver.observe({ baseline: true });
+    globalThis.addEventListener?.("pagehide", () => this.automationObserver.dispose(), { once: true });
     game.socket.on(SOCKET_CHANNEL, this.receiveSocketMessage);
     window.setTimeout(() => {
       if (isPrimaryModerator()) void this.markActivePlayersPlaying();
@@ -101,12 +106,14 @@ export class FocusAuditTool {
 
   onStateChanged(rawState) {
     this.state = normalizeFocusAuditState(rawState);
+    this.automationObserver.observe();
     this.renderPlayersList();
     this.auditWindow?.onAuditChanged();
   }
 
   onThresholdsChanged(rawThresholds) {
     this.thresholds = normalizeAuditThresholds(rawThresholds);
+    this.automationObserver.observe();
     this.auditWindow?.onAuditChanged();
   }
 
@@ -560,11 +567,14 @@ export class FocusAuditTool {
     return state.players[userId];
   }
 
-  async updateState(mutator) {
+  async updateState(mutator, { causality } = {}) {
+    if (!isModerator()) throw new Error("Moderator required");
     return this.runStateTask(async () => {
       const state = normalizeFocusAuditState(game.settings.get(MODULE_ID, SETTINGS.focusAuditState));
       const result = await mutator(state);
       if (result === false) return false;
+      if (causality) state.automationCause = structuredClone(causality);
+      else delete state.automationCause;
       await game.settings.set(MODULE_ID, SETTINGS.focusAuditState, state);
       return result;
     });

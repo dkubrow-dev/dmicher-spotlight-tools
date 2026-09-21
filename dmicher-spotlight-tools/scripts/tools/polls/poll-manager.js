@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { createAutomationDraft, mountAutomationTabs } from "../../automation/ui.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import { i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import {
@@ -131,10 +132,16 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
       this.refreshOptionVisibility();
       this.refreshTimerBlock();
       if (this.focusFormOnRender) this.focusTemplateForm();
+      if (this.formVisible) {
+        const owner = { type: "polls", id: this.editTemplateId || (this.automationDraftId ??= foundry.utils.randomID()) };
+        this.automationDraft ??= createAutomationDraft(owner, { saved: Boolean(this.editTemplateId) });
+        mountAutomationTabs(this, this.element.querySelector("[data-poll-template-form]"), owner, { host: this.automationDraft?.host });
+      }
     });
   }
 
   _onClose(options) {
+    this.automationDispose?.();
     this.pollTool.forgetManagerWindow(this);
     return super._onClose(options);
   }
@@ -198,6 +205,9 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
   }
 
   openTemplateForm(templateId) {
+    this.automationDraft = null;
+    this.automationDraftId = null;
+    this.automationTab = "content";
     this.editTemplateId = String(templateId ?? "");
     this.formVisible = true;
     this.focusFormOnRender = true;
@@ -250,10 +260,13 @@ export class PollManagerApplication extends HandlebarsApplicationMixin(Applicati
     if (submitButton) submitButton.disabled = true;
 
     try {
-      await this.pollTool.saveTemplate({
-        id: this.editTemplateId,
+      const saved = await this.pollTool.saveTemplate({
+        id: this.editTemplateId || this.automationDraftId,
         ...this.collectFormInput(form)
       });
+      await this.automationDraft?.commit({ type: "polls", id: saved.id });
+      this.automationDraft = null;
+      this.automationDraftId = null;
       this.editTemplateId = "";
       this.formVisible = false;
       this.newPollDraft = null;

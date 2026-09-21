@@ -1,3 +1,5 @@
+import { publishAutomation } from "../../automation/events.js";
+import { isPrimaryModerator } from "../../utils.js";
 import {
   FLAGS,
   MODULE_ID,
@@ -247,7 +249,7 @@ export class TimerTool {
     return template;
   }
 
-  async startTimerTemplate(templateId) {
+  async startTimerTemplate(templateId, { check = () => {} } = {}) {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
     const id = String(templateId ?? "");
     const template = this.templateState.templates[id];
@@ -255,6 +257,7 @@ export class TimerTool {
     if (id === BUILTIN_BREAK_TEMPLATE_ID) return this.openBreakTimer();
 
     return this.startTimer({
+      automationCheck: check,
       name: template.name,
       mode: template.mode,
       time: template.time,
@@ -355,6 +358,8 @@ export class TimerTool {
 
   async startTimer(input) {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
+    const check = input.automationCheck ?? (() => {});
+    check();
 
     const now = Date.now();
     const kind = input.kind === TIMER_KIND.break ? TIMER_KIND.break : TIMER_KIND.standard;
@@ -398,6 +403,7 @@ export class TimerTool {
     if (typeof input.onDeadlineCalculated === "function") input.onDeadlineCalculated(endsAt);
 
     const timer = {
+      ...(check.automationCause ? { automationCause: structuredClone(check.automationCause) } : {}),
       id: foundry.utils.randomID(),
       name,
       mode,
@@ -416,6 +422,7 @@ export class TimerTool {
     };
 
     await this.updateState((state) => {
+      check();
       if (kind === TIMER_KIND.break) {
         const activeBreak = listTimers(state).find((candidate) => {
           return candidate.kind === TIMER_KIND.break && !isTimerExpired(candidate, now);
@@ -425,7 +432,9 @@ export class TimerTool {
       state.timers[timer.id] = timer;
     });
     try {
+      check();
       const messages = await this.createTimerChatMessage(timer);
+      check();
       if (isTechnicalChatEnabled("timers") && (!Array.isArray(messages) || !messages.length)) {
         throw new Error(localize("Timers.Errors.StartFailed"));
       }
@@ -450,10 +459,12 @@ export class TimerTool {
       }
     }
 
+    void publishAutomation({ type: "timers", id: timer.templateId || timer.id }, "timers.started", timer, check.automationCause);
+    if (timer.kind === TIMER_KIND.break) void publishAutomation({ type: "break", id: "break" }, "break.started", timer, check.automationCause);
     return timer;
   }
 
-  async startBreakTimer(descriptor, { onDeadlineCalculated } = {}) {
+  async startBreakTimer(descriptor, { onDeadlineCalculated, check = () => {} } = {}) {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
     if (this.getActiveBreakTimer()) {
       throw new Error(localize("Timers.Break.AlreadyActive"));
@@ -477,6 +488,7 @@ export class TimerTool {
           : TIMER_MODE.deadline;
 
     return this.startPausedTimer({
+      automationCheck: check,
       name: localize("Timers.Break.TimerName"),
       mode,
       kind: TIMER_KIND.break,
@@ -599,6 +611,7 @@ export class TimerTool {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
     const wasPaused = Boolean(game.paused);
     try {
+      input.automationCheck?.();
       await setGamePaused(true);
       return await this.startTimer(input);
     } catch (error) {
@@ -807,15 +820,24 @@ export class TimerTool {
     await this.deleteTimers([timerId]);
   }
 
-  async deleteTimers(timerIds) {
+  async deleteTimers(timerIds, { check = () => {} } = {}) {
     if (!isModerator()) throw new Error(localize("Timers.Errors.Forbidden"));
     const ids = new Set(timerIds.map((timerId) => String(timerId)));
     if (!ids.size) return;
 
-    this.closeTimerWindows(ids);
+    const removed = [];
     await this.updateState((state) => {
-      for (const timerId of ids) delete state.timers[timerId];
+      check();
+      for (const timerId of ids) {
+        if (state.timers[timerId]) removed.push(state.timers[timerId]);
+        delete state.timers[timerId];
+      }
     });
+    this.closeTimerWindows(ids);
+    for (const timer of removed) {
+      void publishAutomation({ type: "timers", id: timer.templateId || timer.id }, "timers.cancelled", timer, check.automationCause);
+      if (timer.kind === TIMER_KIND.break && !isTimerExpired(timer)) void publishAutomation({ type: "break", id: "break" }, "break.finished", timer, check.automationCause);
+    }
   }
 
   closeTimerWindows(timerIds) {
@@ -888,9 +910,28 @@ export class TimerTool {
   }
 
   tick() {
+    this.observeAutomationExpirations();
     this.managerWindow?.onTimerTick();
     for (const app of this.timerWindows.values()) app.onTimerTick();
     this.checkExpiredTimers();
+  }
+
+  observeAutomationExpirations() {
+    const primary = isPrimaryModerator();
+    const expired = Object.values(this.state.timers).filter((timer) => isTimerExpired(timer));
+    if (!this.automationWasPrimary || !primary) {
+      this.automationExpired = new Set(expired.map((timer) => timer.id));
+      this.automationWasPrimary = primary;
+      return;
+    }
+    const ids = new Set(Object.keys(this.state.timers));
+    for (const id of this.automationExpired) if (!ids.has(id)) this.automationExpired.delete(id);
+    for (const timer of expired) {
+      if (this.automationExpired.has(timer.id)) continue;
+      this.automationExpired.add(timer.id);
+      void publishAutomation({ type: "timers", id: timer.templateId || timer.id }, "timers.completed", timer, timer.automationCause);
+      if (timer.kind === TIMER_KIND.break) void publishAutomation({ type: "break", id: "break" }, "break.finished", timer, timer.automationCause);
+    }
   }
 
   checkExpiredTimers() {

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { activateAutomationEvents, publishAutomation } from "../dmicher-spotlight-tools/scripts/automation/events.js";
 import test from "node:test";
 import { installPremiumFixture } from "./fixtures/premium.mjs";
 test.beforeEach(() => installPremiumFixture());
@@ -462,4 +463,30 @@ test("a cancelled result creation schedules reconciliation retry", async () => {
     window.setTimeout = originalSetTimeout;
     console.warn = originalConsoleWarn;
   }
+});
+
+test("poll automation publishes committed launches, accepted answers and final results once per run", async () => {
+  const { getState } = installGame();
+  installMessageRecorder();
+  getState().templates.template.timerEnabled = false;
+  const events = [];
+  const originalSet = game.settings.set.bind(game.settings);
+  game.settings.set = async (namespace, key, value) => {
+    if (key === "automationEvent") { events.push(value); return value; }
+    return originalSet(namespace, key, value);
+  };
+  activateAutomationEvents();
+  const tool = new PollTool();
+  tool.openResultsWindow = () => null;
+  const run = await tool.launchPoll("template");
+  const response = { runId: run.id, userId: "player", status: "answered", value: "yes" };
+  await tool.processResponse(response);
+  await tool.processResponse(response);
+  await tool.clearActivePoll();
+  await tool.clearActivePoll();
+  const next = await tool.launchPoll("template");
+  assert.notEqual(run.id, next.id);
+  await publishAutomation({ type: "polls", id: "template" }, "flush", {});
+  assert.deepEqual(events.filter((event) => event.name !== "flush").map((event) => event.name), ["polls.started", "polls.answered", "polls.allAnswered", "polls.finished", "polls.started"]);
+  assert.equal(events.find((event) => event.name === "polls.finished").parameters.responses.player.value, "yes");
 });

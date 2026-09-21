@@ -108,7 +108,7 @@ export function normalizeFocusAuditState(rawState) {
   for (const [userId, rawEntry] of Object.entries(state.players ?? {})) {
     players[userId] = normalizeAuditEntry(rawEntry, { forceEnabled: migrateEnabledDefault });
   }
-  return { version: FOCUS_AUDIT_STATE_VERSION, players };
+  return { version: FOCUS_AUDIT_STATE_VERSION, players, ...(state.automationCause ? { automationCause: structuredClone(state.automationCause) } : {}) };
 }
 
 export function normalizeAuditEntry(rawEntry, { forceEnabled = false } = {}) {

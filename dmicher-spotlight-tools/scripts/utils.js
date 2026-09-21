@@ -107,7 +107,7 @@ export function getWhisperRecipientsWithModerators(userId) {
 export function isPrimaryModerator() {
   const moderators = game.users
     .filter((user) => user.active && isModerator(user))
-    .sort((left, right) => left.id.localeCompare(right.id));
+    .sort((left, right) => (Number(right.role === 4) - Number(left.role === 4)) || left.id.localeCompare(right.id));
   return moderators[0]?.id === game.user.id;
 }
 

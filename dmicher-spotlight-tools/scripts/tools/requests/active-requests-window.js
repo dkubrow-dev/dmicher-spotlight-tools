@@ -1,4 +1,5 @@
 import { MODULE_ID, REQUEST_TYPES } from "../../config.js";
+import { mountAutomationTabs } from "../../automation/ui.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import { format, i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import { getRequestConfiguration, hasConfiguredRequestTimeouts } from "./request-config.js";
@@ -86,10 +87,12 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
       this.activateListeners();
       this.applyFilters();
       this.startTicking();
+      mountAutomationTabs(this, this.element.querySelector(".dmicher-active-requests-shell"), { type: "requests", id: "requests" }, { label: "Automation.ActiveRequests" });
     });
   }
 
   _onClose(options) {
+    this.automationDispose?.();
     this.stopTicking();
     this.activeRequests.forgetWindow(this);
     return super._onClose(options);
@@ -185,6 +188,7 @@ export class ActiveRequestsApplication extends HandlebarsApplicationMixin(Applic
   onActiveRequestsChanged() {
     if (!this.rendered) return;
     this.updateWindowTitle();
+    if (this.automationTab === "automation") return;
     void this.render({ parts: ["main"] }).then(() => this.updateWindowTitle());
   }
 }

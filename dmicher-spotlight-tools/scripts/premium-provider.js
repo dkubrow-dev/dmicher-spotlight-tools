@@ -22,6 +22,14 @@ export const isPremiumActive = () => getPremiumStatus().active;
 export const openPremiumSettings = () => premium.openSettings();
 export const subscribePremiumChanges = (listener) => premium.subscribe(listener);
 
+const automation = generics.premium.forModule(MODULE_ID, {
+  apiVersion: PREMIUM_API_VERSION, methods: ["authorizeAutomation"]
+});
+export function authorizePremiumAutomation(operation) {
+  return automation.invoke("authorizeAutomation", [operation], () => false,
+    (value) => typeof value === "boolean") === true;
+}
+
 export function getPremiumSoundPickerOptions(current = "") {
   const path = String(current ?? "").trim().slice(0, 2048);
   const options = soundPicker.invoke("resolveSoundPickerOptions", [path], () => null,

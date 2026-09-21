@@ -1,3 +1,4 @@
+import { publishAutomation } from "../../automation/events.js";
 import {
   FLAGS,
   MODULE_ID,
@@ -34,6 +35,8 @@ export class StopwatchTool {
     this.startedAt = 0;
     this.elapsedBeforeStart = 0;
     this.events = [];
+    this.stateTail = Promise.resolve();
+    this.pendingTransitions = 0;
     this.handleHotbarDrop = this.handleHotbarDrop.bind(this);
     this.handleChatMessage = this.handleChatMessage.bind(this);
   }
@@ -43,7 +46,63 @@ export class StopwatchTool {
     Hooks.on("hotbarDrop", this.handleHotbarDrop);
   }
 
+  registerSettings() {
+    game.settings.register(MODULE_ID, "stopwatchState", {
+      scope: "world", config: false, type: Object,
+      default: { running: false, startedAt: 0, elapsedBeforeStart: 0, events: [], finished: false },
+      onChange: (state) => this.applyState(state)
+    });
+  }
+
+  applyState(state = {}) {
+    this.running = state.running === true;
+    this.startedAt = Math.max(0, Number(state.startedAt) || 0);
+    this.elapsedBeforeStart = Math.max(0, Number(state.elapsedBeforeStart) || 0);
+    this.events = Array.isArray(state.events) ? structuredClone(state.events).slice(-1000) : [];
+    this.finished = state.finished === true;
+    this.window?.onStopwatchStateChanged();
+  }
+
+  transition(action, check = () => {}) {
+    if (this.pendingTransitions >= 100) return Promise.reject(new Error("Stopwatch queue full"));
+    this.pendingTransitions += 1;
+    const task = this.stateTail.then(async () => {
+      if (!isModerator()) throw new Error("Moderator required");
+      check();
+      const state = structuredClone(game.settings.get(MODULE_ID, "stopwatchState") ?? {});
+      const now = Date.now();
+      const elapsed = (Number(state.elapsedBeforeStart) || 0) + (state.running ? Math.max(0, now - state.startedAt) : 0);
+      let event;
+      if (action === "start" || action === "resume") {
+        if (state.running || (action === "resume" && state.finished)) return false;
+        event = action === "resume" || elapsed > 0 ? "resumed" : "started";
+        if (action === "start" && state.finished) { state.elapsedBeforeStart = 0; event = "started"; }
+        Object.assign(state, { running: true, startedAt: now, finished: false });
+      } else if (action === "pause" || action === "finish") {
+        if ((!state.running && action === "pause") || state.finished) return false;
+        Object.assign(state, { running: false, startedAt: 0, elapsedBeforeStart: elapsed, finished: action === "finish" });
+        event = action === "pause" ? "paused" : "finished";
+      } else if (action === "reset") {
+        Object.assign(state, { running: false, startedAt: 0, elapsedBeforeStart: 0, events: [], finished: false });
+        event = "reset";
+      } else if (action === "clear") { state.events = []; event = "cleared"; }
+      else {
+        const config = getStopwatchEventConfig(action);
+        if (!config || (!state.running && elapsed <= 0)) return false;
+        state.events = [...(state.events ?? []), { id: foundry.utils.randomID(), type: action, label: localize(config.labelKey), image: config.image, elapsed }].slice(-1000);
+      }
+      check();
+      await game.settings.set(MODULE_ID, "stopwatchState", state);
+      this.applyState(state);
+      if (event) void publishAutomation({ type: "stopwatch", id: "stopwatch" }, `stopwatch.${event}`, state, check.automationCause);
+      return true;
+    });
+    this.stateTail = task.catch(() => {}).finally(() => { this.pendingTransitions -= 1; });
+    return task;
+  }
+
   activate() {
+    this.applyState(game.settings.get(MODULE_ID, "stopwatchState"));
     for (const [, eventConfig] of getStopwatchEventEntries()) {
       void preloadImage(eventConfig.image);
     }
@@ -67,31 +126,18 @@ export class StopwatchTool {
   }
 
   startPause() {
-    if (!isModerator()) return;
-    if (this.running) {
-      this.elapsedBeforeStart = this.getElapsed();
-      this.running = false;
-      this.startedAt = 0;
-    } else {
-      this.startedAt = performance.now();
-      this.running = true;
-    }
-    this.window?.onStopwatchStateChanged();
+    return this.transition(this.running ? "pause" : "start");
   }
 
   stopReset() {
-    if (!isModerator()) return;
-    this.running = false;
-    this.startedAt = 0;
-    this.elapsedBeforeStart = 0;
-    this.window?.onStopwatchStateChanged();
+    return this.transition("reset");
   }
 
   getElapsed() {
-    return this.elapsedBeforeStart + (this.running ? performance.now() - this.startedAt : 0);
+    return this.elapsedBeforeStart + (this.running ? Math.max(0, Date.now() - this.startedAt) : 0);
   }
 
-  recordEvent(eventType) {
+  recordEvent(eventType, check = () => {}) {
     if (!isModerator()) {
       ui.notifications.warn(localize("Timers.Errors.Forbidden"));
       return;
@@ -106,14 +152,7 @@ export class StopwatchTool {
     const eventConfig = getStopwatchEventConfig(eventType);
     if (!eventConfig) return;
 
-    this.events.push({
-      id: foundry.utils.randomID(),
-      type: eventType,
-      label: localize(eventConfig.labelKey),
-      image: eventConfig.image,
-      elapsed: this.getElapsed()
-    });
-    this.window?.onStopwatchEventsChanged();
+    return this.transition(eventType, check);
   }
 
   canRecordEvent() {
@@ -121,9 +160,7 @@ export class StopwatchTool {
   }
 
   clearEvents() {
-    if (!isModerator()) return;
-    this.events = [];
-    this.window?.onStopwatchEventsChanged();
+    return this.transition("clear");
   }
 
   async postEventsToChat() {

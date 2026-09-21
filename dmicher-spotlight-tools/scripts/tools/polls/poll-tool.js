@@ -1,5 +1,6 @@
 import { FLAGS, MODULE_ID, SETTINGS, SOCKET_CHANNEL } from "../../config.js";
 import { generics } from "../../generics.js";
+import { publishAutomation } from "../../automation/events.js";
 import {
   applyChatMessageMode,
   confirmDialog,
@@ -439,7 +440,7 @@ export class PollTool {
     return `game.modules.get("${MODULE_ID}")?.api?.openPollLaunch("${templateId}");`;
   }
 
-  async launchPoll(templateId, overrides = {}) {
+  async launchPoll(templateId, overrides = {}, { check = () => {} } = {}) {
     if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
 
     const state = clonePollState(game.settings.get(MODULE_ID, SETTINGS.polls));
@@ -454,10 +455,12 @@ export class PollTool {
       return null;
     }
 
-    return this.launchPreparedPoll(state, template, overrides);
+    return this.launchPreparedPoll(state, template, overrides, { check });
   }
 
-  async launchPreparedPoll(state, template, overrides = {}, { temporary = false } = {}) {
+  async launchPreparedPoll(state, template, overrides = {}, { temporary = false, check = () => {} } = {}) {
+    if (!isModerator()) throw new Error(localize("Polls.Errors.Forbidden"));
+    check();
     if (!isTechnicalChatEnabled()) {
       ui.notifications.warn(localize("TechnicalChat.Disabled"));
       return null;
@@ -527,6 +530,7 @@ export class PollTool {
     }
 
     const stored = await this.updateState((latestState) => {
+      check();
       if (latestState.activePoll && !latestState.activePoll.closed) return false;
       latestState.activePoll = run;
       latestState.lastRuns[template.id] = foundry.utils.deepClone(run);
@@ -539,6 +543,7 @@ export class PollTool {
 
     const requestMessages = [];
     try {
+      check();
       if (timerEnabled) {
         const timer = await this.startPollTimer(run);
         if (!timer?.id) throw new Error(localize("Polls.Errors.TimerUnavailable"));
@@ -559,10 +564,12 @@ export class PollTool {
       }
 
       for (const user of selectedUsers) {
+        check();
         const messages = await this.createRequestMessage(user, run);
         const message = messages.find((candidate) => candidate.whisper?.includes(user.id)) ?? messages[0];
         if (!message?.id) throw new Error(localize("Polls.Errors.StartFailed"));
         requestMessages.push(...messages);
+        check();
         const messageStored = await this.updateState((latestState) => {
           if (latestState.activePoll?.id !== run.id) return false;
           latestState.activePoll.responses[user.id].messageId = message.id;
@@ -576,6 +583,7 @@ export class PollTool {
       throw error;
     }
 
+    void publishAutomation({ type: "polls", id: template.id }, "polls.started", run, check.automationCause);
     this.openResultsWindow(template.id);
     return run;
   }
@@ -836,6 +844,7 @@ export class PollTool {
   }
 
   async processResponse(payload) {
+    if (!isPrimaryModerator()) return;
     const processed = await this.updateState((state) => {
       const run = state.activePoll;
       if (!run || run.id !== String(payload.runId ?? "")) return false;
@@ -870,6 +879,7 @@ export class PollTool {
       state.activePoll = run;
       state.lastRuns[run.templateId] = foundry.utils.deepClone(run);
       return {
+        accepted: true,
         messageId,
         response,
         run: foundry.utils.deepClone(run),
@@ -877,6 +887,14 @@ export class PollTool {
       };
     });
     if (!processed) return;
+
+    if (processed.accepted && processed.response.status === POLL_RESPONSE_STATUS.answered) {
+      const owner = { type: "polls", id: processed.run.templateId };
+      void publishAutomation(owner, "polls.answered", processed);
+      if (Object.values(processed.run.responses).length && Object.values(processed.run.responses).every((response) => response.status === POLL_RESPONSE_STATUS.answered)) {
+        void publishAutomation(owner, "polls.allAnswered", processed.run);
+      }
+    }
 
     await this.finalizePollResponse(processed);
   }
@@ -921,19 +939,21 @@ export class PollTool {
     }
   }
 
-  async clearActivePoll() {
+  async clearActivePoll({ check = () => {} } = {}) {
     if (!isModerator()) {
       ui.notifications.warn(localize("Polls.Errors.Forbidden"));
       return;
     }
 
-    await this.updateState(async (state) => {
+    const finished = await this.updateState(async (state) => {
+      check();
       const run = state.activePoll;
       if (!run) return false;
 
       for (const [userId, response] of Object.entries(run.responses)) {
         if (response.status !== POLL_RESPONSE_STATUS.pending) continue;
         for (const message of this.findRequestMessages(run.id, userId, response.messageId)) {
+          check();
           await message.delete();
         }
         run.responses[userId] = normalizePollResponse({
@@ -946,9 +966,12 @@ export class PollTool {
       }
 
       run.closed = true;
+      check();
       state.activePoll = null;
       state.lastRuns[run.templateId] = foundry.utils.deepClone(run);
+      return foundry.utils.deepClone(run);
     });
+    if (finished) void publishAutomation({ type: "polls", id: finished.templateId }, "polls.finished", finished, check.automationCause);
   }
 
   async confirmCloseTemporaryResults(templateId) {

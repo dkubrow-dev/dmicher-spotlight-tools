@@ -1,4 +1,5 @@
 import { MODULE_ID } from "../../config.js";
+import { openAutomation } from "../../automation/ui.js";
 import { getThemedWindowClasses } from "../../theme.js";
 import { i18nKey, localize, runAfterApplicationLifecycle } from "../../utils.js";
 import {
@@ -82,6 +83,7 @@ export class StopwatchWindowApplication extends HandlebarsApplicationMixin(Appli
   }
 
   activateListeners() {
+    this.element.querySelector("[data-stopwatch-action='automation']")?.addEventListener("click", () => openAutomation({ type: "stopwatch", id: "stopwatch" }));
     this.element.querySelector("[data-stopwatch-action='start-pause']")?.addEventListener("click", () => this.stopwatchTool.startPause());
     this.element.querySelector("[data-stopwatch-action='stop-reset']")?.addEventListener("click", () => this.stopwatchTool.stopReset());
     this.element.querySelector("[data-stopwatch-action='post']")?.addEventListener("click", () => void this.stopwatchTool.postEventsToChat());

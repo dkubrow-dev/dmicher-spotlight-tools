@@ -82,6 +82,7 @@ export function normalizeTimer(timer) {
   return {
     id,
     name,
+    ...(timer.automationCause ? { automationCause: structuredClone(timer.automationCause) } : {}),
     mode: timer.mode === TIMER_MODE.deadline ? TIMER_MODE.deadline : TIMER_MODE.duration,
     kind,
     templateId,

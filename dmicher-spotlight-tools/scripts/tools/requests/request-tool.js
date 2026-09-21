@@ -1,3 +1,4 @@
+import { publishAutomation } from "../../automation/events.js";
 import {
   DEFAULT_USER_PORTRAIT,
   FLAGS,
@@ -142,7 +143,7 @@ export class RequestTool {
     return true;
   }
 
-  async processRequestTimeoutReset(resolverId) {
+  async processRequestTimeoutReset(resolverId, { check = () => {} } = {}) {
     if (!isPrimaryModerator()) return false;
     const resolver = game.users.get(String(resolverId ?? ""));
     if (!isModerator(resolver)) {
@@ -154,6 +155,7 @@ export class RequestTool {
       return false;
     }
     return this.runStateTask(async () => {
+      check();
       const current = getActiveRequestState();
       current.cooldowns = {};
       current.cooldownsResetAt = Date.now();
@@ -201,7 +203,7 @@ export class RequestTool {
   }
 
   createSubmissionPayload(type) {
-    const token = canvas?.tokens?.controlled?.[0] ?? null;
+    const token = globalThis.canvas?.tokens?.controlled?.[0] ?? null;
     const actor = token?.actor ?? game.user.character ?? null;
     const tokenDocument = token?.document ?? null;
     return {
@@ -212,7 +214,7 @@ export class RequestTool {
       characterName: firstNonEmptyString(actor?.name, token?.name).slice(0, 100),
       actorId: String(actor?.id ?? "").slice(0, 100),
       tokenId: String(tokenDocument?.id ?? token?.id ?? "").slice(0, 100),
-      sceneId: String(tokenDocument?.parent?.id ?? canvas?.scene?.id ?? "").slice(0, 100),
+      sceneId: String(tokenDocument?.parent?.id ?? globalThis.canvas?.scene?.id ?? "").slice(0, 100),
       text: getRequestText(REQUEST_TYPES[type]).slice(0, 500),
       style: getRequestStyle(REQUEST_TYPES[type]),
       portrait: firstNonEmptyString(
@@ -226,14 +228,15 @@ export class RequestTool {
     };
   }
 
-  async processSubmission(payload) {
+  async processSubmission(payload, { check = () => {}, attention = false } = {}) {
     if (!isPrimaryModerator()) return false;
     try {
       return await this.runStateTask(async () => {
+      check();
       const type = normalizeRequestType(payload?.urgency);
       const request = REQUEST_TYPES[type];
       const user = game.users.get(String(payload?.authorId ?? ""));
-      if (!user || isTechnicalUser(user) || !canUseRequest(request, user)) {
+      if (!user || isTechnicalUser(user) || (!canUseRequest(request, user) && !attention)) {
         this.sendFeedback(payload?.authorId, "Requests.Chat.Forbidden", "warn");
         return false;
       }
@@ -272,7 +275,7 @@ export class RequestTool {
 
       if (configuration.chatEnabled) {
         const ChatMessageClass = getChatMessageClass();
-        const message = await ChatMessageClass.create({
+        const messageData = {
           author: user.id,
           speaker: buildRequestSpeaker(entry),
           content: buildRequestMessageContent(
@@ -282,8 +285,13 @@ export class RequestTool {
             getRequestImage(type, configuration)
           ),
           flags: { [MODULE_ID]: { [FLAGS.request]: entry } }
-        });
+        };
+        const created = attention
+          ? await createTechnicalChatMessages(messageData, { deduplicationKey: `focus-attention:${entry.id}` })
+          : [await ChatMessageClass.create(messageData)];
+        const message = created[0];
         if (!message) throw new Error(localize("Requests.Chat.SubmitError"));
+        try { check(); } catch (error) { for (const candidate of created) await candidate?.delete(); throw error; }
         entry.messageId = message.id;
       }
 
@@ -294,6 +302,7 @@ export class RequestTool {
       await game.settings.set(MODULE_ID, SETTINGS.activeRequests, current);
       this.applyState(current);
       this.focusAuditTool?.recordRequestSubmitted?.({ id: entry.id, timestamp: entry.submittedAt }, entry);
+      void publishAutomation({ type: "requests", id: "requests" }, "requests.submitted", entry, check.automationCause);
       this.broadcastRequestSound(type, configuration);
       return true;
       });
@@ -346,11 +355,12 @@ export class RequestTool {
     return true;
   }
 
-  async processResolution(requestId, completed, resolverId) {
+  async processResolution(requestId, completed, resolverId, { check = () => {} } = {}) {
     if (!isPrimaryModerator() || this.resolvingRequests.has(requestId)) return false;
     this.resolvingRequests.add(requestId);
     try {
       return await this.runStateTask(async () => {
+        check();
         const current = getActiveRequestState();
         const entry = current.entries.find((item) => item.id === requestId);
         if (!entry) return false;
@@ -364,16 +374,18 @@ export class RequestTool {
         const configuration = getRequestConfiguration();
         const elapsed = Date.now() - Number(entry.submittedAt);
         if (completed && normalizeRequestType(entry.urgency) === "stop") await setGamePaused(true);
+        check();
 
         current.entries = current.entries.filter((item) => item.id !== requestId);
         if (completed) recordRequestTimeoutEvent(current, entry.urgency, entry.authorId, "grant", Date.now());
         current.revision += 1;
         await game.settings.set(MODULE_ID, SETTINGS.activeRequests, current);
         this.applyState(current);
+        void publishAutomation({ type: "requests", id: "requests" }, completed ? "requests.granted" : "requests.cancelled", entry, check.automationCause);
 
         if (entry.messageId) {
-          const message = game.messages.get(entry.messageId);
-          if (message) {
+          const messages = Array.from(game.messages).filter((message) => message.id === entry.messageId || message.getFlag?.(MODULE_ID, FLAGS.request)?.id === entry.id);
+          for (const message of messages) {
             this.deletingMessageIds.add(message.id);
             try {
               await message.delete();
@@ -408,6 +420,7 @@ export class RequestTool {
       await game.settings.set(MODULE_ID, SETTINGS.activeRequests, current);
       this.applyState(current);
       this.focusAuditTool?.recordRequestResolved?.(entry.id, entry, completed);
+      void publishAutomation({ type: "requests", id: "requests" }, completed ? "requests.granted" : "requests.cancelled", entry);
       if (createTechnical) await this.createTechnicalMessage(entry, completed, Date.now() - entry.submittedAt, game.user);
       return true;
     });
